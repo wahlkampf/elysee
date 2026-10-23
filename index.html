@@ -2085,6 +2085,11 @@ function govShare(G,gv){gv=gv||G.gov;const c=gv.map(k=>(G.cab&&G.cab[k])||0),T=s
 /* below this Government approval a government counts as unpopular */
 const UNPOP=40;
 function normV(G){const T=sum(G.v);G.v=G.v.map(v=>v/T)}
+/* realistic bounds on term polls (Logan 2026-10-23: polls favoured landslides and crushed small parties). Every party keeps a core vote,
+   60 % of its share at the start of the term and at least 1 %; above 35 % a party loses half of the excess each quarter (real French polls top out in the mid-30s).
+   What is moved comes from, or goes to, every other party in proportion to its size. */
+const PCORE=.6,PCEIL=.35;
+function pollBounds(G){const B=G.vb||G.v;G.v=G.v.map((v,k)=>{if(k===7)return v;const c=Math.max(.01,PCORE*(B[k]||0));if(v<c)return v+(c-v)*.5;if(v>PCEIL)return v-(v-PCEIL)*.5;return v});normV(G)}
 /* ===== censure ===== */
 /* ===== censure motions: a roll-call vote that tests the coalition's cohesion =====
    Each group takes a line (censure or not); then individual MPs break ranks. In the government's camp the leak grows with low cohesion,
@@ -2228,6 +2233,8 @@ function govLossW(G,gp,lostK){const opp=P.map((_,k)=>k).filter(k=>!gp.includes(k
  const L=gp.reduce((a,g)=>a+Math.max(0,lostK[g]||0),0)||1,orig={};gp.forEach(g=>{const l=Math.max(0,lostK[g]||0)/L;if(!l)return;const T=opp.reduce((a,k)=>a+AFF[g][k]*rt(k),0)||1;opp.forEach(k=>orig[k]=(orig[k]||0)+l*AFF[g][k]*rt(k)/T)});
  if(!Object.keys(orig).length)opp.forEach(k=>orig[k]=rt(k));
  add(orig,.8-cs);const cw={};opp.forEach(k=>cw[k]=(C[k]||0)*rt(k));add(cw,cs);const fl={};opp.forEach(k=>fl[k]=rt(k));add(fl,.2);
+ /* a third of them just stop answering 'who would you vote for' (undecided, abstention): that leaves the other parties' relative shares unchanged (Logan 2026-10-23) */
+ const TV=opp.reduce((a,k)=>a+G.v[k],0)||1;opp.forEach(k=>out[k]=.67*(out[k]||0)+.33*G.v[k]/TV);
  G.lossW=out;return out}
 function campCauseW(G,pm0,gp){const B=CAMPW[pm0]||{},C=govCauses(G),mx=Math.max(0,...Object.keys(C).filter(k=>!gp.includes(+k)).map(k=>C[k])),W={};
  for(let k=0;k<P.length;k++){const c=mx>0?(C[k]||0)/mx*Math.min(1,mx/1.2):0;W[k]=.5*(B[k]||0)+.5*c}return W}
@@ -2286,9 +2293,10 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  {const dis=Math.tanh(Math.max(0,38-G.appr.pm)/12),W=campCauseW(G,pm0,gp);G.cso=G.cso||P.map(()=>0);G.v=G.v.map((v,k)=>{const o=gp.includes(k)?0:.2*dis*(W[k]||0)*Math.min(1,Math.sqrt(.18/Math.max(.01,v))),d=o-(G.cso[k]||0);G.cso[k]=o;return v*Math.exp(d)})}
  normV(G);G.v=G.v.map(v=>Math.max(.004,v));normV(G);
  /* the party leading an unpopular government never gains in the polls while it leads it (Logan 2026-10-23): any rise is cut back and goes to the opposition */
- if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0&&G.v[pm0]>v0[pm0]){const cap=v0[pm0]*(1-.004-rnd()*.012),ex=G.v[pm0]-cap,op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));G.v[pm0]=cap;if(T>0)op.forEach(k=>G.v[k]+=ex*G.v[k]/T);G.pmo[pm0]=Math.min(0,G.pmo[pm0])}
+ if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0&&G.v[pm0]>v0[pm0]){const cap=v0[pm0],ex=G.v[pm0]-cap,op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));G.v[pm0]=cap;if(T>0)op.forEach(k=>G.v[k]+=ex*G.v[k]/T);G.pmo[pm0]=Math.min(0,G.pmo[pm0])}
  /* and it can't stay far above its own government's approval (Logan 2026-10-23: a sole RN government at 20-something % approval still polled 39 %): above approval + 6 pt it slides 40 % of the way down each quarter, its lost voters going where government losses go */
  if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0){const ceil=(G.appr.pm+6)/100;if(G.v[pm0]>ceil){const ex=(G.v[pm0]-ceil)*.4,W=govLossW(G,gp,{[pm0]:ex});G.v[pm0]-=ex;let w=0;for(const k in W){G.v[+k]+=ex*W[k];w+=W[k]}if(w<.999){const op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));op.forEach(k=>G.v[k]+=ex*(1-w)*G.v[k]/T)}normV(G)}}
+ pollBounds(G);
  G.ang=G.ang.map(v=>v*.8);G.deals=(G.deals||[]).filter(d=>d.until>G.q);
  /* coalition partners lose patience when their measure waits; an angry partner walks out to the back benches */
  /* a partner short-changed on cabinet posts grows restless */
