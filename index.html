@@ -1156,8 +1156,27 @@ calibrate(TG0);
 const SIM={};let st={tab:'map',layer:'proj',sel:null,zoom:null,lp:5};
 const ACTIVE=()=>SIM.phase==='r1'||SIM.phase==='r2c';
 /* Latent support for each party in a seat (as if every party ran). */
-function latent(d,noise){const nat=SIM.nat,tr=SIM.trend,rg=SIM.reg[d.g],mo=SIM.mom||Array(NP).fill(0),T0=SIM.t0||TG0;
+function latent0(d,noise){const nat=SIM.nat,tr=SIM.trend,rg=SIM.reg[d.g],mo=SIM.mom||Array(NP).fill(0),T0=SIM.t0||TG0;
  const e=d.b.map((b,k)=>{const el=clamp(1+.15*(b/Math.max(.01,T0[k])-1),.75,1.15); /* stronghold swing amplification, softened from 1.8× (Logan 2026-10-22) */return b*Math.exp(nat[k]+tr[k]*el+rg[k]+d.l[k]+mo[k]+(SIM.inc&&SIM.inc[d.i]===k?.06:0)+(noise?noise[k]:0))});const T=sum(e);return e.map(v=>v/T)}
+/* Wasted votes (Logan 2026-10-23, instead of a hard seat cap): when a party polls above PKTH nationally, its gains since the last election
+   don't spread evenly. They pile up first in the seats it already led in the first round last time (strongest first) until it reaches about
+   PKMAX there, then in the seats it leads now, and only what is left over goes to the other seats. The move is national-total neutral. PK caches the per-seat shifts. */
+const PKTH=.3,PKMAX=.6;let PK={sg:'',t:null};
+function packTable(){const sg=[SIM.nat,SIM.trend,SIM.mom||[],SIM.t0||[]].map(a=>a.map(v=>Math.round(v*400)).join(',')).join('|')+'|'+(SIM.seed||0)+'|'+(SIM.day||0)+'|'+(SIM.r2day||0);
+ if(PK.sg===sg&&PK.t)return PK.t;const L=C.map(d=>latent0(d)),n=Array(NP).fill(0);L.forEach((s,i)=>s.forEach((v,k)=>n[k]+=v*C[i].wt/WT));const t=[];
+ const B=C.map(d=>{const T=sum(d.b)||1;return d.b.map(v=>v/T)});
+ n.forEach((nk,k)=>{if(k===7||nk<=PKTH)return;const ph=Math.min(1,(nk-PKTH)/.05);
+  const g=L.map((s,i)=>Math.max(0,s[k]-B[i][k])*ph);let pool=g.reduce((a,v,i)=>a+v*C[i].wt,0);if(pool<=0)return;
+  const add=Array(C.length).fill(0),top=(a,i)=>a[i].indexOf(Math.max(...a[i]))===k,o1=C.map((_,i)=>i).filter(i=>top(B,i)).sort((a,b)=>B[b][k]-B[a][k]);
+  /* then the seats it leads now, strongest first */
+  const ord=o1.concat(C.map((_,i)=>i).filter(i=>!top(B,i)&&top(L,i)).sort((a,b)=>L[b][k]-L[a][k]));
+  for(const i of ord){if(pool<=0)break;const room=Math.max(0,PKMAX-(L[i][k]-g[i])),u=Math.min(room,pool/C[i].wt);add[i]=u;pool-=u*C[i].wt}
+  /* what the strongholds can't hold goes back to the other seats in proportion to their gains */
+  let gw=0;C.forEach((d,i)=>{if(!add[i])gw+=g[i]*d.wt});
+  C.forEach((d,i)=>{const back=add[i]?0:gw>0?pool*g[i]/gw:0,dv=add[i]+back-g[i];if(Math.abs(dv)>1e-5)(t[i]=t[i]||Array(NP).fill(0))[k]+=dv})});
+ PK={sg,t};return t}
+function latent(d,noise){const s=latent0(d,noise);if(PRES())return s;const dv=packTable()[d.i];if(!dv)return s;let o=s.slice();
+ dv.forEach((v,k)=>{if(!v)return;const nk=clamp(o[k]+v,.001,.95),f=(1-nk)/Math.max(1e-6,1-o[k]);o=o.map((x,j)=>j===k?nk:x*f)});return o}
 /* Who stands in the first round: allied parties put up one shared candidate. */
 function pactOf(k){return (SIM.pacts||[]).find(p=>p.type==='union'&&p.m.includes(k))}
 const desistOf=(a,b)=>(SIM.pacts||[]).some(p=>p.m.includes(a)&&p.m.includes(b));
@@ -3342,13 +3361,18 @@ Object.assign(LEG,{
   else if(v==='ri'){const i=D.ri.indexOf(a);if(i>=0)D.ri.splice(i,1);else if(D.ri.length<4)D.ri.push(a)}
   else if(v==='reset')G.desk=LEG.newDesk();
   else if(v==='table')LEG.deskTable(G);
-  else if(v==='merge')LEG.deskMerge(G,+a)},
+  else if(v==='merge')LEG.deskMerge(G,+a)
+  /* any programme measure can be drafted, including every pledge (Logan 2026-10-23) */
+  else if(v==='mcat')st.dkCat=+a;
+  else if(v==='meas'){const i=+a;if(BLS[i]&&!G.passed.includes(i)&&!G.offer.includes(i)&&!(G.vote&&!G.vote.done)){G.offer.push(i);st.bst='ag';G.log.push({m:G.m,t:x('Texte rédigé et ajouté au programme : ','Bill drafted and added to the agenda: ')+mName(i)})}}},
  deskHTML(G){if(budgetDue(G)&&ctrl())return'';
   const D=G.desk=G.desk||LEG.newDesk(),dis=!!(G.vote&&!G.vote.done),n=D.cl.length;if(!D.no||+D.no<=(G.bnoN||0))D.no=String(billNoPeek(G));
   const b=n?LEG.multi(D,G):null;
   const tok=(label,opts,tt)=>`<button type="button" class="tok" data-tok="${safeText(JSON.stringify(opts))}"${tt?` title="${safeText(tt)}"`:''}>${safeText(label)}</button>`;
   const need=LCORE.map(k=>({k,s:G.ind[k]-(G.heat&&G.heat[k]||0)*3})).sort((a,z)=>a.s-z.s).slice(0,3);
   const sug=`<div class="dk-row" style="align-items:center;margin:0 0 10px"><span class="note">${x('Sujets du moment :','Pressing issues:')}</span>${need.map(({k})=>{const ia=domInfo(k),arc=deskArc(G,k);return `<button class="chip" data-dk="sug|${k}|${arc}">${x(ia[1],ia[2])} · ${metSummary(G,k)} · ${x(LV[k][arc][0],LV[k][arc][1])}</button>`}).join('')}</div>`;
+  const mc=st.dkCat??(D.cl[0]&&!D.cl[0].code&&DCAT[D.cl[0].dom]!=null?DCAT[D.cl[0].dom]:THO[0]),ML=MEAS.map((_,i)=>i).filter(i=>MEAS[i][0]===mc&&!G.passed.includes(i)&&codeLive(G,BLS[i]));
+  const mrow=`<div class="dk-row" style="align-items:center;margin:0 0 10px"><span class="note">${x('Mesures de programme :','Programme measures:')}</span>${tok(x(TH[mc][0],TH[mc][1]),THO.map(t=>[x(TH[t][0],TH[t][1]),'mcat|'+t,t===mc]))}${ML.length?tok('＋ '+x('rédiger une mesure','draft a measure'),ML.map(i=>[mName(i)+(G.offer.includes(i)?x(' (au programme)',' (on the agenda)'):'')+(mFits(SIM.me,i)?'':x(' · hors de votre ligne',' · off your line')),'meas|'+i,G.offer.includes(i)])):`<span class="note">${x('Toutes déjà en vigueur.','All already in force.')}</span>`}</div>`;
   const money=v=>(v>0?'+':'')+fn(v)+' Md€/'+x('an','yr');
   const termTok=tok(x(PTERM[D.du][0],PTERM[D.du][1]),Object.keys(PTERM).map(z=>[x(PTERM[z][0],PTERM[z][1]),'du|'+z,D.du===z]));
   const ridList=Object.keys(LRID).filter(z=>!LRID[z].only||D.cl.some(c=>LRID[z].only.includes(c.dom)));
@@ -3361,7 +3385,7 @@ Object.assign(LEG,{
   const clauses=D.cl.map((c,i)=>{if(c.code)return codeClauseHTML(G,c,i,b&&b.parts[i],tok,money);const pt=b&&b.parts[i],A=LARC[c.arc],cost=A.c>0&&c.dom!=='tax',fr=LEG.fromDom(G,c.dom),dm=domInfo(c.dom);
    const effects=pt?effLines(pt.ind,lang==='fr',pt):[];
    const domTok=tok(x(dm[1],dm[2]),deskDoms(i,c));
-   const arcTok=tok(x(LV[c.dom][c.arc][0],LV[c.dom][c.arc][1]),lArcs(c.dom).filter(z=>!pNo(SIM.me,c.dom,z)).map(z=>[x(LV[c.dom][z][0],LV[c.dom][z][1]),`set|${i}|arc|${z}`,c.arc===z]),x(A.n[0],A.n[1]));
+   const arcTok=tok(x(LV[c.dom][c.arc][0],LV[c.dom][c.arc][1]),lArcs(c.dom).map(z=>[x(LV[c.dom][z][0],LV[c.dom][z][1]),`set|${i}|arc|${z}`,c.arc===z]),x(A.n[0],A.n[1]));
    const scTok=tok(x(PSCF[c.sc][0],PSCF[c.sc][1]),Object.keys(LSC).map(z=>[x(PSCF[z][0],PSCF[z][1]),`set|${i}|sc|${z}`,c.sc===z]));
    const imTok=tok(x(PIMF[c.mag-1][0],PIMF[c.mag-1][1]),[1,2,3,4,5].map(m=>[x(PIMF[m-1][0],PIMF[m-1][1])+' ('+m+'/5)',`set|${i}|mag|${m}`,c.mag===m]));
    const fuTok=cost?tok(x(PFUF[c.fu||'def'][0],PFUF[c.fu||'def'][1]),['def','real','corp','rich','fee'].map(z=>[x(PFUF[z][0],PFUF[z][1]),`set|${i}|fu|${z}`,c.fu===z])):'';
@@ -3370,7 +3394,7 @@ Object.assign(LEG,{
     <p class="bill-paper-domain">${x('S’applique ','Applies ')}${scTok}${x(', à intensité ',', at ')}${imTok}${x(' (',' intensity (')}${c.mag}/5). ${cost?x('Financé ','Financed ')+fuTok+'.':x('Mesure d’économie : aucun financement requis.','Savings measure: no funding needed.')}</p>
     <div class="bill-paper-effect-block"><b>${x('Effets estimés','Estimated effects')}</b>${effects.length?`<ol class="bill-paper-effects" type="i">${effects.map(e=>`<li>${safeText(e)}</li>`).join('')}</ol>`:`<p class="bill-paper-muted">${x('Aucun effet chiffré','No quantified effects')}</p>`}<p class="bill-paper-muted">${x('Effet budgétaire net','Net budget effect')} : ${pt?money(lr1(pt.c-(pt.rev||0))):'—'}${c.fu==='real'&&cost?' · '+x('prélevé sur ','drawn from ')+x(domInfo(fr)[1],domInfo(fr)[2]):''}</p></div></section>`}).join('');
   const analysis=`<section class="bill-paper-analysis"><h3>${x('Analyse et prévisions','Bill analysis and forecast')}</h3>${b?`<div class="bill-paper-analysis-grid"><div><small>${x('Coût net','Net cost')}</small><b>${money(lr1(b.c-(b.rev||0)))}</b></div><div><small>${x('Capital au dépôt','Capital to table')}</small><b>${LEG.cost(G,b)}</b></div></div>${billReceptionHTML(G,b,ctrl())}${b.warn.map(w=>`<p class="dk-warn">${x(w[0],w[1])}</p>`).join('')}`:`<p>${x('Ajoutez un article pour calculer les effets.','Add a clause to calculate the effects.')}</p>`}</section>`;
-  return `<section class="card bill-builder bill-builder-document">${sug}<article class="bill-paper bill-paper-editor" aria-label="${x('Document du projet de loi','Bill document')}">
+  return `<section class="card bill-builder bill-builder-document">${sug}${mrow}<article class="bill-paper bill-paper-editor" aria-label="${x('Document du projet de loi','Bill document')}">
    <header class="bill-paper-head">${anHead(G,{gov:ctrl(),no:D.no,title:''}).replace(/<div class="anh-title">[\s\S]*?<\/div><\/div>$/,'</div>')}<div class="bill-paper-title">${safeText((D.t||(b?x(b.f,b.e):x('Projet de loi','Bill'))).trim())}</div></header>
    <hr class="bill-paper-sep">${sec1}${clauses}<div class="bill-paper-addrow"><button type="button" data-dk="add">＋ ${x('Ajouter un article','Add a clause')}</button></div>${analysis}
    <footer class="bill-paper-file"><p>${x('Le texte rejoint le programme législatif. Le capital est payé au dépôt en séance.','The bill joins the agenda. Capital is paid when it is tabled in the chamber.')}</p><div><button type="button" data-dk="reset">${x('Réinitialiser','Reset')}</button><button type="button" class="bill-paper-submit vbtn" data-dk="table" ${(!n||dis)?'disabled':''}>${x('Déposer le texte','File the bill')}</button></div></footer></article></section>`}});
