@@ -1,7 +1,7 @@
-<!doctype html>
+ <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>French Elections · simulateur</title>
+<title>⚜ Élysée</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
 <style>:root{--onfleur:#fff;--bg:#eef1f6;--panel:#fff;--ice:#dde3ec;--line:#c8d0dc;--ink:#121a2c;--mute:#5a6578;--fleur:#1f3f8f;--ok:#1f7a4d;--bad:#b3261e;--warn:#a86200;--bleu:#002395;--rouge:#ed2939;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--onfleur:#0e1421;--bg:#0e1421;--panel:#161f2f;--ice:#232f42;--line:#2f3d54;--ink:#e7ecf4;--mute:#97a3b8;--fleur:#7ea2f0;--ok:#4cc38a;--bad:#ff7b72;--warn:#f0a845}}
@@ -113,6 +113,54 @@ select{font:inherit;padding:4px 8px;border-radius:6px;border:1px solid var(--lin
 .mode-choice b{font:800 15.5px "Bricolage Grotesque",sans-serif;display:block}.mode-choice small{color:var(--mute)}
 .mode-choice[disabled]{opacity:.5}
 .gobtn{margin-top:22px;padding:14px 26px;border:0;border-radius:10px;background:var(--rouge);color:#fff;font:800 15.5px "Bricolage Grotesque",sans-serif}.gobtn:disabled{opacity:.4;cursor:not-allowed}
+
+/* ===== start screen: a table of ballot slips ===== */
+#startscreen{--paper:#fff;--paperink:#141a2c;--papermute:#5b6475;background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans",system-ui,sans-serif}
+#startscreen .st-hero{padding:22px clamp(18px,5vw,70px) 18px}
+#startscreen .st-hero p{margin:0 0 2px!important;font-size:12px}
+#startscreen .st-hero h1{font-size:42px;margin:0}
+#startscreen .st-hero .gobtn{margin-top:6px;padding:6px 14px;font-size:13px}
+.sx{padding:4px clamp(18px,5vw,70px) 20px}.sx-row:first-child{border-top:0}
+.sx-row{display:grid;grid-template-columns:1fr;gap:10px;padding:22px 0;border-top:1px solid var(--line)}
+.sx-lab{font-size:13px;font-weight:600;color:var(--mute);padding-top:9px}
+.sx-seg{display:inline-flex;justify-self:start;align-self:start;border:1px solid var(--line);border-radius:8px;padding:3px;gap:3px;flex-wrap:wrap}
+.sx-seg button,.sx-chips button{font:inherit;color:var(--ink);background:none;border:0;border-radius:6px;cursor:pointer}
+.sx-seg button{padding:8px 18px;font-weight:600;font-size:14px}
+.sx-seg button:hover:not(.on):not([disabled]){background:var(--ice)}
+.sx-seg button[disabled]{opacity:.45;cursor:not-allowed}
+.sx-seg button.on,.sx-chips button.on{background:var(--ink);color:var(--bg)}
+.sx-chips{display:flex;flex-wrap:wrap;gap:6px}
+.sx-chips button{border:1px solid var(--line);padding:6px 12px;font-size:13px}
+.sx-chips button:hover:not(.on){border-color:var(--mute)}
+.sx-slips{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px;padding-top:14px}
+.sx-slip{position:relative;display:flex;flex-direction:column;text-align:left;font:inherit;background:var(--paper);color:var(--paperink);border:0;border-top:5px solid var(--party);border-radius:3px;padding:16px 12px 14px;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.18),0 10px 18px -12px rgba(0,0,0,.55);transition:transform .22s cubic-bezier(.2,.7,.2,1),box-shadow .22s,opacity .22s}
+.sx-slip:hover{transform:translateY(-4px)}
+.sx-slip .sx-logo{height:68px;display:flex;align-items:center;justify-content:center;margin:4px 0 14px}
+.sx-slip .sx-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.sx-slip b{font:800 21px/1 "Bricolage Grotesque",sans-serif;letter-spacing:-.01em}
+.sx-slip .sx-full{font-size:12px;line-height:1.3;color:var(--papermute);margin:5px 0 14px;min-height:47px}
+.sx-slip .sx-stat{white-space:nowrap;font-size:11px;color:var(--papermute)}.sx-slip .sx-stat em{font:800 20px "Bricolage Grotesque",sans-serif;font-style:normal;color:var(--paperink);margin-right:4px;white-space:nowrap}
+.sx-slip .sx-bar{display:block;height:3px;background:#e5e8ee;border-radius:2px;margin:6px 0 8px;overflow:hidden}
+.sx-slip .sx-bar i{display:block;height:100%;width:var(--w);background:var(--party)}
+.sx-slip .sx-seat{white-space:nowrap;font-size:11px;color:var(--papermute)}
+.sx-slip:after{content:"";position:absolute;right:9px;top:11px;width:15px;height:15px;border:1.5px solid #b9c0cc;border-radius:2px;font:700 12px/12px sans-serif;color:var(--party);text-align:center}
+.sx-slip.on:after{content:"✓";border-color:var(--party);padding-top:1px}
+.sx-slips.has-sel .sx-slip:not(.on){opacity:.55}
+.sx-slip.on{transform:translateY(-10px);box-shadow:0 1px 0 rgba(0,0,0,.18),0 18px 26px -12px rgba(0,0,0,.7);opacity:1}
+.sx-slip:focus-visible,.sx-seg button:focus-visible,.sx-chips button:focus-visible,.sx-go:focus-visible{outline:2px solid var(--fleur);outline-offset:3px}
+.sx-foot{align-items:center}
+.sx-foot .sx-end{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.sx-go{border:0;border-radius:8px;background:var(--rouge);color:#fff;font:700 15px "IBM Plex Sans",sans-serif;padding:13px 26px;cursor:pointer}
+.sx-go:hover:not(:disabled){filter:brightness(1.08)}
+.sx-go:disabled{background:var(--ice);color:var(--mute);cursor:not-allowed}
+.sx-hint{font-size:13px;color:var(--mute)}.sx-hint[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.sx-slip{transition:none}}
+@media(min-width:1100px){
+.sx-row{grid-template-columns:120px 1fr;gap:16px}
+.sx-slips{grid-template-columns:repeat(auto-fit,minmax(108px,1fr));padding-top:14px}
+.sx-foot{grid-template-columns:120px 1fr auto}
+}
+
 /* hemicycle */
 .hemi svg{width:100%;height:auto;display:block}
 .pie-legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:4px 12px;font-size:11.5px;margin-top:8px}
@@ -533,6 +581,32 @@ main:has(.gtop){max-width:1280px}
 #pfb .pbtns{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
 #pfb .pbtn{padding:9px 18px;border-radius:8px;border:1px solid var(--fleur);background:var(--fleur);color:var(--onfleur);font-weight:700;font-size:14px;cursor:pointer}
 #pfb .pbtn.alt{background:var(--panel);color:var(--fleur)}
+/* compact layout: the whole platform builder fits a 1470x844 window without scrolling */
+@media(min-width:1100px){
+#pfb{max-width:1440px;padding:0 12px}
+#pfb h2{font-size:17px;margin:0 0 6px}
+#pfb .pgrid{grid-template-columns:minmax(0,1fr) 330px;gap:10px}
+#pfb .pcard{padding:8px 12px}
+#pfb .pf-sl{grid-template-columns:repeat(3,minmax(0,1fr));column-gap:20px;row-gap:2px}
+#pfb .pb-leg{font-size:11px;margin:0 0 2px}
+#pfb .pbar{font-size:12.5px}
+#pfb .pbar>span:first-child{width:110px!important}
+#pfb .sl{margin:2px 0}
+#pfb .sl label{font-size:12.5px}
+#pfb .sl input[type=range]{margin:1px 0}
+#pfb .sl .ends{font-size:10.5px}
+.pb-col{font-size:10px;line-height:12px}
+#pfb .pchip{font-size:10px;padding:0 6px}
+#pfb h3{font-size:14px;margin:0 0 2px}
+#pfb h4{margin:8px 0 1px;font-size:12px}
+#pfb .pdiv{font-size:11.5px;margin:3px 0}
+#pfb .pdiv>span:first-child{width:100px}
+.pf-proj{padding:5px 8px;font-size:12px}.pf-proj b{font-size:15px}
+#pfb .pcard .note{font-size:11px}
+#pfb .pbtns{margin-top:6px}
+#pfb .pbtn{padding:7px 14px;font-size:13px}
+}
+
 .pf-sum{display:flex;flex-wrap:wrap;gap:4px;margin:0 0 6px}.pf-sum .tag{font-size:11px}
 /* vote ticker: one fixed chip per group, filled as its votes land */
 .vticker{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin:6px 0 8px;font-size:12px;line-height:1}
@@ -808,6 +882,112 @@ h4 .bsl-cat{display:inline;margin-left:6px}
 .ely-log summary{display:inline-block;margin-top:6px;list-style:none;cursor:pointer}.ely-log summary::-webkit-details-marker{display:none}.ely-log[open] summary{margin-bottom:6px}
 @media(max-width:900px){.ely-r2{grid-template-columns:1fr}}
 @media(max-width:600px){.rt{font-size:12px}.rt td,.rt th{padding:4px 4px}.rt .pty{gap:5px}.rt .pty small,.rt .rvb .trk{display:none}.rt .rvb{min-width:0}.rt .pty .lg{width:26px}.rt .pty .lg .plogo{max-width:26px}}
+/* compact bill rows (Logan 2026-10-22, mock A) */
+.mb{border-top:1px solid var(--line);padding:9px 0}
+.bst-meta+.mb,.bst-top>p.note+.mb,.bst-h4+p.note+.mb{border-top:0}
+.mb-h{display:flex;align-items:flex-start;gap:8px}
+.mb-t{flex:1;min-width:0;border:0;background:none;padding:0;text-align:left;font:700 13.5px/1.3 "IBM Plex Sans",sans-serif;color:var(--ink)}
+.mb-t:before{content:"▸ ";color:var(--mute);font-size:11px}.mb.open .mb-t:before{content:"▾ "}
+.mb-t:hover{text-decoration:underline;text-underline-offset:2px}
+.mb-m{font-size:11.5px;color:var(--mute);margin-top:2px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px}
+.mb-m i{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px;vertical-align:1px}
+.mb-m b{color:var(--ink);font-weight:600}
+.mb-tg{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.mb-tg span{font-size:11px;font-weight:600;border-radius:5px;padding:1px 6px;line-height:1.5}
+.mb-tg .cr{color:var(--bad);background:color-mix(in srgb,var(--bad) 14%,transparent)}
+.mb-tg .ok{color:var(--ok);background:color-mix(in srgb,var(--ok) 12%,transparent)}
+.mb-tg .bad{color:var(--bad);background:color-mix(in srgb,var(--bad) 12%,transparent)}
+.mb-tg .gov{color:var(--fleur);background:color-mix(in srgb,var(--fleur) 12%,transparent)}
+.mb-tg .u{color:#fff;background:#9b1c1c}.mb-tg .r{color:#fff;background:var(--mute)}.mb-tg .n{color:var(--onfleur);background:var(--fleur)}
+.mb-a{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px;flex:none;max-width:62%}
+.mb-a button{font:700 11.5px "IBM Plex Sans",sans-serif;border-radius:6px;padding:4px 9px;white-space:nowrap}
+.mb-go{border:0;background:var(--fleur);color:var(--onfleur)}.mb-go:disabled{background:var(--ice);color:var(--mute);cursor:not-allowed}
+.mb-49{background:none;border:1px solid var(--fleur);color:var(--fleur)}.mb-49:disabled{border-color:var(--line);color:var(--mute);cursor:not-allowed}
+.mb-a .mb-x{background:none;border:1px solid var(--line);color:var(--mute);padding:4px 7px}.mb-x:hover:not(:disabled){color:var(--bad);border-color:var(--bad)}
+.mb-st{font-size:11.5px;margin-top:4px;color:var(--mute)}.mb-st b{font-weight:700;margin:0 4px 0 8px}.mb-st b:first-child{margin-left:0}
+.mb-paper{margin-top:4px}
+/* ribbon figures never overlap (Logan 2026-10-22): the change chip wraps under the value when its column is too narrow */
+.kc b{flex-wrap:wrap;row-gap:3px}.kc b em{white-space:nowrap}
+/* first-time tips (Logan 2026-10-22) */
+.tp-ring{position:absolute;z-index:9998;border-radius:12px;box-shadow:0 0 0 4px var(--fleur),0 0 0 9999px rgba(10,16,30,.5);pointer-events:none;transition:all .2s}
+.tp-card{position:absolute;z-index:9999;background:var(--panel);color:var(--ink);border-radius:14px;box-shadow:0 18px 50px rgba(0,0,0,.35);padding:16px 18px 10px;font:13.5px/1.45 "IBM Plex Sans",sans-serif}
+.tp-card:before{content:"";position:absolute;width:14px;height:14px;background:var(--panel);transform:rotate(45deg)}
+.tp-card.r:before{left:-7px;top:26px}.tp-card.l:before{right:-7px;top:26px}.tp-card.b:before{top:-7px;left:30px}.tp-card.t:before{bottom:-7px;left:30px}.tp-card.in:before{display:none}
+.tp-k{font:700 10.5px "IBM Plex Sans",sans-serif;letter-spacing:.1em;text-transform:uppercase;color:var(--fleur);margin-bottom:4px;display:flex;justify-content:space-between}
+.tp-card h4{margin:0 0 6px;font:800 16.5px "Bricolage Grotesque",sans-serif}
+.tp-card p{margin:0 0 12px}.tp-card p b{color:var(--fleur)}
+.tp-f{display:flex;align-items:center;gap:6px}.tp-dots{display:flex;gap:4px;margin-right:auto}.tp-dots i{width:7px;height:7px;border-radius:50%;background:var(--line)}.tp-dots i.on{background:var(--fleur)}
+.tp-f button{font:700 12.5px "IBM Plex Sans",sans-serif;border-radius:8px;padding:6px 12px;border:1px solid var(--line);background:none;color:var(--mute)}
+.tp-f button.go{background:var(--fleur);border-color:var(--fleur);color:var(--onfleur)}
+.tp-off{display:block;margin:8px 0 0;padding:0;border:0;background:none;font-size:11.5px;color:var(--mute);text-decoration:underline;text-underline-offset:2px}
+
+/* budget vote pop-up */
+#bpvpop{z-index:10030!important}
+.bpv{width:min(600px,100%);max-height:calc(100vh - 32px);overflow:auto;background:var(--panel);color:var(--ink);border-radius:16px;box-shadow:0 24px 60px rgba(0,0,0,.4);font-size:13.5px;line-height:1.45}
+.bpv-top{padding:16px 20px 12px;border-bottom:1px solid var(--line);position:relative}.bpv-top:before{content:"";position:absolute;left:0;right:0;top:0;height:4px;border-radius:16px 16px 0 0;background:linear-gradient(90deg,var(--bleu) 0 33.3%,#fff 33.3% 66.6%,var(--rouge) 66.6%)}
+.bpv-k{font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.bpv h3{margin:2px 0 0;font-size:20px;font-weight:800}
+.bpv-paper{margin:14px 20px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--bg)}
+.bpv .bchart{display:flex;gap:10px;justify-content:center;margin:4px 0 8px}.bpv .bpie{flex:1 1 0;max-width:170px}.bpv .bpie svg{width:100%;height:auto}.bpv .bpie>*:not(svg){display:none}
+.bpv-g{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.bpv-g div{display:flex;flex-direction:column}.bpv-g small{font-size:11px;color:var(--mute)}.bpv-g b{font-size:17px;font-weight:800}
+.bpv-eu{margin-top:8px;font-size:12px;font-weight:600;border-radius:6px;padding:3px 8px;display:inline-block}
+.bpv-ch{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px}.bpv-ch li{display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-top:1px dashed var(--line)}.bpv-ch li:first-child{border-top:0}
+.bpv-note{margin:0 20px 8px;padding:10px 12px;border-radius:10px;font-size:12.5px;background:color-mix(in srgb,var(--bad) 8%,transparent);border-left:3px solid var(--bad)}.bpv-note>b{display:block;margin-bottom:3px}.bpv-note ul{margin:0;padding-left:18px}.bpv-note li{margin:2px 0}
+.bpv-f{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;padding:6px 20px 16px}
+@media(max-width:520px){.bpv-g{grid-template-columns:repeat(2,1fr)}}
+
+/* first-term tour */
+.gtab[data-tnew]{position:relative;animation:tourp 1.6s ease-in-out infinite}
+.gtab[data-tnew]:before{content:attr(data-tnew);position:absolute;top:5px;right:7px;font-size:9.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--onfleur);background:var(--fleur);border-radius:5px;padding:1px 5px;pointer-events:none}
+@keyframes tourp{0%,100%{box-shadow:inset 0 0 0 2px var(--fleur)}50%{box-shadow:inset 0 0 0 2px transparent}}
+.tour{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;background:color-mix(in srgb,var(--fleur) 8%,var(--panel));border:1px solid color-mix(in srgb,var(--fleur) 35%,transparent);border-radius:12px;padding:10px 14px;margin:10px 0}
+.tour b.h{font-size:14px;font-weight:800}.tour .n{font-size:12px;color:var(--mute)}
+.tour ul{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0}
+.tour li button{font:inherit;font-size:12px;font-weight:600;border-radius:999px;padding:3px 10px;border:1px solid var(--line);color:var(--mute);background:var(--panel);cursor:pointer}
+.tour li.ok button{color:var(--ok);border-color:color-mix(in srgb,var(--ok) 40%,transparent);background:color-mix(in srgb,var(--ok) 8%,var(--panel))}
+.tour .bar{flex:1;min-width:120px;height:6px;border-radius:3px;background:var(--ice);overflow:hidden}.tour .bar i{display:block;height:100%;background:var(--fleur);transition:width .3s}
+.tour.tour-nag{animation:tourn .5s 2}@keyframes tourn{50%{border-color:var(--bad);box-shadow:0 0 0 3px color-mix(in srgb,var(--bad) 30%,transparent)}}
+.gend.locked{background:var(--ice)!important;color:var(--mute)!important;border-color:var(--line)!important;cursor:not-allowed}
+@media(prefers-reduced-motion:reduce){.gtab[data-tnew],.tour.tour-nag{animation:none}.gtab[data-tnew]{box-shadow:inset 0 0 0 2px var(--fleur)}}
+.tour li button:disabled{opacity:.6;cursor:default}
+
+/* pre-campaign screens: platform, pacts, rallies (Logan picked option B, 2026-10-23) */
+html{overflow-x:clip}
+body.pre-ph{background:#dde2eb}
+:root[data-theme="dark"] body.pre-ph{background:#0e1526}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]) body.pre-ph{background:#0e1526}}
+body.pre-one #nav{display:none}
+.pre-hero{display:flex;align-items:flex-end;justify-content:space-between;gap:16px 24px;flex-wrap:wrap;margin:-10px calc(50% - 50vw) 20px;padding:22px clamp(18px,5vw,70px) 24px;background:linear-gradient(115deg,#0c1d4f 0%,#14307a 38%,#1b3c91 52%,#8a1c2b 100%);color:#fff;position:relative}
+.pre-hero:after{content:"";position:absolute;left:0;right:0;bottom:0;height:5px;background:linear-gradient(90deg,var(--bleu) 0 33.3%,#fff 33.3% 66.6%,var(--rouge) 66.6%)}
+.pre-k{margin:0 0 2px;letter-spacing:.14em;font-weight:700;font-size:12px}
+.pre-hero h1{font:800 clamp(30px,5vw,42px)/.95 "Bricolage Grotesque",sans-serif;letter-spacing:-.03em;margin:0;text-transform:uppercase}
+.pre-sub{margin:6px 0 0;font-size:13px;opacity:.85}
+.pre-steps{display:flex;flex-wrap:wrap;gap:6px;list-style:none;margin:0;padding:0;font-size:12.5px;font-weight:600}
+.pre-steps li{display:flex;align-items:center;gap:6px;padding:5px 10px 5px 6px;border-radius:999px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.75)}
+.pre-steps li i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.18);font-size:11px}
+.pre-steps li.on{background:#fff;color:#14307a}.pre-steps li.on i{background:#14307a;color:#fff}.pre-steps li.done i{background:#2e8b57}
+.pre-slip{display:flex;align-items:center;gap:12px;background:#fff;color:#141a2c;border-top:5px solid var(--party);border-radius:3px;padding:10px 14px;box-shadow:0 10px 18px -12px rgba(0,0,0,.55)}
+.pre-slip img{height:38px;max-width:70px;object-fit:contain}.pre-slip b{font:800 19px "Bricolage Grotesque",sans-serif;display:block}.pre-slip small{font-size:11.5px;color:#5b6475}
+.pre-go{border:0!important;border-radius:8px!important;background:var(--rouge)!important;color:#fff!important;font:700 15px "IBM Plex Sans",sans-serif!important;padding:13px 26px!important;cursor:pointer}
+.pre-go:hover{filter:brightness(1.08)}
+.pre-foot{display:flex;justify-content:flex-end;align-items:center;gap:8px 16px;flex-wrap:wrap;margin-top:18px;font-size:13px;color:var(--mute)}
+.pre .card,#pfb.pre .pcard{background:var(--panel)!important;border:0!important;border-radius:3px!important;box-shadow:0 1px 0 rgba(0,0,0,.18),0 14px 24px -14px rgba(0,0,0,.6)!important}
+.pre .card h2,.pre .card h3,#pfb.pre h3{font:800 22px "Bricolage Grotesque",sans-serif;margin:0 0 6px}
+#pfb.pre>h2{display:none}
+#pfb.pre .sl{background:var(--bg);border-radius:6px;padding:8px 10px;margin:0 0 8px}
+#pfb.pre .pf-sl{row-gap:4px!important}
+#pfb.pre .pbtns{justify-content:flex-end;align-items:center}
+#pfb.pre .pbtn.alt{border-color:var(--line);color:var(--ink);background:var(--panel)}
+.pre table.t{font-size:13px;border-collapse:separate;border-spacing:0 8px}
+.pre table.t th{border:0}
+.pre table.t td{background:var(--bg);border:0;padding:10px 8px;vertical-align:middle}
+.pre table.t td:first-child{border-left:4px solid var(--party);border-radius:4px 0 0 4px}.pre table.t td:last-child{border-radius:0 4px 4px 0}
+.pre-lg{display:inline-flex;width:44px;height:28px;align-items:center;justify-content:center;float:left;margin-right:10px;background:#fff;border-radius:4px;padding:2px}.pre-lg img{max-width:100%;max-height:100%;object-fit:contain}
+.pre .layers button{border-radius:6px;border:1px solid var(--line);background:var(--panel);padding:6px 12px;font-weight:600}
+@media(max-width:640px){.pre-hero{padding:18px 16px 20px}.pre-slip{display:none}.pre-go{width:100%}.pre-lg{display:none}}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.pre table.t td{padding:8px 5px}}
+.pre table.t td.r,.pre table.t th.r{white-space:nowrap}
+.seg.tiptog{padding:6px 12px;background:none;font-weight:600;white-space:nowrap}.seg.tiptog:not(.on){opacity:.7}
 </style>
 </head><body>
 <header>
@@ -818,6 +998,8 @@ h4 .bsl-cat{display:inline;margin-left:6px}
  <div class="seg" role="group" aria-label="Langue / Language"><button data-lang="fr">FR</button><button data-lang="en">EN</button></div>
  <button class="seg" style="padding:6px 12px;background:none" data-theme aria-label="Thème / Theme">◐</button>
  <button class="seg" style="padding:6px 12px;background:none" data-snd aria-label="Son / Sound">🔊</button>
+ <button class="seg" style="padding:6px 12px;background:none;font-weight:700" data-tiphelp aria-label="Aide / Help" title="Conseils / Tips">?</button>
+ <span id="tiptog"></span>
  <button class="seg" style="padding:6px 12px;background:none" data-newgame>↺</button>
 </header>
 <nav role="tablist" id="nav"></nav>
@@ -888,7 +1070,7 @@ const regShort=['ARA','BFC','BRE','CVL','COR','GES','HDF','IDF','NOR','NAQ','OCC
 /* weight of each seat in national vote totals = expressed votes */
 C.forEach(d=>{d.wt=d.r*d.T*d.X});const WT=sum(C.map(d=>d.wt));
 /* ===== starting point: calibrate base shares to target national first-round support (autumn 2026 polling) ===== */
-const TG0=[.11,.125,.055,.095,.115,.345,.045,.04,.03,.04];
+const TG0=[.11,.125,.055,.115,.10,.345,.03,.04,.035,.045]; /* nudged toward the 2024 first round (Logan 2026-10-23): Ensemble ~20 %, LR ~10 %, Reconquête small */
 /* presidential first-round intentions, autumn 2026 style */
 const TGP=[.13,.115,.045,.035,.10,.345,.055,.03,.015,.13];
 /* al<1 flattens 2024's local strongholds a little: a new election brings new candidates and fewer landslides (Logan 2026-10-22) */
@@ -920,14 +1102,32 @@ function classify(d,sh){if(SIM.mode==='pres'){const o=sh.map((v,k)=>[v,k]).filte
  if(o[0][0]>.5&&o[0][0]*ei>=.25)return {el:o[0][1],q:[o[0][1]],o};
  const q=o.filter((a,j)=>j<2||a[0]*ei>=.125).map(a=>a[1]);return {el:-1,q,o}}
 /* Run-off: votes of eliminated or withdrawn candidates flow by affinity; a strong anti-RN or anti-LFI reflex reshapes it. */
+/* Republican front in RN duels, from the Ipsos 2024 second-round survey (Logan 2026-10-23): [share for the RN's opponent, share for the RN]
+   by first-round vote; the rest abstain. Ipsos: NFP→Ensemble 72–3, NFP→LR 70–2, Ensemble→left 54–15, Ensemble→LR 79–4, Ensemble→LFI 43–19. LR, REC and DIV rows are estimates. */
+const FAM=k=>k<=2?'L':k===4?'R':k===5||k===6?'X':k===7?'D':'E';
+function frontTR(j,o){const fj=FAM(j),fo=FAM(o);
+ if(fj==='L')return fo==='E'?[.72,.03]:fo==='R'?[.70,.02]:[.88,.02];
+ if(fj==='E')return fo==='E'?[.88,.04]:fo==='R'?[.79,.04]:o===0?[.43,.19]:[.54,.15];
+ if(fj==='R')return fo==='E'?[.62,.14]:fo==='R'?[.85,.06]:o===0?[.15,.42]:[.32,.3];
+ if(fj==='X')return [.05,.85];return [.35,.25]}
+/* the front wears down as the game goes on: full strength at the start (autumn 2026), about 7 % weaker each year after, never below 35 % */
+/* the surge was strongest behind left candidates (young and urban abstainers) */
+const FRONTMOB={L:.26,E:.04,R:.02,D:.03};
+function frontFade(){const y=(START-new Date(2026,9,1))/31557600000;return clamp(1-.07*Math.max(0,y),.35,1)}
 function r2Shares(d,sh,remain,lat){const s=lat||latent(d),out=Array(NP).fill(0),bar=SIM.barrage??1,bl=SIM.barLFI??1;
  const hasRN=remain.some(k=>k===5||k===6);
  const aff=(j,c)=>{let a=AFF[j][c];if(hasRN&&remain.length===2){const other=remain.find(k=>k!==5&&k!==6);if(other!=null&&j!==5&&j!==6){if(c===other)a*=(j<=3||j>=7?bar:1)*(other===0?(j>=3?bl*.8:1):1);else if(c===5||c===6)a/=Math.max(.6,bar)}}
   if(SIM.cons&&SIM.cons[j]!=null){const cs=SIM.cons[j];if(cs==='nrn'&&(c===5||c===6))a*=.5;if(cs==='bar'&&hasRN)a*=(c===5||c===6)?.75:1.35;if(typeof cs==='number'&&c===cs)a*=1.25}return a};
  for(let k=0;k<NP;k++){const v=sh[k];if(v<=0)continue;if(remain.includes(k)){out[k]+=v*.97;continue}
+  if(hasRN&&remain.length===2&&!remain.every(c=>c===5||c===6)){const rk=remain.find(c=>c===5||c===6),o=remain.find(c=>c!==rk),f=frontFade(),sb=Math.sqrt(bar/2.6);let [a,b]=frontTR(k,o);
+   if(FAM(k)!=='X'){a*=Math.min(1.3,sb);b/=Math.max(.6,sb);b+=a*(1-f)*.35;a*=f}
+   const cs=SIM.cons&&SIM.cons[k];if(cs==='nrn')b*=.5;if(cs==='bar'){a*=1.25;b*=.75}if(typeof cs==='number'&&cs===o)a*=1.2;if(typeof cs==='number'&&cs===rk)b*=1.2;
+   const tt=a+b;if(tt>.95){a*=.95/tt;b*=.95/tt}out[o]+=v*a;out[rk]+=v*b;continue}
   const w=remain.map(c=>aff(k,c)),W=sum(w)+AB;remain.forEach((c,j)=>out[c]+=v*w[j]/W)}
  /* local candidate strength: a bit of the latent party support that stayed home returns */
  remain.forEach(c=>out[c]+=s[c]*.04);
+ /* 2024's run-off turnout surge: first-round abstainers came out against the RN (66.7 % turnout); it fades with the front */
+ if(hasRN&&remain.length===2&&!remain.every(c=>c===5||c===6)){const o=remain.find(c=>c!==5&&c!==6);out[o]+=s[o]*(FRONTMOB[FAM(o)]||0)*frontFade()*Math.min(1.2,Math.sqrt(bar/2.6))}
  if(SIM.r2l)remain.forEach(c=>out[c]*=Math.exp(SIM.r2l[d.i]?.[c]||0));
  if(SIM.r2n)remain.forEach(c=>out[c]*=Math.exp(SIM.r2n[c]||0));
  if(SIM.r2b)remain.forEach(c=>out[c]*=Math.exp(SIM.r2b[c]||0));
@@ -997,7 +1197,7 @@ function mapSVG(layer,opts){opts=opts||{};const vb=opts.vb||st.zoom||VB0,sel=st.
  /* overseas boxes */
  for(const k in FR.BOX){const b=FR.BOX[k];s+=`<rect x="${b[0]}" y="${b[1]}" width="${b[2]}" height="${b[3]}" fill="none" stroke="var(--line)" stroke-width="14"/><text class="boxlab" x="${b[0]+30}" y="${b[1]-40}">${esc(x(FR.DEP[k][0],FR.DEP[k][1]))}</text>`}
  s+=`<rect x="${TBOX[0]}" y="${TBOX[1]}" width="${TBOX[2]}" height="${TBOX[3]}" fill="none" stroke="var(--line)" stroke-width="14"/><text class="boxlab" x="${TBOX[0]+40}" y="${TBOX[1]+130}">${x('Autres outre-mer et Français de l’étranger','Other overseas and French abroad')}</text>`;
- const U=mapUnit(),tf={};if(U!=='circ'){UNITS[U].forEach(u=>s+=unitPath(u,layer,opts));if(U==='dep')s+=`<g pointer-events="none">${Object.values(FR.UR).map(p=>`<path d="${p}" fill="none" stroke="#fff" stroke-width="2.6" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('')}</g>`;TILE.forEach(d=>{tf[d.dp]=tf[d.dp]||unitFill(unitShares(TILE.filter(z=>z.dp===d.dp),layer,opts),layer)})}
+ const U=mapUnit(),tf={};if(U!=='circ'){UNITS[U].forEach(u=>s+=unitPath(u,layer,opts));if(U==='dep')s+=`<g pointer-events="none">${Object.values(FR.UR).map(p=>`<path d="${p}" fill="none" stroke="#fff" stroke-width="1.2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`).join('')}</g>`;TILE.forEach(d=>{tf[d.dp]=tf[d.dp]||unitFill(unitShares(TILE.filter(z=>z.dp===d.dp),layer,opts),layer)})}
  C.forEach(d=>{if(U!=='circ'&&d.p)return;const f=U!=='circ'?tf[d.dp]:fillOf(d,layer,opts),cl='circ'+(sel===d.i?' sel':'');
   if(d.p)s+=`<path class="${cl}" d="${d.p}" fill="${f}" data-r="${d.i}"><title>${esc(cname(d))}</title></path>`;
   else s+=`<g data-r="${d.i}" class="${cl}"><rect x="${d.tx}" y="${d.ty}" width="${d.tw}" height="${d.th}" rx="40" fill="${f}" class="${cl}" data-r="${d.i}"><title>${esc(cname(d))}</title></rect><text x="${d.c[0]}" y="${d.c[1]+45}" text-anchor="middle" font-size="130" font-weight="700" fill="${isDark()?'#fff':'#122'}" pointer-events="none">${tileLab(d)}</text></g>`});
@@ -1106,14 +1306,14 @@ const mFits=(k,i)=>k==null||k<0||k===7||Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]
 const mName=m=>x(MEAS[m][2],MEAS[m][3]);
 const ACT=[
  {em:'🎤',f:'Meeting',e:'Rally',df:'Un grand meeting dans la circonscription, l’effet déborde chez les voisines.',de:'A big rally in the seat that spills into neighbouring seats.',c:35,ap:1,sc:'c'},
- {em:'🚆',f:'Déplacement du chef',e:'Leader visit',df:'Une journée de visites dans toute la région.',de:'A day of visits across the region.',c:20,ap:1,sc:'g'},
+ {em:'🚆',f:'Déplacement du chef',e:'Leader Tour',df:'Une journée de visites dans toute la région.',de:'A day of visits across the region.',c:20,ap:1,sc:'g'},
  {em:'🚪',f:'Porte-à-porte',e:'Door-knocking',df:'Militants sur le terrain : modeste mais précis. Pèse plus en fin de campagne.',de:'Activists on the ground: modest but precise. Hits harder late on.',c:8,ap:1,sc:'c'},
  {em:'📜',f:'Tractage et affichage',e:'Leaflets and posters',df:'Couvrir une région de tracts et d’affiches.',de:'Cover a region in leaflets and posters.',c:30,ap:1,sc:'g'},
- {em:'📱',f:'Campagne numérique',e:'Online campaign',df:'Vidéos et réseaux sociaux, partout en France. Peut viser un rival.',de:'Videos and social media nationwide. Can target a rival.',c:25,ap:1,sc:'n'},
+ {em:'📱',f:'Campagne social média',e:'Social media campaign',df:'Vidéos et réseaux sociaux, partout en France. Peut viser un rival.',de:'Videos and social media nationwide. Can target a rival.',c:25,ap:1,sc:'n'},
  {em:'📣',f:'Annonce de programme',e:'Policy announcement',df:'Annoncer une mesure : elle rejoint votre programme.',de:'Announce a measure: it joins your platform.',c:0,ap:1,sc:'n'},
  {em:'🎯',f:'Préparer le débat',e:'Debate prep',df:'Étudier un adversaire avant le débat télévisé.',de:'Study an opponent before the TV debate.',c:0,ap:1,sc:'n'},
  {em:'💶',f:'Appel aux dons',e:'Fundraising appeal',df:'Relancer les donateurs et les militants (dons plafonnés).',de:'Tap donors and members (donations are capped).',c:0,ap:1,sc:'n'},
- {em:'🎙️',f:'Interview',e:'Interview',df:'Une matinale radio ou un plateau télé.',de:'A morning radio show or a TV studio.',c:0,ap:1,sc:'n'}];
+ {em:'🎙️',f:'La presse',e:'Press Interview',df:'Une matinale radio ou un plateau télé.',de:'A morning radio show or a TV studio.',c:0,ap:1,sc:'n'}];
 const OUTLETS=[{f:'France Inter, la matinale',e:'France Inter morning show',tilt:[.5,.6,.6,.3,-.1,-.5,-.6,0,.4,.2]},{f:'BFMTV, face à face',e:'BFMTV head-to-head',tilt:[0,.2,.1,.4,.3,.2,0,0,.3,.4]},{f:'CNews, l’heure des pros',e:'CNews talk show',tilt:[-.7,-.4,-.5,-.1,.4,.6,.8,0,-.2,.1]},{f:'TF1, journal de 20 h',e:'TF1 evening news',tilt:[.1,.2,.1,.3,.3,.3,.1,.1,.3,.3]},{f:'Un podcast jeunesse',e:'A youth podcast',tilt:[.6,.1,.5,.1,-.3,.2,0,.1,0,-.1]}];
 const HOUSES=[{n:'Ifop',b:[0,0,-.003,.003,.003,.004,0,-.007,0,0]},{n:'Ipsos',b:[-.003,.004,0,.004,0,-.004,0,-.001,0,0]},{n:'Elabe',b:[.002,0,.002,0,0,.003,-.003,-.004,0,0]},{n:'OpinionWay',b:[-.004,-.002,0,.004,.004,.006,-.002,-.006,0,0]},{n:'Odoxa',b:[.004,.002,.003,-.004,-.002,-.002,0,-.001,0,0]},{n:'Harris Interactive',b:[0,-.002,0,0,0,.008,.002,-.008,0,0]},{n:'Cluster17',b:[.012,-.004,0,-.004,-.004,.004,0,-.004,0,0]}];
 let D1=21,D2=5;
@@ -1163,10 +1363,10 @@ function allocPact(m,share){const n=m.map(k=>(SIM.t0||TG0)[k]),N=sum(n),q=m.map(
  const al={},left=q.slice();for(const [s,i,j] of pairs){if(al[i]!=null||left[j]<=0)continue;al[i]=m[j];left[j]--}C.forEach(d=>{if(al[d.i]==null)al[d.i]=m[0]});return al}
 function mkPact(m,type,share){const ord=m.map((k,j)=>[k,j]).sort((a,b)=>a[0]-b[0]);if(share)share=ord.map(a=>share[a[1]]);const p={m:ord.map(a=>a[0]),type,share:share||null};p.alloc=type==='union'?allocPact(p.m,share):Object.fromEntries(C.map(d=>[d.i,-1]));if(type!=='union')p.alloc=null;return p}
 function aiPacts(){const me=SIM.me,P2=[];const free=k=>k!==me;
- const r=rnd();if(r<.72&&[0,1,2].every(free))P2.push(mkPact([0,1,2],'union'));else if(r<.9&&free(1)&&free(2)){P2.push(mkPact([1,2],'union'))}
+ const r=rnd();if(r<.85&&[0,1,2].every(free))P2.push(mkPact([0,1,2],'union'));else if(r<.95&&free(1)&&free(2)){P2.push(mkPact([1,2],'union'))}
  /* Ensemble pour la République: Renaissance, MoDem and Horizons usually share one candidate per seat (Logan 2026-10-21) */
  let ep=null;const r3=rnd();if(ENSF.every(free)){if(r3<.88)ep=mkPact(ENSF,'union');else if(r3<.96)ep=mkPact([3,8],'union')}else if(!free(9)&&r3<.8)ep=mkPact([3,8],'union');
- const r2=rnd(),em=ep?ep.m:[3];if(free(3)&&free(4)&&r2<(ep&&ep.m.length>1?.4:.75))P2.push(mkPact([...em,4],'desist'));
+ const r2=rnd(),em=ep?ep.m:[3];if(free(3)&&free(4)&&r2<(ep&&ep.m.length>1?.2:.6))P2.push(mkPact([...em,4],'desist'));
  if(ep)P2.push(ep);
  if(free(5)&&free(6)&&rnd()<.1)P2.push(mkPact([5,6],'desist'));
  SIM.pacts=P2}
@@ -1204,7 +1404,9 @@ function r2mode(){return SIM.phase==='r2c'}
 /* in the run-off week, campaign effects move run-off votes directly */
 function bumpLocal(d,k,v){if(r2mode()){if(!d.res2run||!d.res2run.includes(k))return;SIM.r2l[d.i]=SIM.r2l[d.i]||{};SIM.r2l[d.i][k]=(SIM.r2l[d.i][k]||0)+v*.8}else d.l[k]+=v}
 function bumpReg(g,k,v){if(r2mode()){C.forEach(d=>{if(d.g===g)bumpLocal(d,k,v*.6)})}else SIM.reg[g][k]+=v}
-function bumpNat(k,v){if(r2mode())SIM.r2n[k]=(SIM.r2n[k]||0)+v*.7;else SIM.nat[k]+=v}
+/* loyal bases (Logan 2026-10-23): many LFI and RN voters would never vote for anyone else, so hits on them bite less */
+const LOYAL={0:.6,5:.55};
+function bumpNat(k,v){if(v<0&&LOYAL[k])v*=r2mode()?(1+LOYAL[k])/2:LOYAL[k];if(r2mode())SIM.r2n[k]=(SIM.r2n[k]||0)+v*.7;else SIM.nat[k]+=v}
 function planAppeal(k,m){const M=MEAS[m],t=M[0],fit=1-Math.abs(M[1]-stanceOf(k,t))/2.5;return fit*(.6+OWN[k][t]*.6)*salience()[t]}
 function platCost(k){return sum((ps(k).plat||[]).map(m=>MEAS[m][4]))}
 function credOf(k){const c=platCost(k);return clamp(1-Math.max(0,c-25)/80,.35,1)}
@@ -1265,6 +1467,9 @@ function campDynamics(){const sh=natShares(true),me=SIM.me,o=sh.map((v,k)=>[v,k]
  if(sh[ld]>.38)SIM.nat[ld]-=(sh[ld]-.38)*.08;
  /* the RN's glass ceiling: gains beyond its starting level meet growing resistance (Logan 2026-10-22) */
  if(!PRES()&&!r2mode()&&SIM.t0){const fx=sh[5]+sh[6]-SIM.t0[5]-SIM.t0[6]-.01;if(fx>0)[5,6].forEach(k=>{if(sh[k]>SIM.t0[k])SIM.nat[k]-=fx*2})} /* RN and Reconquête together, so the far right can't break through via REC */
+  /* loyal bases: LFI and RN keep a core that doesn't drift away, and a polarising image limits LFI's reach beyond it */
+ if(!r2mode()&&SIM.t0)[[0,.82],[5,.86]].forEach(([k,c])=>{if(k===me||sh[k]<.01)return;const fl=c*SIM.t0[k];if(sh[k]<fl){SIM.nat[k]+=(fl-sh[k])*.6;if(SIM.trend[k]<0)SIM.trend[k]*=.6}});
+ if(!r2mode()&&SIM.t0&&me!==0){const ex=sh[0]-SIM.t0[0]-.025;if(ex>0)SIM.nat[0]-=ex*1.5}
  /* campaign moments */
  /* any party in the race can have its moment, not only the top four (Logan 2026-10-20: smaller parties were squeezed out) */
  if(rnd()<Math.min(.9,.18*VOL.camp)){const cs=o.filter(a=>a[0]>.02),wt=cs.map(a=>Math.sqrt(a[0])),W=wt.reduce((s,v)=>s+v,0);let u=rnd()*W,ci=0;while(ci<cs.length-1&&(u-=wt[ci])>0)ci++;const k=cs[ci][1],up=rnd()<(k===ld?.46:.5),m=(.05+rnd()*.08)*Math.max(1,VOL.camp/2.8)*ptF(sh[k]),tx=pick(up?UPS:DNS);SIM.trend[k]+=up?m*.6:-m*.6;SIM.nat[k]+=up?m*.4:-m*.4;SIM.rv.push({k,t:x(tx[0],tx[1]),big:1});if(k===me)SIM.news.unshift({day:SIM.day,t:tx,k})}
@@ -1407,11 +1612,11 @@ function pfEffHTML(){const me=SIM.me,R=pfPreview(SIM.pfv),A=R.M.A,mx=Math.max(.0
  <h4>${x('Régions','Regions')}</h4>${rmx>.0021?rg.filter(z=>z[1]>.0005).slice(0,3).concat(rg.filter(z=>z[1]<-.0005).slice(-3)).map(([g,z])=>bar(x(FR.REG[g][0],FR.REG[g][1]),z,rmx)).join(''):`<p class="note" style="margin:2px 0">${x('Déplacez un curseur pour voir où il porte.','Move a slider to see where it lands.')}</p>`}
  <p class="note" style="margin:8px 0 0">${x('Se rapprocher d’un parti attire ses électeurs, s’éloigner de votre ligne vous coûte les vôtres. Les enjeux qui préoccupent le plus comptent davantage.','Moving towards a party draws its voters; moving away from your own line costs you yours. The issues voters care most about count more.')}</p>`}
 function vBuild(){const me=SIM.me,p=P[me],v=SIM.pfv,first=!SIM.K;
- return `<div id="pfb"><h2><span class="pf-dot" style="background:${pc(me)}"></span>${x('Programme électoral','Platform builder')} · ${p.n} <span class="note" style="font-weight:400;font-size:13px">${PRES()?x('Présidentielle','Presidential election'):x('Législatives','Legislative election')}</span></h2>
+ return `${preHero()}<div id="pfb" class="pre"><h2><span class="pf-dot" style="background:${pc(me)}"></span>${x('Programme électoral','Platform builder')} · ${p.n} <span class="note" style="font-weight:400;font-size:13px">${PRES()?x('Présidentielle','Presidential election'):x('Législatives','Legislative election')}</span></h2>
  <div class="pgrid"><div class="pcard pf-sl"><div id="pfmeta">${pfMeta()}</div><p class="pb-leg">${x('Les sigles sous chaque curseur indiquent la ligne habituelle de chaque parti (la vôtre est soulignée). Chaque cran loin du centre coûte un point de budget.','The labels under each slider show each party’s usual line (yours is underlined). Each notch away from the centre costs one budget point.')}</p>
  ${THm((t,i)=>`<div class="sl"><label for="pf${i}"><span>${x(t[0],t[1])}</span><output id="pfo${i}">${v[i]>0?'+':''}${v[i]}</output></label><input type="range" id="pf${i}" data-pf="${i}" min="-2" max="2" step="1" value="${v[i]}"><div class="ends"><span>${x(THE[i][0],THE[i][2])}</span><span>${x(THE[i][1],THE[i][3])}</span></div>${pfBench(i)}<div id="pfc${i}">${pfChip(i)}</div></div>`).join('')}</div>
  <aside><div class="pcard"><h3>${x('Qui cela attire','Who this appeals to')}</h3><p class="note" style="margin:0 0 8px">${x('Vert : attire · Rouge : éloigne','Green: attracts · Red: alienates')}</p><div id="pfeff">${pfEffHTML()}</div></div></aside></div>
- <div class="pbtns">${first?`<button class="pbtn alt" data-pfback>← ${x('Retour','Back')}</button>`:''}<button class="pbtn alt" data-pfbrand>${x('Ligne du parti','Party line')}</button><button class="pbtn" data-pfgo>${PRES()?x('Publier le programme et entrer en campagne','Publish platform and enter the race'):x('Publier le programme et négocier les alliances','Publish platform and negotiate alliances')} →</button></div></div>`}
+ <div class="pbtns">${first?`<button class="pbtn alt" data-pfback>← ${x('Retour','Back')}</button>`:''}<button class="pbtn alt" data-pfbrand>${x('Ligne du parti','Party line')}</button><button class="pbtn pre-go" data-pfgo>${PRES()?x('Publier le programme et entrer en campagne','Publish platform and enter the race'):x('Publier le programme et négocier les alliances','Publish platform and negotiate alliances')} →</button></div></div>`}
 function pfRefresh(i){const v=SIM.pfv[i],o=$('#pfo'+i);if(o)o.textContent=(v>0?'+':'')+v;const c=$('#pfc'+i);if(c)c.innerHTML=pfChip(i);const m=$('#pfmeta');if(m)m.innerHTML=pfMeta();const e=$('#pfeff');if(e)e.innerHTML=pfEffHTML()}
 document.addEventListener('input',e=>{const t=e.target;if(!t||!t.dataset||t.dataset.pf===undefined||SIM.phase!=='plat')return;const i=+t.dataset.pf;let v=+t.value;
  const room=PLBUD-(pfUsed(SIM.pfv)-Math.abs(SIM.pfv[i]));if(Math.abs(v)>room)v=Math.sign(v)*Math.max(0,room);SIM.pfv[i]=v;t.value=v;pfRefresh(i)});
@@ -1558,7 +1763,7 @@ function presAITarget(k,o,r2){if(r2){const L=C.filter(d=>d.pj2).sort((a,b)=>Math
  const L=C.map(d=>[latent(d)[k]*d.wt*(.5+rnd()),d]).sort((a,b)=>b[0]-a[0]);return L[(rnd()*30)|0][1]}
 /* ===== first-round night (presidential) ===== */
 function startNightP1(){SIM.base={v:natShares()};realNoise();C.forEach(d=>{const L=latent(d,P.map((_,k)=>SIM.err[k]+gauss()*.05)),sh=r1Shares(d,L);d.r1={sh,cl:{el:-1,q:[],o:sh.map((v,k)=>[v,k]).sort((a,b)=>b[0]-a[0])},L}});
- const nat=Array(NP).fill(0);C.forEach(d=>d.r1.sh.forEach((v,k)=>nat[k]+=v*d.wt/WT));SIM.r1nat=nat;const o=nat.map((v,k)=>[v,k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0]);SIM.fin=[o[0][1],o[1][1]];
+ const nat=Array(NP).fill(0);C.forEach(d=>d.r1.sh.forEach((v,k)=>nat[k]+=v*d.wt/WT));SIM.r1nat=nat;SIM.barrage=1.8;/* a presidential run-off is a personal choice: the anti-RN front is weaker than in 577 local duels (Logan 2026-10-23: RN must be competitive) */const o=nat.map((v,k)=>[v,k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0]);SIM.fin=[o[0][1],o[1][1]];
  C.forEach(d=>{d.r1.cl.q=SIM.fin.slice();d.res2run=SIM.fin.slice()});
  SIM.phase='n1';SIM.night={t:0,ord:revealOrder(),n:0};st.tab='night';st.zoom=null;st.city=null;st.layer='r1';save();render();runNight()}
 /* endorsements from eliminated candidates; the player courts them if in the run-off */
@@ -1615,11 +1820,11 @@ function vResP(){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,me=SIM.me,nat=S
 /* ===== rallies before the campaign ===== */
 function vRallies(){const me=SIM.me,sh=natShares(true),mine=SIM.pacts.find(p=>p.head===me),others=SIM.pacts.filter(p=>p.head!==me);
  const row=k=>{const ok=PACTOK(me,k),inR=mine&&mine.m.includes(k),gone=others.find(p=>p.m.includes(k)&&p.head!==k),off=SIM.offers.find(o=>o.k===k),tried=(SIM.tried||{})[k];
-  return `<tr><td>${chipP(k)}<div class="note">${pfull(k)}</div></td><td class="r">${sh[k]?pct(sh[k]):'—'}</td><td>${inR?`<b style="color:var(--ok)">${x('Vous soutient','Backs you')}</b>`:gone?`<span class="note">${x('Rallié à ','Backing ')+P[gone.head].n}</span>`:others.some(p=>p.head===k)?`<span class="note">${x('Candidat d’un rassemblement','Heads a joint run')}</span>`:!ok?`<span class="note">${x('Aucun accord possible','No deal possible')}</span>`:tried?`<span class="note">${tried}</span>`:`${off?`<div class="note" style="margin-bottom:4px">📨 ${x(P[k].n+' est prêt à discuter d’un retrait.',P[k].n+' is open to standing down.')}</div>`:''}<button class="chip" data-rally="${k}">${x('Lui proposer de se retirer en votre faveur','Ask them to stand down for you')}</button>`}</td></tr>`};
- return `<div class="grid"><div><div class="card"><h2>${x('Ralliements','Rallies')}</h2><p>${x('Avant le dépôt des 500 parrainages, chaque camp se compte. Un candidat proche et plus faible peut renoncer et appeler à voter pour vous : ses électeurs vous rejoignent en grande partie dès le premier tour.','Before the 500 sponsorships are filed, each camp takes stock. A weaker, like-minded candidate can drop out and endorse you: most of their voters then back you from the first round.')}</p>
+  return `<tr style="--party:${pc(k)}"><td>${LOGO[k]?`<span class="pre-lg"><img src="${LOGO[k]}" alt=""></span>`:''}${chipP(k)}<div class="note">${pfull(k)}</div></td><td class="r">${sh[k]?pct(sh[k]):'—'}</td><td>${inR?`<b style="color:var(--ok)">${x('Vous soutient','Backs you')}</b>`:gone?`<span class="note">${x('Rallié à ','Backing ')+P[gone.head].n}</span>`:others.some(p=>p.head===k)?`<span class="note">${x('Candidat d’un rassemblement','Heads a joint run')}</span>`:!ok?`<span class="note">${x('Aucun accord possible','No deal possible')}</span>`:tried?`<span class="note">${tried}</span>`:`${off?`<div class="note" style="margin-bottom:4px">📨 ${x(P[k].n+' est prêt à discuter d’un retrait.',P[k].n+' is open to standing down.')}</div>`:''}<button class="chip" data-rally="${k}">${x('Lui proposer de se retirer en votre faveur','Ask them to stand down for you')}</button>`}</td></tr>`};
+ return `${SIM.phase==='pacts'?preHero():''}<div class="grid ${SIM.phase==='pacts'?'pre':''}"><div><div class="card"><h2>${x('Ralliements','Rallies')}</h2><p>${x('Avant le dépôt des 500 parrainages, chaque camp se compte. Un candidat proche et plus faible peut renoncer et appeler à voter pour vous : ses électeurs vous rejoignent en grande partie dès le premier tour.','Before the 500 sponsorships are filed, each camp takes stock. A weaker, like-minded candidate can drop out and endorse you: most of their voters then back you from the first round.')}</p>
  <p class="note">${x('Plus vous êtes devant eux, plus ils acceptent. Une seule tentative par candidat.','The further ahead of them you are, the likelier they say yes. One attempt per candidate.')}</p>
  <table class="t"><thead><tr><th>${x('Candidat','Candidate')}</th><th class="r">${x('Intentions','Polling')}</th><th>${x('Proposition','Offer')}</th></tr></thead><tbody>${ORD.filter(k=>k!==me&&k!==7).map(row).join('')}</tbody></table>
- <button class="act vbtn" data-begin style="margin-top:14px;width:100%"><b>${x('Déposer les parrainages et lancer la campagne','File sponsorships and start the campaign')}</b><small>${x('Premier tour le ','First round on ')+R1DATE()}</small></button></div>
+ <div class="pre-foot"><span>${x('Premier tour le ','First round on ')+R1DATE()}</span><button class="pre-go" data-begin>${x('Déposer les parrainages','File sponsorships')} →</button></div></div>
  <div class="card"><h3>${x('Rassemblements entre les autres','Other joint runs')}</h3>${others.length?others.map(p=>`<div style="margin:6px 0">${p.m.filter(k=>k!==p.head).map(chipP).join(' ')} → ${chipP(p.head)}</div>`).join(''):`<p class="note">${x('Aucun pour l’instant : chacun part seul.','None so far: everyone runs alone.')}</p>`}</div></div>
  <div><div class="card"><h3>${x('Intentions de vote au 1er tour','First-round voting intention')}</h3>${pie(P.map((p,k)=>[sh[k],pc(k),p.n]).filter(r=>r[0]>0),180,.5)}<div class="pie-legend">${P.map((p,k)=>sh[k]?`<span><i style="background:${pc(k)}"></i>${p.n} ${pct(sh[k])}</span>`:'').join('')}</div></div>${presSide()}</div></div>`}
 function doRally(k){const me=SIM.me,r=rallyAccept(k);SIM.tried=SIM.tried||{};if(r.ok){let p=SIM.pacts.find(q=>q.head===me);const m=p?p.m.concat(k):[me,k];SIM.pacts=SIM.pacts.filter(q=>q!==p&&q.head!==k).map(q=>q.m.includes(k)?rallyPact(q.head,q.m.filter(j=>j!==k)):q).filter(q=>q.m.length>1);SIM.pacts.push(rallyPact(me,m));SIM.tried[k]=x('Accepté','Accepted');SIM.log.push(x(P[k].n+' se retire et vous soutient.',P[k].n+' stands down and backs you.'))}else SIM.tried[k]=x('Refusé','Turned down');SIM.offers=SIM.offers.filter(o=>o.k!==k);save();render()}
@@ -1956,7 +2161,7 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
   startCens(null,x('sur le budget','on the budget'),true);return card(x('Le gouvernement a engagé le 49.3 sur le budget : une motion de censure est mise aux voix. Choisissez votre consigne.','The government used 49.3 on the budget: a censure motion comes to a vote. Choose your stance.'))}
  {const bi=(G.vq||[]).find(bi=>B(bi)&&!votedQ(G,bi));if(ctrl()&&bi!=null){G.vq=G.vq.filter(z=>z!==bi);startVote('bill',bi,false,B(bi).by??G.pm);return card(x('Un texte promis est mis aux voix avant la fin du trimestre.','A promised bill comes to a vote before the quarter ends.'))}G.vq=[]}
  if(!ctrl()){const bi=(G.aib||[]).find(bi=>B(bi)&&!votedQ(G,bi));if(bi!=null){startVote('bill',bi,false,B(bi).by??G.pm);return card(x('Un texte du gouvernement est mis aux voix avant la fin du trimestre. Choisissez votre consigne.','A government bill comes to a vote before the quarter ends. Choose your stance.'))}
-  if(budgetDue(G)&&G.pm!=null&&G.budQ!==G.q){G.budQ=G.q;startVote('budget');return card(x('Le budget du gouvernement est mis aux voix. Choisissez votre consigne.','The government’s budget comes to a vote. Choose your stance.'),'asm')}}
+  if(budgetDue(G)&&G.pm!=null&&G.budQ!==G.q){G.budQ=G.q;startVote('budget');G.bpv={q:G.q,mine:0};return card(x('Le budget du gouvernement est mis aux voix. Choisissez votre consigne.','The government’s budget comes to a vote. Choose your stance.'),'asm')}}
  if(G.oMsg){if(G.msg===G.oMsg)G.msg='';G.oMsg=null}G.oppL=[];
  /* a dissolution starts a new campaign; a fallen government leaves the quarter to run its course */
  if(SIM.G!==G||SIM.phase==='pacts')return;const fell=SIM.phase==='form';
@@ -2373,14 +2578,37 @@ function budPie(rows,grp,tot,gap,gapLab,gapCol,ttl,id){const segs=grp.map((g,i)=
  const T=segs.reduce((a,z)=>a+z[1],0)||1,R=92,r=56,c=100,pt=(t,q)=>(c+q*Math.sin(t)).toFixed(2)+','+(c-q*Math.cos(t)).toFixed(2);let a0=0;
  const arcs=segs.map(z=>{let a1=a0+z[1]/T*2*Math.PI;if(a1-a0>6.283)a1=a0+6.283;const L=a1-a0>Math.PI?1:0,d=`M${pt(a0,R)} A${R},${R} 0 ${L} 1 ${pt(a1,R)} L${pt(a1,r)} A${r},${r} 0 ${L} 0 ${pt(a0,r)} Z`;a0=a1;return `<path d="${d}" style="fill:${z[2]};stroke:var(--panel)" stroke-width="2" stroke-linejoin="round"><title>${z[0]} : ${fn(z[1])} Md€ (${Math.round(z[1]/T*100)} %)</title></path>`}).join('');
  return `<div class="bpie"><svg viewBox="0 0 200 200" role="img" aria-label="${ttl} ${fn(tot,0)} Md€"><defs><pattern id="bh${id}" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" style="fill:var(--panel)"/><rect width="3" height="7" style="fill:${gapCol}"/></pattern></defs>${arcs}<text x="100" y="94" text-anchor="middle" style="fill:var(--mute)" font-size="13">${ttl}</text><text x="100" y="116" text-anchor="middle" style="fill:var(--ink)" font-size="20" font-weight="700">${fn(tot,0)}</text><text x="100" y="132" text-anchor="middle" style="fill:var(--mute)" font-size="11">Md€</text></svg><div class="bkey">${segs.map(z=>`<span><i style="background:${z[2].startsWith('url')?`repeating-linear-gradient(135deg,${gapCol} 0 2px,transparent 2px 4px)`:z[2]}"></i>${z[0]} <b>${fn(z[1],0)}</b><em>${Math.round(z[1]/T*100)} %</em></span>`).join('')}</div></div>`}
-function budHTML(G){const F=gfin(G),ta=F.ta,pieOn=st.budPie!==false;
+function budRows(G,F){const ta=F.ta;
  const rev=[...TAXES.map((t,i)=>[x(t[0],t[1]),ta[i],[0,1,2,0,3,4,4,4][i]]),[x('Autres impôts et taxes affectées','Other taxes and earmarked levies'),F.other,4],[x('Recettes non fiscales','Non-tax revenue'),F.nontax,5],[x('Dividendes et participations','Dividends and holdings'),F.div,5]].filter(a=>a[1]>.005);
  const cg=t=>THO.indexOf(t),og=THO.length,exp=[...BU.map((b,i)=>[i===PEN?x('Retraites','Pensions'):x(b[0],b[1]),i===PEN?F.pens:G.bu[i],cg(BUC[i])]),[x('Assurance chômage','Unemployment insurance'),F.chom,cg(4)],[x('Familles et autonomie','Families and long-term care'),F.fam,cg(4)],[x('Concours aux collectivités locales','Grants to local government'),F.coll,og],[x('Autres ministères et fonctionnement (agriculture, culture...)','Other ministries and operations (agriculture, culture...)'),F.ops,og],[x('Charge de la dette','Debt interest'),F.ds,cg(6)],[x('Réserve de précaution','Contingency reserve'),F.reserve,og],[x('Lois votées et risques budgétaires','Laws passed and fiscal risks'),G.cost+F.pr,og]].filter(a=>a[1]>.005);
+ return {rev,exp}}
+/* the two budget pies (revenue with borrowing hatched, spending with any surplus) */
+function budPies(G,F,id){const {rev,exp}=budRows(G,F),def=F.bal<0;return `<div class="bchart">${budPie(rev,BGR.r,F.rev,def?-F.bal:0,x('Emprunt (déficit)','Borrowing (deficit)'),'var(--bad)',x('Recettes','Revenue'),(id||'')+'r')}${budPie(exp,BGR.s,F.sp,def?0:F.bal,x('Excédent','Surplus'),'var(--ok)',x('Dépenses','Spending'),(id||'')+'s')}</div>`}
+function budHTML(G){const F=gfin(G),ta=F.ta,pieOn=st.budPie!==false;
+ const {rev,exp}=budRows(G,F);
  const srt=l=>l.map((r,i)=>[r,i]).sort((a,b)=>a[0][2]-b[0][2]||a[1]-b[1]).map(a=>a[0]);
  const leg=(items,t,tot)=>`<div style="flex:1 1 260px;min-width:220px"><div style="font-weight:700;margin-bottom:6px">${t} · ${fn(tot,0)} Md€</div>${srt(items).map(it=>`<div style="display:flex;gap:6px;align-items:center;font-size:13px;padding:1px 0"><i style="width:11px;height:11px;border-radius:3px;flex:none;background:${pieOn?bcol(it[2]):'var(--line)'}"></i><span>${it[0]}</span><b style="margin-left:auto;padding-left:8px;white-space:nowrap">${fn(it[1])}</b></div>`).join('')}</div>`;
  const def=F.bal<0,r=Math.abs(F.bal)/gdpOf(G)*100,rc=F.bal>=0||r<3?'var(--ok)':r>5?'var(--bad)':'var(--mute)';
- const chart=pieOn?`<div class="bchart">${budPie(rev,BGR.r,F.rev,def?-F.bal:0,x('Emprunt (déficit)','Borrowing (deficit)'),'var(--bad)',x('Recettes','Revenue'),'r')}${budPie(exp,BGR.s,F.sp,def?0:F.bal,x('Excédent','Surplus'),'var(--ok)',x('Dépenses','Spending'),'s')}</div>`:'';
+ const chart=pieOn?budPies(G,F):'';
  return `<div style="display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center"><div class="big bbig" style="color:var(${F.bal>=0?'--ok':'--bad'})">${F.bal>=0?'+':''}${fn(F.bal)} Md€ <span class="note">${F.bal>=0?x('excédent','surplus'):x('déficit','deficit')}</span> <span class="note" style="color:${rc};font-weight:700">· ${fn(r)} % ${F.bal>=0?x('du PIB','of GDP'):x('de déficit / PIB','deficit-to-GDP')}</span></div><button class="chip" data-budpie>${pieOn?x('Masquer le graphique','Hide chart'):x('Afficher le graphique','Show chart')}</button></div>${chart}`}
+/* budget vote pop-up (Logan 2026-10-22): a little budget card before the Assembly votes; G.bpv={q,mine} */
+function bpvSync(){let el=document.getElementById('bpvpop');const G=SIM.G;
+ const N=G&&SIM.phase==='gov'&&st.tab!=='night'&&!document.getElementById('startscreen')&&!document.getElementById('n49pop')&&G.bpv&&G.bpv.q===G.q?G.bpv:null;
+ if(!N){if(el)el.remove();return}
+ if(!el){el=document.createElement('div');el.id='bpvpop';el.className='backdrop';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el)}
+ const F=gfin(G),gdp=gdpOf(G),dp=-F.bal/gdp*100,y=Math.floor(G.m/12)+1,bb=G.budBase||{bu:G.bu,tx:G.tx},F0=gfin(G,bb.bu,bb.tx),dd=(F0.bal-F.bal)/gdp*100,eu=dp>3,ec=eu?'var(--bad)':'var(--ok)';
+ const ch=BU.map((_,i)=>[i,G.bu[i]-bb.bu[i]]).filter(z=>Math.abs(z[1])>=.05).sort((a,b)=>Math.abs(b[1])-Math.abs(a[1])).slice(0,4);
+ const adj=Math.abs(dd)<.05?x('Les ajustements des recettes et des dépenses du budget '+y+' devraient laisser le déficit pratiquement inchangé.','Adjustments to revenue and expenditure in the '+y+' budget are expected to leave the deficit roughly unchanged.'):x('Les ajustements des recettes et des dépenses du budget '+y+' devraient '+(dd>0?'augmenter':'réduire')+' le déficit de <b>'+fn(Math.abs(dd))+' point'+(Math.abs(dd)>=2?'s':'')+' de PIB</b>.','Adjustments to revenue and expenditure in the '+y+' budget are expected to <b>'+(dd>0?'increase':'decrease')+'</b> the deficit by <b>'+fn(Math.abs(dd))+' % of GDP</b>.');
+ const who=N.mine?'':`<p class="note" style="margin:0 20px 6px">${x('Budget du gouvernement '+P[G.pm].n+'. Choisissez ensuite votre consigne de vote.','The '+P[G.pm].n+' government’s budget. You then choose your stance.')}</p>`;
+ el.innerHTML=`<section class="bpv"><div class="bpv-top"><div class="bpv-k">${x('Assemblée nationale · vote','Assemblée nationale · vote')}</div><h3>🗳️ ${x('Le budget '+y+' est mis aux voix','The '+y+' budget goes to a vote')}</h3></div>
+<div class="bpv-paper">${budPies(G,F,'bpv')}<div class="bpv-g"><div><small>${x('Recettes','Revenue')}</small><b>${fn(F.rev,0)} Md€</b></div><div><small>${x('Dépenses','Spending')}</small><b>${fn(F.sp,0)} Md€</b></div><div><small>${F.bal<0?x('Déficit','Deficit'):x('Excédent','Surplus')}</small><b style="color:${F.bal<0&&eu?'var(--bad)':'var(--ok)'}">${fn(Math.abs(dp))} %</b><small>${x('du PIB','of GDP')} · ${fn(Math.abs(F.bal),0)} Md€</small></div><div><small>${x('Dette','Debt')}</small><b>${fn(G.debt)} %</b><small>${x('du PIB','of GDP')}</small></div></div>
+<span class="bpv-eu" style="color:${ec};background:color-mix(in srgb,${ec} 12%,transparent)">🇪🇺 ${eu?x('Au-dessus de la limite européenne de 3 %','Above the 3 % EU limit'):x('Sous la limite européenne de 3 %','Within the 3 % EU limit')}</span>
+${ch.length?`<ul class="bpv-ch">${ch.map(([i,d])=>`<li><span>${x(BU[i][0],BU[i][1])}</span><b style="color:${d>0?'var(--ok)':'var(--bad)'}">${d>0?'+':'−'}${fn(Math.abs(d))} Md€</b></li>`).join('')}</ul>`:''}</div>
+<div class="bpv-note"><b>⚠️ ${x('Pourquoi le déficit et la dette comptent','Why the deficit and debt matter')}</b><ul><li>${adj}</li><li>${x('L’Union européenne se réserve le droit d’ouvrir une procédure pour déficit excessif si le déficit dépasse 3 % du PIB.','The European Union retains the right to open an excessive deficit procedure if the deficit exceeds 3 % of GDP.')}</li><li>${x('Une dette qui croît sans contrôle mènera à une crise de la dette.','The uncontrolled growth of the debt will lead to a debt crisis in the future.')}</li></ul></div>
+${who}<div class="bpv-f">${N.mine?`<button class="act" data-bpv="back">${x('Retour au budget','Back to the budget')}</button><button class="act vbtn" data-bpv="go"><b>${x('Mettre aux voix','Call the vote')}</b></button>`:`<button class="act vbtn" data-bpv="x"><b>${x('Aller au vote','Go to the vote')}</b></button>`}</div></section>`}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-bpv]');if(!a||!SIM.G)return;e.stopPropagation();const G=SIM.G,k=a.dataset.bpv;G.bpv=null;
+ if(k==='go'&&ctrl()&&budgetDue(G)&&!(G.vote&&!G.vote.done)){G.vote=null;startVote('budget');st.gtab='asm'}
+ if(k==='x')st.gtab='asm';save();render();scrollTo(0,0)},true);
 function budOpen(G){return ctrl()&&budgetDue(G)}
 /* the pension line follows the Pensions Code (age, contributions, uprating...): it changes by passing a pension bill, not in the budget */
 function penLawRow(G){G.bu[PEN]=BL(PEN);const c=codeOf(G);return `<div class="sl bsl2"><label><span class="bsl-n"><small class="bsl-cat">${x(TH[4][0],TH[4][1])} · ${x(MIN[CATMIN[4]][3],MIN[CATMIN[4]][4])}</small>${x(BU[PEN][0],BU[PEN][1])}</span><output>${fn(G.bu[PEN])} Md€</output></label><p class="note" style="margin:2px 0 0">⚖️ ${x('Fixé par le Code des retraites','Set by the Pensions Code')} · ${x(CXP.idx.f+' : ',CXP.idx.e+': ')}${cxL(CXP.idx,c.v.idx)}${cneed(PEN)?' · '+x('loi','law')+' '+(cneed(PEN)>0?'+':'−')+fn(Math.abs(cneed(PEN)))+' Md€':''}. <button class="tok" data-gpane="law">${x('Modifier par une loi','Change it by law')}</button></p></div>`}
@@ -2582,7 +2810,8 @@ function promBreaks(G,b){return billThs(b).some(t=>myProm(G).some(p=>p.t===t[0]&
 const aiPlat=k=>(k===SIM.me?SIM.plat:(SIM.ai[k]&&SIM.ai[k].plat))||[];
 const govPl=(G,b)=>!!b&&!!b.th&&!G.gov.includes(SIM.me)&&aiPlat(G.pm).some(i=>MEAS[i][0]===b.th[0]&&Math.abs(MEAS[i][1])>=.5&&Math.sign(MEAS[i][1])===b.th[1]);
 const inGov=G=>G.gov.includes(SIM.me);
-function promTag(G,b){if(!b)return'';const ct=crTag(G,b);if(!inGov(G)&&!ctrl())return ct;const ok=[],bad=[];billThs(b).forEach(t=>myProm(G).forEach(p=>{if(p.t!==t[0]||p.s==='kept'||(Math.abs(p.v)<.5&&b.meas!==p.i))return;(Math.sign(p.v)===t[1]?ok:bad).push(p)}));
+function promSplit(G,b){const ok=[],bad=[];if(!b||(!inGov(G)&&!ctrl()))return{ok,bad};billThs(b).forEach(t=>myProm(G).forEach(p=>{if(p.t!==t[0]||p.s==='kept'||(Math.abs(p.v)<.5&&b.meas!==p.i))return;(Math.sign(p.v)===t[1]?ok:bad).push(p)}));return{ok,bad}}
+function promTag(G,b){if(!b)return'';const ct=crTag(G,b),{ok,bad}=promSplit(G,b);
  return ok.map(p=>' <b style="color:var(--ok)">✦ '+x('promesse : ','pledge: ')+safeText(promLabel(p))+'</b>').join('')+bad.map(p=>' <b style="color:var(--bad)">⚠ '+x('contredit : ','breaks: ')+safeText(promLabel(p))+'</b>').join('')+ct}
 /* ===== platform measures as fixed bills ===== */
 const MEFF=[{infl:-.6,econ:-3},{econ:-2,infl:.2,hous:2},{infl:-.4,econ:2},{econ:4},{econ:1},{arr:-15},{arr:-8},{arr:-20,econ:-1},{arr:10,econ:2},{arr:15},
@@ -2846,6 +3075,20 @@ function billReceptionHTML(G,b,gvSponsor){if(!b)return'';
  return `<p>${x('Accueil du public','Public reception')} : <b>${rec}</b></p>${b.st?`<p>${x('Soutien probable','Likely support')} : ${sup.length?sup.join(', '):x('aucun','none')}${opp.length?` · ${x('Opposition probable','Likely opposition')} : ${opp.join(', ')}`:''}</p>`:''}${split?`<p class="dk-warn">${x('Risque de diviser la coalition.','May split the coalition.')}</p>`:''}`}
 function billFold(G,bi,o){const b=B(bi);if(!b)return'';const who=P[o.sp!=null?o.sp:(b.by!=null?b.by:SIM.me)].n,net=((+b.c||0)-(+b.rev||0)),open=G.lpo&&G.lpo[bi]?' open':'';
  return `<details class="bill-fold" data-lbp="${bi}"${open} style="margin:10px 0"><summary style="cursor:pointer;padding:8px 2px"><b>${safeText(x(b.f,b.e))}</b> ${catMinHTML(G,b)} <span class="note">· ${safeText(who)} · ${(net>0?'+':'')+fn(net)} Md€/${x('an','yr')} · ${b.k??0} ${x('capital','capital')}</span></summary>${billPaperHTML(G,bi,o)}</details>`}
+/* compact bill row (Logan 2026-10-22 picked mock A): title + actions | theme · minister · cost | crisis/pledge tags | for ✓ / against ✕ / abstain – ; title opens the bill document below */
+function billRow(G,bi,o){const b=B(bi);if(!b)return'';const net=lr1((+b.c||0)-(+b.rev||0)),t=billCat(b),sl=CATMIN[t],mi=G.min?G.min[sl]:null,mp=mi!=null&&MP[mi],open=G.lpo&&G.lpo[bi];
+ const crs=(G.cr||[]).filter(q=>crDef(q.id)).map(q=>{const nm=safeText(crNm(q));if(b.cr===q.id)return `<span class="cr">🚨 ${nm}</span>`;if(!crRel(q.id,b))return'';const sc=crScore(q.id,b);return sc>=.5?`<span class="cr" title="${x('Aide face à la crise','Helps with the crisis')}">🚨 ${nm}</span>`:sc<=-.5?`<span class="bad" title="${x('Nuit à la crise','Works against the crisis')}">⚠ ${nm}</span>`:''}).join('');
+ const tg={crisis:['URGENCE','URGENT','u'],repeal:['ABROGATION','REPEAL','r'],renew:['PROROGATION','RENEWAL','n']}[b.tag];
+ const {ok,bad}=promSplit(G,b);
+ const tags=(tg?`<span class="${tg[2]}">${x(tg[0],tg[1])}</span>`:'')+crs+ok.map(q=>`<span class="ok" title="${x('Tient une promesse','Keeps a pledge')}">✦ ${safeText(promLabel(q))}</span>`).join('')+bad.map(q=>`<span class="bad" title="${x('Contredit une promesse','Breaks a pledge')}">⚠ ${safeText(promLabel(q))}</span>`).join('')+(o.tag||'');
+ const ks=P.map((_,k)=>k).filter(k=>G.seats[k]>0&&b.st),sv=k=>b.st[k]||0,nm=a=>a.map(k=>`<span style="color:${pt(k)}">${P[k].n}</span>`).join(' ');
+ const fo=ks.filter(k=>sv(k)>0),ag=ks.filter(k=>sv(k)<0),ab=ks.filter(k=>!sv(k));
+ const who=o.sp!=null?o.sp:b.by;
+ return `<div class="mb${open?' open':''}"><div class="mb-h"><button class="mb-t" data-lbt="${bi}" title="${x('Lire le texte','Read the bill')}">${safeText(x(b.f,b.e))}</button><div class="mb-a">${o.act||''}</div></div>
+ <div class="mb-m"><span>${x(TH[t][0],TH[t][1])}</span>${MIN[sl]?`<span><i style="background:${mp?(mp[1]>=0?pc(mp[1]):'var(--mute)'):'var(--line)'}"></i>${mp?esc(mp[0])+', ':''}${x(MIN[sl][3],MIN[sl][4])}</span>`:''}<span><b>${net>0?'+':''}${fn(net)}</b> Md€/${x('an','yr')}</span>${o.by&&who!=null&&P[who]?`<span>${x('déposée par ','tabled by ')}<b style="color:${pt(who)}">${P[who].n}</b></span>`:''}${o.cost?`<span>${o.cost}</span>`:''}</div>
+ ${tags?`<div class="mb-tg">${tags}</div>`:''}
+ ${ks.length?`<div class="mb-st"><b style="color:var(--ok)">✓</b>${nm(fo)||'—'}<b style="color:var(--bad)">✕</b>${nm(ag)||'—'}${ab.length?`<b>–</b>${nm(ab)}`:''}</div>`:''}
+ ${open?`<div class="mb-paper">${billPaperHTML(G,bi,o)}</div>`:''}</div>`}
 /* ===== the bill's cover page, as printed by the Assemblée (Logan 2026-10-20) =====
    numbers run through the legislature: each bill tabled gets the next number, and the count restarts with a new Assembly */
 const LEGORD=['DIX-SEPTIÈME','DIX-HUITIÈME','DIX-NEUVIÈME','VINGTIÈME','VINGT ET UNIÈME','VINGT-DEUXIÈME','VINGT-TROISIÈME','VINGT-QUATRIÈME','VINGT-CINQUIÈME'];
@@ -2989,20 +3232,22 @@ function newOffer(G){try{codeOf(G);codeSync(G)}catch(e){}G.offer=LEG.offer(G);cr
 /* ===== Assembly pane: agenda, opposition bill, government bills when the player is not in charge, desk ===== */
 /* bill stack: legislative agenda, opposition bills and the drafting desk as three sheets under divider tabs */
 function billParts(G){const c=ctrl(),dis=(G.vote&&!G.vote.done)?'disabled':'',me=SIM.me;
- const own=G.offer.map((bi,oi)=>{const b=B(bi);if(!b)return'';const cost=LEG.cost(G,b);return `<div class="bill-row"><div class="bill-main">${billFold(G,bi,{own:1,sp:c?(b.by!=null&&G.gov.includes(b.by)?b.by:G.pm):me,priv:!c})}${promTag(G,b)} <span class="note">${LEG.ui(G,bi)}</span></div><div style="display:flex;flex-direction:column;gap:6px"><button class="vbtn" data-gtab="${oi}" ${G.cap<cost||dis?'disabled':''} title="${cost} ${x('capital','capital')}">${x('Déposer','Table')} (${cost})</button>${c?`<button class="chip" data-g493="${oi}" ${G.u493||G.cap<cost||dis?'disabled':''} title="${x('Adopté sans vote, mais une motion de censure suit. Une fois par session hors budget.','Passed without a vote, but a censure motion follows. Once a session outside the budget.')}">49.3</button>`:''}</div></div>`}).join('');
+ const own=G.offer.map((bi,oi)=>{const b=B(bi);if(!b)return'';const cost=LEG.cost(G,b),poor=G.cap<cost;
+  const act=`<button class="mb-go" data-gtab="${oi}" ${poor||dis?'disabled':''} title="${poor?x('Il manque du capital politique : '+cost+' requis','Not enough political capital: '+cost+' needed'):cost+' '+x('de capital politique','political capital')}">${x('Déposer','Table')} · ${cost}</button>${c?`<button class="mb-49" data-g493="${oi}" ${G.u493||poor||dis?'disabled':''} title="${x('Adopté sans vote, mais une motion de censure suit. Une fois par session hors budget.','Passed without a vote, but a censure motion follows. Once a session outside the budget.')}">${x('Engager l’article 49.3','Invoke Article 49.3')}</button>`:''}<button class="mb-x" data-gdis="${oi}" ${dis} title="${x('Retirer de l’ordre du jour (gratuit)','Dismiss from the agenda (free)')}" aria-label="${x('Retirer','Dismiss')}">✕</button>`;
+  return billRow(G,bi,{own:1,sp:c?(b.by!=null&&G.gov.includes(b.by)?b.by:G.pm):me,priv:!c,act})}).join('');
  const ag=G.offer.length?`${c?'':`<p class="note">${x('Dans l’opposition, vous pouvez déposer des propositions de loi. Le gouvernement et les autres groupes votent selon leurs positions.','In opposition you can table member’s bills. The government and the other groups vote according to their positions.')}</p>`}${own}`:`<p class="note">${x('Aucun texte à déposer ce trimestre. Rédigez-en un dans l’onglet Brouillons.','No bills to table this quarter. Write one under Draft Bills.')}</p>`;
  const agMeta=`${LEG.slotTxt(G)} · ${x('capital','capital')} ${G.cap}${c?' · 49.3 '+(G.u493?x('déjà utilisé','used'):x('disponible','available')):''}`;
  const oL=(G.oppL||[]).filter(o=>B(o.bi)&&!votedQ(G,o.bi));
- const op=oL.length?`<p class="note">${x('Journées réservées aux groupes d’opposition. Choisissez votre consigne au moment du vote ; les textes non appelés sont votés en fin de trimestre.','Days reserved for opposition groups. Choose your stance when the vote is called; bills not called are voted at the end of the quarter.')}</p>${oL.map(o=>`<div class="bill-row"><div class="bill-main">${billFold(G,o.bi,{sp:o.sp,priv:1})}<span class="note">${x('Déposée par ','Tabled by ')}${P[o.sp].n}</span></div><button class="vbtn" data-goppbill="${o.bi}" ${dis}>${x('Appeler le vote','Call the vote')}</button></div>`).join('')}`:`<p class="note">${x('Aucune proposition de loi de l’opposition ce trimestre.','No opposition bills this quarter.')}</p>`;
+ const op=oL.length?`<p class="note">${x('Journées réservées aux groupes d’opposition. Choisissez votre consigne au moment du vote ; les textes non appelés sont votés en fin de trimestre.','Days reserved for opposition groups. Choose your stance when the vote is called; bills not called are voted at the end of the quarter.')}</p>${oL.map(o=>billRow(G,o.bi,{sp:o.sp,priv:1,by:1,act:`<button class="mb-go" data-goppbill="${o.bi}" ${dis}>${x('Appeler le vote','Call the vote')}</button>`})).join('')}`:`<p class="note">${x('Aucune proposition de loi de l’opposition ce trimestre.','No opposition bills this quarter.')}</p>`;
  const aibL=(G.aib||[]).filter(bi=>B(bi)&&!votedQ(G,bi));
  const gb=!c&&aibL.length?`<h4 class="bst-h4">${x('Textes du gouvernement ce trimestre','Government bills this quarter')}</h4><p class="note">${x('Vous choisissez la consigne de votre groupe quand le vote est appelé. Les textes non appelés sont mis aux voix avant la fin du trimestre.','You choose your group’s stance when the vote is called. Bills not called come to a vote before the quarter ends.')}</p>${aibL.map(bi=>{const b=B(bi);if(!b)return'';
-  return `<div class="bill-row"><div class="bill-main">${billFold(G,bi,{sp:b.by??G.pm})}${govPl(G,b)?`<span class="note">${x('Promesse du gouvernement','A government pledge')}</span>`:''}</div><button class="vbtn" data-gaivote="${bi}" ${dis}>${x('Passer au vote','Go to the vote')}</button></div>`}).join('')}`:'';
+  return billRow(G,bi,{sp:b.by??G.pm,by:1,tag:govPl(G,b)?`<span class="gov">${x('Promesse du gouvernement','Government pledge')}</span>`:'',act:`<button class="mb-go" data-gaivote="${bi}" ${dis}>${x('Passer au vote','Go to the vote')}</button>`})}).join('')}`:'';
  return {ag:ag+gb,agMeta,nAg:G.offer.filter(B).length+(c?0:aibL.length),op,nOp:oL.length}}
 const BST=[['ag','Programme législatif','Legislative Agenda','#f2c94c','Programme','Agenda'],['op','Propositions de l’opposition','Opposition Bills','#f28bb0','Opposition','Opposition'],['dr','Brouillons','Draft Bills','#6cb8f0','Brouillons','Drafts']];
 function billStack(G){const p=billParts(G),desk=LEG.deskHTML(G);
  if(st.det&&st.det.draft){st.bst='dr';st.det.draft=false}
  if(st.bstQ!==G.q){st.bstQ=G.q;if(st.bst!=='dr')st.bst='ag'}
- let t=st.bst||'ag';if(t==='dr'&&!desk)t='ag';
+ let t=st.bst||'ag';if(t==='dr'&&!desk)t='ag';if(t==='dr')tourSee('dr');
  const n={ag:p.nAg,op:p.nOp,dr:0},body={ag:(p.agMeta?`<div class="bst-meta">${p.agMeta}</div>`:'')+p.ag,op:p.op,dr:desk},cur=BST.find(b=>b[0]===t);
  const clip=`<svg class="bst-clip" width="46" height="180" viewBox="0 0 46 180" aria-hidden="true"><defs><linearGradient id="bstchr" x1="0" x2="1"><stop offset="0" stop-color="#7d8792"/><stop offset=".35" stop-color="#f4f7fa"/><stop offset=".55" stop-color="#b6bec8"/><stop offset=".8" stop-color="#eef2f6"/><stop offset="1" stop-color="#6f7983"/></linearGradient></defs>${['#69737e" stroke-width="5.4','url(#bstchr)" stroke-width="4','#fff" stroke-opacity=".75" stroke-width="1" transform="translate(-.8,-.6)'].map(a=>`<path d="M16 120 V24 a11 11 0 0 1 22 0 V150 a17 17 0 0 1 -34 0 V38" fill="none" stroke-linecap="round" stroke="${a}"/>`).join('')}</svg>`;
  return `<div class="bst"><div class="bst-sh s2"></div><div class="bst-sh s3"></div><div class="bst-tabs" role="tablist">${BST.filter(b=>b[0]!=='dr'||desk).map(b=>`<button role="tab" aria-selected="${b[0]===t}" class="bst-tab${b[0]===t?' on':''}" style="--c:${b[3]}" data-bst="${b[0]}"><span class="bst-l">${x(b[1],b[2])}</span><span class="bst-s">${x(b[4],b[5])}</span>${n[b[0]]?`<b>${n[b[0]]}</b>`:''}</button>`).join('')}</div>${clip}<div class="bst-top"><h3 class="bst-title">${x(cur[1],cur[2])}</h3>${body[t]}</div></div>`}
@@ -3547,9 +3792,9 @@ function crPopSync(){let el=document.getElementById('crpop');const G=SIM.G;
  if(!el){el=document.createElement('div');el.id='crpop';el.className='backdrop';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el)}
  const gov=ctrl(),pcn=v=>Math.round(v*100)+' %';
  const items=L.map(({p,c})=>{const C=crDef(c.id),sv=c.sev,col=['var(--mute)','#c98500','var(--bad)','var(--bad)'][sv-1],e=crEsc(c),reg=crRegs(c);
-  const what=gov?x('Répondez avant que la crise ne s’aggrave : textes de réponse, un ministre sur le dossier et le budget du ministère. Toute loi utile compte.','Respond before it gets worse: response bills, a minister on the file and the ministry’s budget. Any helpful law counts.'):x('Le gouvernement doit répondre. Depuis l’onglet Vue nationale, vous pouvez le mettre sous pression ou déposer votre propre réponse.','The government has to respond. From the National View tab you can put it under pressure or table your own response.');
+  const what=gov?'':x('Le gouvernement doit répondre. Depuis l’onglet Vue nationale, vous pouvez le mettre sous pression ou déposer votre propre réponse.','The government has to respond. From the National View tab you can put it under pressure or table your own response.');
   const risk=C.econ?'':(sv>=4?x('Critique : encore un trimestre ainsi et la crise marquera la législature.','Critical: one more quarter like this and it defines the term.'):x('Sans réponse forte : ','Without a strong response: ')+pcn(e)+x(' de risque d’aggravation',' chance it worsens'))+' · '+x('environ ','about ')+fn(.6*sv+(sv>=3?.8:0))+x(' pt de popularité par trimestre',' approval pts per quarter');
-  return `<div class="crpop-i" style="border-left-color:${col}"><div class="crpop-k" style="color:${col}">${p.k==='new'?x('Nouvelle crise','New crisis'):x('La crise s’aggrave','Crisis worsening')} · ${x(CRST[sv-1][0],CRST[sv-1][1])}</div><div class="crpop-t">${C.em} ${crNm(c)}</div><div class="note">${x(TH[CCAT[C.dom]][0],TH[CCAT[C.dom]][1])} · ${reg?reg.map(g=>x(FR.REG[g][0],FR.REG[g][1])).join(', '):x('toute la France','all of France')}</div><p style="margin:8px 0">${crTxt(c)}</p>${risk?`<p style="margin:6px 0"><b>${risk}</b></p>`:''}<p class="note" style="margin:6px 0 0">${what}</p></div>`}).join('');
+  return `<div class="crpop-i" style="border-left-color:${col}"><div class="crpop-k" style="color:${col}">${p.k==='new'?x('Nouvelle crise','New crisis'):x('La crise s’aggrave','Crisis worsening')} · ${x(CRST[sv-1][0],CRST[sv-1][1])}</div><div class="crpop-t">${C.em} ${crNm(c)}</div><div class="note">${x(TH[CCAT[C.dom]][0],TH[CCAT[C.dom]][1])} · ${reg?reg.map(g=>x(FR.REG[g][0],FR.REG[g][1])).join(', '):x('toute la France','all of France')}</div><p style="margin:8px 0">${crTxt(c)}</p>${risk?`<p style="margin:6px 0"><b>${risk}</b></p>`:''}${what?`<p class="note" style="margin:6px 0 0">${what}</p>`:''}</div>`}).join('');
  el.innerHTML=`<section class="modal" style="width:min(620px,100%)"><div class="mh"><h2>🚨 ${L.length>1?x('Crises en cours','Crisis alert'):x('Alerte de crise','Crisis alert')}</h2></div><div class="mb">${items}<div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:6px"><button class="chip" data-crpop="x">${x('Fermer','Close')}</button><button class="act vbtn" data-crpop="go"><b>${x('Voir la Vue nationale →','Open the National View →')}</b></button></div></div></section>`}
 document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-crpop]');if(!a||!SIM.G)return;e.stopPropagation();SIM.G.crPop=[];if(a.dataset.crpop==='go'){st.tab='gov';st.gtab='map'}save();render();if(a.dataset.crpop==='go')scrollTo(0,0)},true);
 /* each quarter, after the economy: progress, escalation, damage, twists, endings, new crises, voter concerns */
@@ -4188,7 +4433,8 @@ function gSub(t,G){const c=ctrl();
  if(t==='map'){const nc=(G.cr||[]).length,np=(G.pjs||[]).filter(p=>p.s==='b'||p.s==='r').length;return (nc?nc+' '+x(nc>1?'crises':'crise',nc>1?'crises':'crisis'):x('Aucune crise','No crisis'))+' · '+np+' '+x(np>1?'projets':'projet',np===1?'project':'projects')}
  if(t==='pl'){const L=(G.prom||[]).filter(p=>p.dl!=null);return L.filter(p=>p.s==='kept').length+' / '+L.length+' '+x('tenus','kept')}
  if(t==='dash')return x('Sondages, popularité, journal','Polls, approval, log');return''}
-function gTabsHTML(G){return `<div id="gtab-top"></div><div class="gtabs" role="tablist">${GT.map(t=>{const b=gBadge(t[0],G);return `<button class="gtab ${st.gtab===t[0]?'on':''}" role="tab" aria-selected="${st.gtab===t[0]}" data-gpane="${t[0]}"><span class="gt-l">${t[1]} ${x(t[2],t[3])}${b?`<i class="gt-b ${b[1]}">${b[0]}</i>`:''}</span><small>${gSub(t[0],G)}</small></button>`}).join('')}</div>`}
+function gTabsHTML(G){if(tourOn())st.drOK=!!LEG.deskHTML(G);tourSee(st.gtab);return tourTabs(gTabsHTML0(G))+tourHTML()}
+function gTabsHTML0(G){return `<div id="gtab-top"></div><div class="gtabs" role="tablist">${GT.map(t=>{const b=gBadge(t[0],G);return `<button class="gtab ${st.gtab===t[0]?'on':''}" role="tab" aria-selected="${st.gtab===t[0]}" data-gpane="${t[0]}"><span class="gt-l">${t[1]} ${x(t[2],t[3])}${b?`<i class="gt-b ${b[1]}">${b[0]}</i>`:''}</span><small>${gSub(t[0],G)}</small></button>`}).join('')}</div>`}
 /* readable text on a party colour */
 function inkOn(c){const m=/^#([0-9a-f]{6})$/i.exec(c||'');if(!m)return'#fff';const n=parseInt(m[1],16),L=(.299*(n>>16)+.587*(n>>8&255)+.114*(n&255))/255;return L>.6?'#1b1300':'#fff'}
 /* quarters of the legislature (5 years); the presidential election quarter is marked */
@@ -4216,7 +4462,7 @@ function vGov(){const G=SIM.G;if(!G.ind)econInit(G,null);if(!G.min&&G.pm!=null&&
  const N=20,qn=Math.min(N,Math.floor((G.m-G.lastDiss)/3)+1),gp=G.pm!=null?G.pm:me;
  /* Logan 2026-10-21: no PM / government / support / cabinet / president line; the role chip and the approval figures carry party colours */
  const info=[];if(cohab(G))info.push('<b>'+x('Cohabitation','Cohabitation')+'</b>');info.push(x('Présidentielle : ','Presidential election: ')+MONTHS(G.presM));
- const head=`<div class="card gtop"><div class="gtop-row"><b>${x('Trimestre','Quarter')} ${qn} / ${N} · ${MONTHS(G.m)}</b><span class="chip on" style="cursor:default;background:${pc(gp)};border-color:${pc(gp)};color:${inkOn(pc(gp))};display:inline-flex;align-items:center;gap:6px">${plogo(gp,22)}${G.pm===me?x('Gouvernement','Government')+' '+P[me].n:roleName()+(G.pm!=null&&G.pm!==me?' · '+x('gouvernement','government')+' '+P[G.pm].n:'')}</span></div>${gQBar(G)}<div class="gtop-row" style="margin:0;align-items:flex-end"><div class="gsteps">${info.map(t=>`<span>${t}</span>`).join('')}</div><button class="vbtn gend" data-endq>${x('Finir le trimestre','End the quarter')}</button></div>${eqPop(G)}${G.msg?`<p role="alert" style="color:var(--bad);margin:6px 0 0">${G.msg}</p>`:''}</div>`;
+ const head=`<div class="card gtop"><div class="gtop-row"><b>${x('Trimestre','Quarter')} ${qn} / ${N} · ${MONTHS(G.m)}</b><span class="chip on" style="cursor:default;background:${pc(gp)};border-color:${pc(gp)};color:${inkOn(pc(gp))};display:inline-flex;align-items:center;gap:6px">${plogo(gp,22)}${G.pm===me?x('Gouvernement','Government')+' '+P[me].n:roleName()+(G.pm!=null&&G.pm!==me?' · '+x('gouvernement','government')+' '+P[G.pm].n:'')}</span></div>${gQBar(G)}<div class="gtop-row" style="margin:0;align-items:flex-end"><div class="gsteps">${info.map(t=>`<span>${t}</span>`).join('')}</div>${tourLeft()?`<button class="vbtn gend locked" data-endq title="${x('Ouvrez d’abord chaque onglet','Open each tab first')}">${x('Finir le trimestre · '+tourLeft()+' à visiter','End the quarter · '+tourLeft()+' left to explore')}</button>`:`<button class="vbtn gend" data-endq>${x('Finir le trimestre','End the quarter')}</button>`}</div>${eqPop(G)}${G.msg?`<p role="alert" style="color:var(--bad);margin:6px 0 0">${G.msg}</p>`:''}</div>`;
  if(st.gtab==='cris'||st.gtab==='pj')st.gtab='map';
  if(st.gtab==='dash')st.gtab='ely';
  const P2={asm:gAsm,bud:gBud,law:gLaw,pl:gPl,map:gMap,ely:gEly}[st.gtab]||gAsm;
@@ -4326,6 +4572,7 @@ function govClick(t,D){const G=SIM.G;
  /* the Assembly: agenda, votes, the desk */
  if(D.gtab!=null){tableOffer(+D.gtab,'vote');return R()}
  if(D.g493!=null){tableOffer(+D.g493,'493');return R()}
+ if(D.gdis!=null){const bi=G.offer[+D.gdis];if(bi!=null){G.offer.splice(+D.gdis,1);const b=B(bi);if(b)G.log.push({m:G.m,t:x('Retiré de l’ordre du jour : ','Dismissed from the agenda: ')+x(b.f,b.e)})}return R()}
  if(t.hasAttribute('data-goppbill')){const o=(G.oppL||[]).find(o=>o.bi===+D.goppbill);if(o&&!(G.vote&&!G.vote.done)){G.vote=null;startVote('bill',o.bi,true,o.sp);G.oppL=G.oppL.filter(z=>z!==o)}return R()}
  if(D.gaivote!=null){const bi=+D.gaivote,b=B(bi);if(b&&!votedQ(G,bi)&&!(G.vote&&!G.vote.done)){G.vote=null;startVote('bill',bi,false,b.by??G.pm)}return R()}
  if(D.mv){const [m,v]=D.mv.split(':');G.mv[+m]=+v;return R()}
@@ -4338,6 +4585,7 @@ function govClick(t,D){const G=SIM.G;
  if(D.dk!=null){closeTok();LEG.deskAct(D.dk);return R()}
  if(D.tok!=null){tokMenu(t);return true}
  if(D.bst){st.bst=D.bst;return R()}
+ if(D.lbt!=null){G.lpo=G.lpo||{};G.lpo[D.lbt]=!G.lpo[D.lbt];return R()}
  if(D.detk){st.det=st.det||{};st.det[D.detk]=!st.det[D.detk];return R()}
  /* the budget */
  if(D.gmeet){const [k,j]=D.gmeet.split('_');meetAsk(+k,+j);return R()}
@@ -4346,7 +4594,7 @@ function govClick(t,D){const G=SIM.G;
  if(D.gcnt!=null){oppCounter(D.gcnt==='1');return R()}
  if(D.gmb){G.mb=D.gmb;return R()}
  if(t.hasAttribute('data-budpie')){st.budPie=st.budPie===false;return R()}
- if(t.hasAttribute('data-budvote')){if(ctrl()&&budgetDue(G)){G.vote=null;startVote('budget');st.gtab='asm'}return R()}
+ if(t.hasAttribute('data-budvote')){if(ctrl()&&budgetDue(G)&&!(G.vote&&!G.vote.done))G.bpv={q:G.q,mine:1};return R()}
  if(t.hasAttribute('data-bud493')){budget493();return true}
  if(D.gev!=null&&(ctrl()||G.pm===SIM.me)){resolveGEv(+D.gev);return true}
  if(D.gevopp!=null){gevOpp(G,+D.gevopp);return true}
@@ -4355,7 +4603,7 @@ function govClick(t,D){const G=SIM.G;
  if(D.censmy!=null){const v=G.vote;if(v&&v.kind==='cens'&&!v.step){G.myc=D.censmy==='1';const r=censRoll(G,v.by,v.whip);v.pos=r.pos;v.res=r.res}return R()}
  if(t.hasAttribute('data-censwhip')){censWhip();return R()}
  if(t.hasAttribute('data-budreset')){if(budOpen(G)){G.bu=G.budBase.bu.slice();G.tx=G.budBase.tx.slice()}return R()}
- if(t.hasAttribute('data-endq')){if(!t.hasAttribute('data-eqok')&&st.eqw!==G.q&&eqItems(G).length){st.eqw=G.q;st.eqo=G.q;render();return true}st.eqo=null;endQuarter();return true}
+ if(t.hasAttribute('data-endq')){if(tourLeft()){const r=document.querySelector('.tour');if(r){r.scrollIntoView({block:'center'});r.classList.remove('tour-nag');void r.offsetWidth;r.classList.add('tour-nag')}return true}if(!t.hasAttribute('data-eqok')&&st.eqw!==G.q&&eqItems(G).length){st.eqw=G.q;st.eqo=G.q;render();return true}st.eqo=null;endQuarter();return true}
  if(D.resign){const v=D.resign;if(v==='ask'){st.resAsk=1;return R()}if(v==='no'){st.resAsk=0;return R()}st.resAsk=0;govResign(SIM.G,v==='go'?null:v);return true}
  if(t.hasAttribute('data-pdismiss')){presDismiss(SIM.G,false);return true}
  if(t.hasAttribute('data-diss')){dissolve(x('le président dissout l’Assemblée','the President dissolves the Assembly'));return true}
@@ -4439,6 +4687,161 @@ function negHTML(G){const N=G.neg,me=SIM.me,W=N.W,pr=G.pres,d=N.d,{D,cap,I}=negL
 function negClick(t,D){if(!SIM.G||!SIM.G.neg)return false;if(D.ng!=null){negToggle(D.ng);save();const y=scrollY;render();scrollTo(0,y);return true}
  if(t.hasAttribute('data-ngo')){negPropose();return true}if(t.hasAttribute('data-nacc')){negAccept();return true}if(t.hasAttribute('data-nbrk')){negBreak();return true}return false}
 
+/* ===== first-time tips (Logan 2026-10-22, mock-up approved): each screen shows short tip cards the first time it appears; seen screens are kept in localStorage; "?" in the header replays the current screen =====
+   a tip: s = selector or function returning the element, p = side of the element the card sits on (b below, t above, r right, l left), t/b = [fr,en] title and text */
+const tq=s=>document.querySelector(s),tcard=s=>{const e=tq(s);return e&&(e.closest('.card')||e)},thead=em=>[...document.querySelectorAll('#main h2,#main h3')].find(h=>h.textContent.trim().startsWith(em));
+const thc=em=>{const h=thead(em);return h&&(h.closest('.card')||h)};
+const TIPS={
+ plat:[
+  {s:'.pbar',p:'b',t:['Votre programme','Your platform'],b:['Chaque cran loin du centre coûte un point de <b>budget programme</b>. Un programme plus marqué mobilise, mais il faut choisir ses combats.','Each notch away from the centre costs a <b>platform budget</b> point. A sharper platform fires people up, but you have to pick your battles.']},
+  {s:'.pcard',p:'r',t:['Où se situent les partis','Where the parties stand'],b:['Les sigles sous chaque curseur montrent la ligne habituelle de chaque parti. S’en rapprocher attire leurs électeurs ; s’éloigner de <b>votre propre ligne</b> vous coûte les vôtres.','The labels under each slider show where each party usually stands. Moving towards one draws its voters; drifting from <b>your own line</b> costs you yours.']},
+  {s:()=>tcard('.pf-proj'),p:'l',t:['Qui vous entendez séduire','Who you are reaching'],b:['Ce panneau chiffre l’effet de vos choix : vert, vous attirez ces électeurs ; rouge, vous les faites fuir. Les enjeux qui comptent le plus pour les Français pèsent davantage.','This panel shows what your choices do: green attracts those voters, red drives them away. The issues voters care most about count for more.']}],
+ pacts:[
+  {s:'#main table.t',p:'t',t:['Les accords électoraux','Electoral pacts'],b:['Une <b>union</b> présente un seul candidat par circonscription ; un <b>désistement réciproque</b> garde des candidats séparés au 1er tour, puis le moins bien placé se retire. Moins de concurrents à gauche, au centre ou à droite, c’est plus de seconds tours gagnables.','A <b>union</b> fields one candidate per seat; a <b>mutual withdrawal</b> keeps separate candidates in the first round, then the weaker one stands down. Fewer rivals in your camp means more run-offs you can win.']},
+  {s:'#main table.t',p:'t',t:['Une seule tentative','One attempt each'],b:['Un parti accepte si l’accord lui rapporte des sièges et s’il vous est proche. Vous n’avez qu’un essai par parti, et certains accords sont impossibles : Renaissance ne traite jamais avec le RN ni Reconquête.','A party says yes when the deal gains it seats and it is close to you. You get one try per party, and some deals are off the table: Renaissance never deals with the RN or Reconquête.']},
+  {s:'[data-begin]',p:'t',t:['Lancez la campagne','Start the campaign'],b:['Quand vos accords sont faits, déposez les candidatures : les accords sont alors figés jusqu’au premier tour.','Once your deals are done, file your nominations: pacts are then locked until the first round.']}],
+ rallies:[
+  {s:'#main table.t',p:'t',t:['Les ralliements','Rallying other candidates'],b:['Avant le premier tour, vous pouvez convaincre de petits candidats de se retirer en votre faveur. Leurs électeurs ne suivent pas tous, mais chaque point compte pour passer le premier tour.','Before the first round you can persuade smaller candidates to stand down for you. Not all their voters follow, but every point counts to make the run-off.']},
+  {s:'[data-begin]',p:'t',t:['Deux tours','Two rounds'],b:['Seuls les <b>deux premiers</b> du premier tour vont au second. Lancez la campagne quand vous êtes prêt.','Only the <b>top two</b> in the first round go through to the run-off. Start the campaign when you are ready.']}],
+ camp:[
+  {s:'.actcol',p:'r',t:['Faites campagne','Run your campaign'],b:['Chaque jour vous avez <b>3 points d’action</b>. Les actions nationales font bouger tous les sondages ; certaines coûtent des fonds, d’autres sont gratuites.','Every day you get <b>3 action points</b>. Nationwide actions move every poll; some cost funds, others are free.']},
+  {s:'.mapwrap',p:'r',t:['Visez les bonnes circonscriptions','Pick your battlegrounds'],b:['Cliquez une circonscription sur la carte (ou dans les sièges disputés) pour y tenir un meeting ou faire du porte-à-porte. Les sièges serrés sont ceux où quelques points changent tout.','Click a constituency on the map (or in the battleground list) to rally or knock on doors there. Close seats are where a few points change everything.']},
+  {s:'.poll-chart-wrap',p:'l',t:['Les sondages','The polls'],b:['Les intentions de vote bougent chaque jour avec vos actions, celles des rivaux et l’actualité. Le thème du moment favorise les partis qui en ont la propriété.','Vote intention moves every day with your actions, your rivals’ and the news. The issue of the moment helps the parties voters trust on it.']},
+  {s:'[data-next]',p:'l',t:['Terminez la journée','End the day'],b:['Quand vos actions sont jouées, <b>terminez la journée</b> : les sondages bougent et vous recevez des fonds.','When your actions are spent, <b>end the day</b>: the polls update and you raise funds.']}],
+ n1:[
+  {s:'.hemi',p:'r',t:['Le soir du premier tour','First-round night'],b:['Les résultats tombent au fil de la soirée ; les premières estimations peuvent se tromper. En législatives, il faut <b>12,5 % des inscrits</b> pour rester au second tour, d’où des duels, des triangulaires et parfois des quadrangulaires.','Results come in through the evening; early estimates can be off. In a legislative election you need <b>12.5% of registered voters</b> to stay in, which gives two-, three- and sometimes four-way run-offs.']},
+  {s:'[data-skip]',p:'b',t:['Allez plus vite','Speed things up'],b:['Vous pouvez accélérer ou passer directement aux résultats.','You can speed the night up or jump straight to the results.']}],
+ wd:[
+  {s:()=>tcard('[data-wdp]'),p:'r',t:['Se maintenir ou se retirer','Stay in or stand down'],b:['Dans chaque triangulaire, vous décidez si votre candidat se maintient ou se retire. Se retirer aide souvent le candidat le plus proche de vous à battre un adversaire commun. Commencez par les réglages rapides, puis ajustez siège par siège.','In each three-way run-off you decide whether your candidate stays in or stands down. Standing down often helps the candidate closest to you beat a shared opponent. Start with the quick presets, then adjust seat by seat.']},
+  {s:()=>tcard('.cons-fx')||tcard('[data-cons]'),p:'l',t:['Votre consigne de vote','Your voting instruction'],b:['Là où vous êtes éliminé, dites à vos électeurs quoi faire. « Pas une voix pour le RN » fait surtout monter l’abstention ; le <b>barrage</b> pousse vers l’adversaire du RN, au prix d’un peu de votre propre base.','Where you are out, tell your voters what to do. “Not one vote for the RN” mostly raises abstention; a <b>barrage</b> pushes them to the RN’s opponent, at some cost with your own base.']},
+  {s:'[data-wddone]',p:'t',t:['Une semaine de campagne','One week to go'],b:['Validez vos choix pour lancer la campagne du second tour.','Confirm your choices to start the run-off campaign.']}],
+ r2c:[
+  {s:'[data-next]',p:'l',t:['L’entre-deux-tours','The run-off week'],b:['Une semaine seulement : concentrez vos actions sur les seconds tours serrés. Les reports de voix des éliminés décident beaucoup de sièges.','Just one week: put your actions into the close run-offs. Where the eliminated candidates’ voters go decides many seats.']}],
+ ral:[
+  {s:()=>tcard('[data-endo]')||tq('#main .card'),p:'r',t:['Les soutiens','Endorsements'],b:['Les candidats éliminés appellent à voter pour l’un ou l’autre finaliste, ou ne donnent aucune consigne. Leur choix dépend de leur proximité avec chacun.','The eliminated candidates back one finalist or the other, or stay neutral. Their choice depends on how close they are to each.']},
+  {s:'[data-presr2]',p:'t',t:['Le duel','The duel'],b:['Il ne reste que deux candidats : il faut désormais dépasser 50 %.','Only two candidates are left: now you need more than 50%.']}],
+ res:[
+  {s:'.hemi',p:'r',t:['La nouvelle Assemblée','The new Assembly'],b:['Il faut <b>289 sièges sur 577</b> pour une majorité absolue. Sans elle, il faudra une coalition, un soutien sans participation ou au moins un pacte de non-censure.','A majority takes <b>289 of 577 seats</b>. Without one you need a coalition, outside support or at least a no-censure pact.']},
+  {s:()=>tq('.res-maj')||tq('[data-startgov]'),p:'l',t:['Les majorités possibles','Possible majorities'],b:['Ce panneau montre quelles combinaisons de groupes atteignent 289. Gardez-le en tête pour la formation du gouvernement.','This panel shows which combinations of groups reach 289. Keep it in mind when the government is formed.']}],
+ form:[
+  {s:()=>tcard('.gl'),p:'l',t:['Qui va à Matignon ?','Who becomes Prime Minister?'],b:['Le Président nomme le Premier ministre. Un gouvernement doit survivre à une motion de censure : <b>289 voix</b> suffisent à le renverser.','The President appoints the Prime Minister. A government has to survive a censure motion: <b>289 votes</b> bring it down.']},
+  {s:()=>tcard('[data-offer]'),p:'r',t:['Demandez leur soutien','Ask for support'],b:['Proposez à chaque groupe d’entrer au gouvernement, de le soutenir de l’extérieur ou de signer un pacte de non-censure. Les partenaires demandent des ministères, des promesses et du budget.','Ask each group to join the government, back it from outside or sign a no-censure pact. Partners ask for ministries, pledges and budget money.']},
+  {s:()=>tq('[data-fmin]')&&tcard('[data-fmin]'),p:'t',t:['Le gouvernement','The cabinet'],b:['Glissez les ministrables dans les ministères. Un ministre qui connaît son dossier améliore les chiffres de son ministère.','Drag ministers into ministries. A minister who knows the brief improves that ministry’s figures.']}],
+ gov:[
+  {s:'.qbar',p:'b',t:['Un mandat en trimestres','A term in quarters'],b:['Chaque case est un trimestre. 💶 marque le budget de l’automne ; les étiquettes annoncent les prochaines élections.','Each box is a quarter. 💶 marks the autumn budget; the tags show when the next elections fall.']},
+  {s:'.kribbon',p:'b',t:['Le tableau de bord','The dashboard'],b:['Popularité du gouvernement et du Président, puis les vrais chiffres du pays : croissance, chômage, inflation, <b>déficit et dette</b>, sécurité. Vos lois, votre budget et les crises les font bouger.','Government and presidential approval, then the country’s real figures: growth, unemployment, inflation, <b>deficit and debt</b>, safety. Your laws, budget and crises move them.']},
+  {s:'.gtabs',p:'b',t:['Les onglets','The tabs'],b:['Assemblée pour les lois, Budget, Lois en vigueur, Vue nationale pour les crises et les grands projets, Engagements, et Élysée. Une pastille rouge signale ce qui attend une décision.','Assembly for bills, Budget, Laws in force, National View for crises and projects, Pledges, and Élysée. A red badge marks something waiting for you.']},
+  {s:'[data-endq]',p:'l',t:['Finir le trimestre','End the quarter'],b:['Quand vous avez fini, terminez le trimestre. S’il reste des choses en suspens, une liste vous les rappelle d’abord.','When you are done, end the quarter. If anything is still pending, a checklist reminds you first.']}],
+ asm:[
+  {s:()=>tcard('.hemi'),p:'r',t:['L’hémicycle','The chamber'],b:['Chaque groupe et son rôle : au gouvernement, soutien extérieur, pacte de non-censure ou opposition. Une loi passe s’il y a plus de voix pour que contre.','Every group and its role: in government, outside support, no-censure pact or opposition. A bill passes if more MPs vote for it than against.']},
+  {s:'.bst',p:'l',t:['Le programme législatif','The legislative agenda'],b:['Déposer un texte coûte du <b>capital politique</b> (6 au maximum, il se recharge chaque trimestre). Cliquez un titre pour lire le texte ; ✕ le retire gratuitement de l’ordre du jour.','Tabling a bill costs <b>political capital</b> (6 at most, it refills each quarter). Click a title to read the bill; ✕ takes it off the agenda for free.']},
+  {s:'.mb-st',p:'l',t:['Qui votera quoi','Who will vote how'],b:['✓ pour, ✕ contre, – abstention : la position probable de chaque groupe. Vérifiez-la avant de déposer.','✓ for, ✕ against, – abstain: each group’s likely position. Check it before you table.']},
+  {s:'.mb-49',p:'l',t:['L’article 49.3','Article 49.3'],b:['Adopte un texte sans vote, une fois par session hors budget. Mais l’opposition dépose alors une motion de censure : à <b>289 voix</b>, le gouvernement tombe.','Passes a bill without a vote, once a session outside the budget. But the opposition then files a censure motion: at <b>289 votes</b> the government falls.']},
+  {s:'[data-bst="dr"]',p:'b',t:['Rédigez vos textes','Write your own bills'],b:['L’onglet Brouillons est un atelier : choisissez un domaine, l’approche et l’ampleur, puis déposez votre propre projet de loi.','The Draft Bills tab is a workshop: pick a field, an approach and a scale, then table your own bill.']},
+  {s:()=>tcard('[data-qag]'),p:'l',t:['Questions au gouvernement','Questions to the Government'],b:['Une fois par trimestre, l’opposition vous interroge trois fois sur vos points faibles. Une bonne séance rapporte du capital et de la cohésion.','Once a quarter the opposition asks you three questions on your weak spots. A strong session earns capital and cohesion.']}],
+ asmopp:[
+  {s:'.bst',p:'l',t:['Dans l’opposition','In opposition'],b:['Vous pouvez déposer des propositions de loi : le gouvernement et les autres groupes votent selon leurs positions. Une loi populaire adoptée grâce à vous vous fait monter.','You can table member’s bills: the government and the other groups vote by their positions. A popular law passed thanks to you lifts your polls.']},
+  {s:()=>tq('[data-gaivote]'),p:'l',t:['Les textes du gouvernement','Government bills'],b:['Chaque texte du gouvernement est mis aux voix : vous choisissez la consigne de votre groupe, et les électeurs jugent votre vote.','Each government bill comes to a vote: you choose your group’s stance, and voters judge how you voted.']},
+  {s:()=>tq('.censfoot'),p:'t',t:['La motion de censure','The censure motion'],b:['Avec au moins 58 députés, vous pouvez déposer une motion de censure. Elle renverse le gouvernement si elle réunit <b>289 voix</b>.','With at least 58 MPs you can file a censure motion. It brings the government down if it reaches <b>289 votes</b>.']}],
+ bud:[
+  {s:()=>tq('.edp-strip')||tq('.bud-sum'),p:'b',t:['Le déficit et la dette','The deficit and the debt'],b:['La France dépense plus qu’elle ne gagne : chaque année de déficit s’ajoute à une dette de plus de 115 % du PIB. Au-dessus de <b>3 % de déficit</b>, Bruxelles vous rappelle à l’ordre ; plus la dette monte, plus les intérêts mangent le budget et plus les marchés s’inquiètent, jusqu’à une crise de la dette.','France spends more than it earns: every year of deficit adds to a debt above 115% of GDP. Above a <b>3% deficit</b>, Brussels calls you to order; the higher the debt, the more interest eats the budget and the more markets worry, up to a debt crisis.']},
+  {s:'.bsl-grid',p:'r',t:['Les curseurs','The sliders'],b:['Chaque ligne se règle en % de son montant au budget précédent. Couper les services fâche les électeurs et peut déclencher des manifestations ; augmenter les impôts aussi. Les effets se font sentir sur environ un an.','Each line moves as a % of last budget’s amount. Cutting services angers voters and can spark protests; so does raising taxes. The effects build up over about a year.']},
+  {s:()=>tcard('.tk-stack')||tq('.tk-party'),p:'l',t:['Les exigences des groupes','What the groups want'],b:['Vos partenaires et les groupes dont vous avez besoin posent leurs conditions. Satisfaire leurs demandes rend le vote du budget plus sûr.','Your partners and the groups you need set their conditions. Meeting their demands makes the budget vote safer.']},
+  {s:()=>tq('[data-budvote]'),p:'t',t:['Faire adopter le budget','Passing the budget'],b:['Mettez le budget aux voix, ou passez-le par le <b>49.3</b> au prix d’une motion de censure. Sans budget, le trimestre ne peut pas se terminer.','Put the budget to a vote, or force it through with <b>49.3</b> at the price of a censure motion. Without a budget the quarter cannot end.']}],
+ law:[
+  {s:'.bill-paper',p:'r',t:['Les lois en vigueur','The laws in force'],b:['Le Code des retraites et le Code du travail tels qu’ils s’appliquent aujourd’hui, avec le calendrier de la réforme de 2023. Ce sont des sujets explosifs.','The Pensions Code and the Labour Code as they stand today, including the 2023 reform timetable. These are explosive issues.']},
+  {s:'.cx-sc',p:'b',t:['Changer une règle','Changing a rule'],b:['Chaque règle montre où se situent les partis et combien de sièges veulent la déplacer. Il faut <b>289 voix</b> pour la modifier ; ajoutez une clause à un brouillon depuis ici.','Each rule shows where the parties stand and how many seats want to move it. Changing it takes <b>289 votes</b>; add a clause to a draft bill from here.']},
+  {s:'.bill-paper',p:'r',t:['Le prix d’une réforme','What a reform costs'],b:['Toucher aux retraites ou au travail déplace le budget des retraites et du chômage. Revenir sur des droits sociaux peut déclencher des grèves.','Touching pensions or labour rules shifts the pensions and jobs budget. Rolling back social rights can trigger strikes.']}],
+ crmap:[
+  {s:()=>tq('.nvcr .crl')&&tq('.nvcr'),p:'b',t:['Les crises','Crises'],b:['Chaque crise a une jauge de <b>maîtrise</b> sur 100 : à 60, elle est sous contrôle. Sans réponse, elle risque de s’aggraver et coûte de la popularité chaque trimestre.','Each crisis has a <b>control</b> gauge out of 100: at 60 it is under control. Left alone it may get worse, and it costs approval every quarter.']},
+  {s:()=>tq('.cr-opts')||tq('.nvcr'),p:'b',t:['Répondre à une crise','Responding to a crisis'],b:['Trois leviers : les textes de réponse (dans l’Assemblée), un ministre envoyé sur le dossier, et le budget du ministère à l’automne. Toute loi utile compte.','Three levers: response bills (in the Assembly), a minister sent onto the file, and the ministry’s budget in the autumn. Any helpful law counts.']}],
+ map:[
+  {s:()=>thc('🏗️'),p:'b',t:['Les grands projets','Major projects'],b:['Choisissez un projet (TGV, EPR, éolien, logements…) dans la couche Projets de la carte, puis son site. Financement, études et entreprises font avancer ses phases jusqu’au lancement, qui crée des emplois sur place.','Pick a project (high-speed rail, nuclear, wind, housing…) in the map’s Projects layer, then its site. Funding, studies and contractors push it through its phases to launch, creating jobs locally.']},
+  {s:'.min-side',p:'l',t:['Vos ministres','Your ministers'],b:['Glissez un ministre sur une crise, un projet ou une région pour une tournée. Un ministre absent néglige un peu son ministère.','Drag a minister onto a crisis, a project or a region for a tour. A minister who is away neglects their ministry a little.']},
+  {s:()=>tq('[data-gml]')&&tq('[data-gml]').parentElement,p:'b',t:['Les couches de la carte','Map layers'],b:['Changez de couche pour voir les effets régionaux de vos lois, les crises, les projets ou la projection en sièges.','Switch layers to see the regional effects of your laws, crises, projects, or the seat projection.']}],
+ pl:[
+  {s:'.plrow',p:'b',t:['Vos engagements','Your pledges'],b:['Chaque promesse a une échéance. Sous 50 % à l’échéance, elle est trahie, et les électeurs s’en souviennent ; tenue, elle vous fait monter.','Every pledge has a deadline. Below 50% when it falls due it is broken, and voters remember; kept, it lifts you.']}],
+ ely:[
+  {s:()=>tq('.ely-top')||tq('#main .card'),p:'b',t:['L’Élysée et Matignon','The Élysée and Matignon'],b:['La popularité du Président et du gouvernement, et le soutien dont ce dernier dispose à l’Assemblée.','The President’s and the government’s approval, and the backing the government has in the Assembly.']},
+  {s:()=>tq('[data-snap]')&&tcard('[data-snap]')||thc('🚪'),p:'t',t:['Les grands pouvoirs','The big powers'],b:['Le Président peut renvoyer le gouvernement ou dissoudre l’Assemblée, mais pas avant <b>12 mois</b> après la dernière dissolution. Le Premier ministre peut démissionner.','The President can dismiss the government or dissolve the Assembly, but not within <b>12 months</b> of the last dissolution. The Prime Minister can resign.']},
+  {s:'.glog',p:'t',t:['Le journal','The log'],b:['Tout ce qui s’est passé, trimestre par trimestre. En cohabitation, le Président et le gouvernement sont de camps opposés : chacun freine l’autre.','Everything that has happened, quarter by quarter. In cohabitation the President and the government are from opposite camps, and each holds the other back.']}],
+ /* one-off events */
+ crisis:[{s:'[data-gpane="map"]',p:'b',t:['Une crise éclate','A crisis breaks out'],b:['Ouvrez la Vue nationale pour voir la crise et y répondre avant qu’elle ne s’aggrave.','Open the National View to see the crisis and respond before it gets worse.']}],
+ budnow:[{s:'[data-gpane="bud"]',p:'b',t:['C’est l’heure du budget','Budget time'],b:['Le budget de l’année doit être adopté avant la fin du trimestre. Surveillez le déficit et la dette.','This year’s budget has to pass before the quarter ends. Keep an eye on the deficit and debt.']}],
+ vote:[{s:()=>tq('[data-gvstance]')&&tcard('[data-gvstance]'),p:'r',t:['Un vote à l’Assemblée','A vote in the Assembly'],b:['Choisissez la consigne de votre groupe : pour, contre ou abstention. Les électeurs jugent chaque vote : soutenir un texte populaire paie, faire tomber un texte impopulaire aussi.','Choose your group’s stance: for, against or abstain. Voters judge every vote: backing a popular bill pays, and so does sinking an unpopular one.']}],
+ cens:[{s:()=>tq('[data-censmy]')&&tcard('[data-censmy]'),p:'r',t:['Une motion de censure','A censure motion'],b:['Si <b>289 députés</b> votent la censure, le gouvernement tombe. Les députés frondeurs de la majorité comptent : la cohésion et la colère des partenaires pèsent.','If <b>289 MPs</b> vote for censure, the government falls. Rebels in your own camp count: cohesion and your partners’ anger matter.']}]};
+let TIP=null,tipMem=null;
+function tipLoad(){if(tipMem)return tipMem;try{tipMem=JSON.parse(localStorage.getItem('frsim_tips')||'{}')}catch(e){tipMem={}}tipMem.seen=tipMem.seen||{};return tipMem}
+function tipSave(){try{localStorage.setItem('frsim_tips',JSON.stringify(tipMem))}catch(e){}}
+/* which tip sets apply right now, one-off events first */
+function tipKeys(){const ph=SIM.phase,G=SIM.G,K=[];if(!ph)return K;
+ if(ph==='gov'&&G){const me=SIM.me,inG=G.gov&&G.gov.includes(me),c=ctrl();
+  if(G.vote&&!G.vote.done&&G.vote.kind==='cens')K.push('cens');else if(G.vote&&!G.vote.done&&G.vote.kind==='bill')K.push('vote');
+  K.push('gov');
+  if(c&&typeof budgetDue==='function'&&budgetDue(G)&&st.gtab!=='bud')K.push('budnow');
+  if((G.cr||[]).length&&st.gtab!=='map')K.push('crisis');const t=st.gtab||'asm';if(t==='map'&&(G.cr||[]).length)K.push('crmap');K.push(t==='asm'?(inG||c?'asm':'asmopp'):t)}
+ else if(ph==='form')K.push('form');
+ else if(ph==='plat')K.push('plat');
+ else if(ph==='pacts')K.push(PRES()?'rallies':'pacts');
+ else if(ph==='r1'&&st.tab==='map')K.push('camp');
+ else if(ph==='r2c'&&st.tab==='map')K.push('r2c');
+ else if(ph==='n1'&&st.tab==='night')K.push('n1');
+ else if(ph==='r2w')K.push('wd');
+ else if(ph==='ral')K.push('ral');
+ else if(ph==='end'&&!PRES())K.push('res');
+ return K}
+const tipEl=d=>{try{const e=typeof d.s==='function'?d.s():tq(d.s);return e&&e.getClientRects().length?e:null}catch(e){return null}};
+const tipBusy=()=>!!document.querySelector('#startscreen,#crpop,#n49pop,#bpvpop,.eqpop')||['dbmodal','respmodal'].some(i=>{const e=document.getElementById(i);return e&&e.children.length&&e.getClientRects().length});
+function tipSync(force){const M=tipLoad();tipTogSync();
+ if(TIP&&!tipKeys().includes(TIP.key))tipClose();
+ if(TIP&&tipBusy()){document.querySelectorAll('.tp-card,.tp-ring').forEach(e=>e.remove());return}
+ if(TIP){tipDraw(false);return}
+ if(M.off&&!force)return;if(tipBusy())return;
+ for(const k of tipKeys()){if(M.seen[k]&&!force)continue;const steps=(TIPS[k]||[]).filter(tipEl);if(!steps.length)continue;TIP={key:k,steps,i:0};tipDraw(true);return}}
+function tipClose(){TIP=null;document.querySelectorAll('.tp-card,.tp-ring').forEach(e=>e.remove())}
+function tipDone(){if(TIP){tipLoad().seen[TIP.key]=1;tipSave()}tipClose();setTimeout(()=>tipSync(),0)}
+function tipDraw(scroll){if(!TIP)return;const d=TIP.steps[TIP.i],el=tipEl(d);if(!el){if(TIP.i<TIP.steps.length-1){TIP.i++;return tipDraw(scroll)}return tipDone()}
+ if(scroll){const r0=el.getBoundingClientRect();if(r0.top<70||r0.bottom>innerHeight-40)el.scrollIntoView({block:r0.height>innerHeight*.6?'start':'center'})}
+ const r=el.getBoundingClientRect(),sx=scrollX,sy=scrollY,pad=6,n=TIP.steps.length,i=TIP.i,vw=document.documentElement.clientWidth,cw=Math.min(330,vw-20);
+ let ring=document.querySelector('.tp-ring');if(!ring){ring=document.createElement('div');ring.className='tp-ring';document.body.appendChild(ring)}
+ Object.assign(ring.style,{left:r.left+sx-pad+'px',top:r.top+sy-pad+'px',width:r.width+2*pad+'px',height:Math.min(r.height,4000)+2*pad+'px'});
+ let c=document.querySelector('.tp-card');if(!c){c=document.createElement('div');c.className='tp-card';c.setAttribute('role','dialog');document.body.appendChild(c)}
+ c.innerHTML=`<div class="tp-k"><span>${x('Prise en main','Getting started')}</span><span>${i+1} / ${n}</span></div><h4>${x(d.t[0],d.t[1])}</h4><p>${x(d.b[0],d.b[1])}</p><div class="tp-f"><div class="tp-dots">${Array.from({length:n},(_,j)=>`<i class="${j===i?'on':''}"></i>`).join('')}</div><button data-tipx="skip">${x('Passer','Skip tips')}</button>${i>0?`<button data-tipx="back">${x('Retour','Back')}</button>`:''}<button class="go" data-tipx="next">${i===n-1?x('Compris','Got it'):x('Suivant','Next')}</button></div><button class="tp-off" data-tipx="off">${x('Ne plus afficher les conseils','Turn tips off')}</button>`;
+ c.style.width=cw+'px';const ch=c.offsetHeight,vh=innerHeight;
+ /* preferred side first, then the others, keeping the card on screen */
+ const at={r:[r.right+18,r.top],l:[r.left-cw-18,r.top],b:[r.left,r.bottom+18],t:[r.left,r.top-ch-18]},fits=([L,T])=>L>=6&&L+cw<=vw-6&&T>=6&&T+ch<=vh-6;
+ /* keep the main buttons of the screen uncovered when possible */
+ const keyB=[...document.querySelectorAll('#main .act,#main [data-next],#main [data-startgov],#main [data-afterpres],#main [data-endq],#main [data-wddone],#main [data-begin],#main [data-pfgo],#main [data-presr2],#main [data-nightdone]')].filter(e=>e!==el&&!el.contains(e)).map(e=>e.getBoundingClientRect()).filter(q=>q.width&&q.bottom>0&&q.top<vh);
+ const clear=([L,T])=>!keyB.some(q=>L<q.right&&L+cw>q.left&&T<q.bottom&&T+ch>q.top);
+ at.in=[Math.min(Math.max(6,r.right-cw-16),vw-cw-6),Math.min(Math.max(70,r.bottom-ch-16),vh-ch-6)];
+ let side=[d.p,'r','l','b','t'].find(s=>fits(at[s])&&clear(at[s]))||(r.width>cw+40&&r.height>ch+40&&clear(at.in)?'in':null)||[d.p,'r','l','b','t'].find(s=>fits(at[s]))||'in';
+ let [L,T]=at[side];L=Math.max(6,Math.min(L,vw-cw-6));T=Math.max(6,Math.min(T,vh-ch-6));c.className='tp-card '+side;c.style.left=L+sx+'px';c.style.top=T+sy+'px'}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tipx],[data-tiphelp]');if(!b)return;
+ if(b.hasAttribute('data-tiphelp')){tipClose();const ks=tipKeys().filter(k=>(TIPS[k]||[]).some(tipEl));const k=ks[ks.length-1];if(!k)return;const steps=TIPS[k].filter(tipEl);TIP={key:k,steps,i:0};tipDraw(true);return}
+ const a=b.dataset.tipx;if(!TIP)return;
+ if(a==='next'){if(TIP.i<TIP.steps.length-1){TIP.i++;tipDraw(true)}else tipDone()}else if(a==='back'){if(TIP.i>0){TIP.i--;tipDraw(true)}}else if(a==='skip')tipDone();else if(a==='off'){tipLoad().off=true;tipSave();tipDone();render()}});
+addEventListener('resize',()=>{if(TIP)tipDraw(false)});
+
+/* first-term tour (Logan 2026-10-22): until every governing tab and the Draft Bills have been opened once, a strip lists them,
+   unvisited tabs pulse with "New", and End the quarter stays locked. Done once per browser; "Turn tips off" skips it. */
+function tourOn(){const M=tipLoad();return SIM.phase==='gov'&&!!SIM.G&&!M.off&&!M.tourDone}
+function tourKeys(){return GT.map(t=>t[0]).concat(['dr'])}
+/* the Draft Bills are closed while the player's budget is due: they then don't hold up the quarter */
+function tourNeed(){return tourKeys().filter(k=>k!=='dr'||st.drOK)}
+function tourSee(k){if(!tourOn()||!k)return;const M=tipLoad();M.tour=M.tour||{};if(M.tour[k])return;M.tour[k]=1;if(tourKeys().every(z=>M.tour[z]))M.tourDone=1;tipSave();if(k==='dr'||M.tourDone)setTimeout(()=>render(),0)}
+function tourLeft(){if(!tourOn())return 0;const M=tipLoad(),T=M.tour||{};return tourNeed().filter(k=>!T[k]).length}
+function tourLabel(k){if(k==='dr')return '✏️ '+x('Brouillons','Draft Bills');const t=GT.find(z=>z[0]===k);return t[1]+' '+x(t[2],t[3])}
+function tourHTML(){if(!tourOn())return '';const T=tipLoad().tour||{},K=tourKeys(),n=K.filter(k=>T[k]).length;
+ return `<div class="tour"><div><b class="h">${x('Premier trimestre : faites le tour','Your first quarter: look around')}</b><div class="n">${x('Ouvrez chaque onglet et les brouillons de lois avant de finir le trimestre.','Open each tab and the Draft Bills before you end the quarter.')}</div></div><ul>${K.map(k=>`<li class="${T[k]?'ok':''}">${k==='dr'&&!st.drOK&&!T[k]?`<button disabled title="${x('Disponibles après le vote du budget','Available once the budget is voted')}">${tourLabel(k)} · ${x('après le budget','after the budget')}</button>`:k==='dr'?`<button data-tourdr>${T[k]?'✓ ':''}${tourLabel(k)}</button>`:`<button data-gpane="${k}">${T[k]?'✓ ':''}${tourLabel(k)}</button>`}</li>`).join('')}</ul><div class="bar"><i style="width:${n/K.length*100}%"></i></div><span class="n"><b>${n} / ${K.length}</b></span></div>`}
+function tourTabs(h){if(!tourOn())return h;const T=tipLoad().tour||{};GT.forEach(t=>{if(!T[t[0]])h=h.replace(`data-gpane="${t[0]}">`,`data-gpane="${t[0]}" data-tnew="${x('Nouveau','New')}">`)});return h}
+document.addEventListener('click',e=>{const a=e.target.closest&&e.target.closest('[data-tourdr]');if(!a)return;e.stopPropagation();st.gtab='asm';st.bst='dr';render();const b=document.querySelector('.bst');if(b)b.scrollIntoView({block:'start'})},true);
+
+/* tips on/off button (Logan 2026-10-23): on the start screen and in the header; on by default, switching back on replays tips from the start */
+function tipTogBtn(){const on=!tipLoad().off;return `<button class="seg tiptog ${on?'on':''}" data-tiptog aria-pressed="${on}" title="${x('Conseils du tutoriel','Tutorial tips')}">💡 ${on?x('Conseils activés','Tips on'):x('Conseils désactivés','Tips off')}</button>`}
+function tipTogSync(){const e=document.getElementById('tiptog');if(e)e.innerHTML=tipTogBtn()}
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('[data-tiptog]');if(!b)return;e.stopPropagation();const M=tipLoad();M.off=!M.off;if(!M.off){M.seen={};M.tourDone=0;M.tour={}}tipSave();tipClose();
+ if(document.getElementById('startscreen'))drawStart();if(SIM.phase)render();tipTogSync()},true);
+
 /* ===== Views ===== */
 const f1=v=>(v*100).toFixed(1).replace('.',lang==='fr'?',':'.');
 function bar(k,v,mx,mark,pv,nm){return `<div class="bar"><span class="bl">${plogo(allyLogo(k,nm),allyLogo(k,nm)==='ens'?26:20)}</span><span class="n" style="color:${pt(k)}${nm?';width:64px;white-space:nowrap':''}">${nm||pn(k)}</span><span class="t"><i style="width:${Math.min(100,v/mx*100)}%;background:${pc(k)}"></i>${mark!=null?`<u style="left:${Math.min(100,mark/mx*100)}%"></u>`:''}</span><span class="v">${pct(v)}</span>${pv!=null?dTick(v-pv):''}</div>`}
@@ -4480,33 +4883,37 @@ function tabsFor(){const ph=SIM.phase;if(ph==='plat')return [['build',x('Program
  if(ph==='r2w')return [['wd',x('Désistements','Withdrawals')],['map',x('Carte du 1er tour','First-round map')]];
  if(ph==='r2c')return [['map',x('Carte','Map')]];
  if(ph==='end')return [['res',x('Résultats','Results')],['map',x('Carte','Map')]];return []}
-function header(){const ph=SIM.phase;if(SIM.G&&(ph==='form'||ph==='gov'||ph==='pdue'))return govHeader();$('#brand').textContent=PRES()?x('France · Élection présidentielle','France · Presidential election'):x('France · Assemblée nationale','France · National Assembly');
+function header(){const ph=SIM.phase;if(SIM.G&&(ph==='form'||ph==='gov'||ph==='pdue'))return govHeader();$('#brand').textContent=PRES()?x('France · Élection présidentielle','France · Presidential election'):x('L’Assemblée nationale','L’Assemblée nationale');
  const dl=ph==='pacts'?x('Avant la campagne','Before the campaign'):ph==='r1'?dateOf(SIM.day):ph==='r2c'?dateOf(D1+SIM.r2day):ph==='n1'?R1DATE():ph==='n2'||ph==='end'?R2DATE():R1DATE();
  const dd=ph==='plat'?x('Programme','Platform'):ph==='r1'?x('Jour ','Day ')+SIM.day+' / '+D1:ph==='r2c'?x('Entre-deux-tours ','Run-off week ')+SIM.r2day+' / '+D2:ph==='pacts'?x('Négociations','Negotiations'):ph==='n1'?x('1er tour','First round'):ph==='r2w'?x('Désistements','Withdrawals'):ph==='ral'?x('Entre-deux-tours','Between the rounds'):x('2nd tour','Second round');
  $('#h-date').textContent=dl;$('#h-day').textContent=dd;document.querySelectorAll('header .stat').forEach(e=>e.style.display='');$('#h-fundsl').textContent=x('Fonds','Funds');$('#h-funds').textContent=SIM.funds+' k€';$('#h-appl').textContent=P[SIM.me].n;$('#h-share').textContent=pct(natShares(true)[SIM.me]);
  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));if(typeof sndBtn==='function')sndBtn();
  const T=tabsFor();if(!T.some(t=>t[0]===st.tab))st.tab=T[0][0];
  $('#nav').innerHTML=T.map(t=>`<button role="tab" data-t="${t[0]}" aria-selected="${st.tab===t[0]}">${t[1]}${t[0]==='map'&&SIM.pend.length&&ACTIVE()?`<span class="bub">${SIM.pend.length}</span>`:''}</button>`).join('')}
-function render(){if(!SIM.phase){return}document.documentElement.lang=lang;header();
+function render(){if(!SIM.phase){return}document.documentElement.lang=lang;document.body.classList.toggle('pre-ph',SIM.phase==='plat'||SIM.phase==='pacts');document.body.classList.toggle('pre-one',SIM.phase==='plat');header();
  const V={build:vBuild,pacts:PRES()?vRallies:vPacts,map:vMap,plat:vPlat,polls:vPolls,night:vNight,wd:vWd,res:PRES()?vResP:vRes,ral:vRal,form:vForm,gov:vGov}[st.tab]||vMap;$('#main').innerHTML=(SIM.why&&(SIM.phase==='pacts'||SIM.phase==='plat')?`<div class="card alert"><b>${x('Dissolution','Dissolution')}</b> · ${SIM.why}</div>`:'')+V();
- debateModal();respModal();crPopSync();n49Sync();if(st.tab==='night')drawNight()}
+ debateModal();respModal();crPopSync();n49Sync();bpvSync();if(st.tab==='night')drawNight();try{tipSync()}catch(e){console.log('tip',e.message)}}
 /* ===== pacts ===== */
 /* the two big fronts get their names: Nouveau Front populaire on the left, Ensemble pour la République in the centre */
 function pactName(p){if(p.type!=='union')return '';const L=p.m.filter(k=>k<=2).length,E=p.m.filter(isE).length;return L>=2?'Nouveau Front populaire':E>=2?'Ensemble pour la République':''}
 function pactLine(p){const nm=pactName(p);return (nm?`<b>${nm}</b> `:'')+p.m.map(k=>chipP(k)).join(' + ')+` <span class="tag" style="color:var(--mute)">${p.type==='union'?x('candidatures communes','joint candidates'):x('désistement réciproque','mutual withdrawal')}</span>`+(p.type==='union'?` <span class="note">${p.m.map(k=>pn(k)+' '+Object.values(p.alloc).filter(v=>v===k).length).join(' · ')} ${x('circ.','seats')}</span>`:'')}
+/* pre-campaign screens (platform, pacts/rallies) share the start screen's banner and a step tracker (Logan picked option B, 2026-10-23) */
+function preHero(){const me=SIM.me,plat=SIM.phase==='plat',t=plat?x('Votre programme','Your platform'):PRES()?x('Ralliements','Rallies'):x('Accords électoraux','Electoral pacts');
+ return `<div class="pre-hero"><div><p class="pre-k">${x('Cinquième République Française','Fifth French Republic')}</p><h1>${t}</h1><p class="pre-sub">${PRES()?x('Élection présidentielle','Presidential election'):x('Élections législatives','Legislative election')}</p></div>
+ </div>`}
 function vPacts(){const me=SIM.me,s=projSeats(),mine=SIM.pacts.filter(p=>p.m.includes(me)),others=SIM.pacts.filter(p=>!p.m.includes(me)),pre=SIM.phase==='pacts';
  const cand=ORD.filter(k=>k!==me&&k!==7);
  const row=k=>{const ok=PACTOK(me,k),inU=mine.some(p=>p.m.includes(k)),off=SIM.offers.find(o=>o.k===k),tried=(SIM.tried||{})[k];
-  return `<tr><td>${chipP(k)}<div class="note">${pfull(k)}</div></td><td class="r">${pct((SIM.t0||TG0)[k])}</td><td class="r">${s[k]}</td><td>${inU?`<b style="color:var(--ok)">${x('Accord conclu','Deal done')}</b>`:!ok?`<span class="note">${x('Aucun accord possible','No deal possible')}</span>`:tried?`<span class="note">${tried}</span>`:pre?`${off?`<div class="note" style="margin-bottom:4px">📨 ${x(P[k].n+' vous propose un accord.',P[k].n+' is offering you a deal.')}</div>`:''}<div class="layers" style="margin:0">${UNIONOK(SIM.me,k)?`<button data-pact="${k}" data-pt="union">${x('Candidatures communes','Joint candidates')}</button>`:''}<button data-pact="${k}" data-pt="desist">${x('Désistement réciproque','Mutual withdrawal')}</button></div>`:'—'}</td></tr>`};
- return `<div class="grid"><div>
+  return `<tr style="--party:${pc(k)}"><td>${pre&&LOGO[k]?`<span class="pre-lg"><img src="${LOGO[k]}" alt=""></span>`:''}${chipP(k)}<div class="note">${pfull(k)}</div></td><td class="r">${pct((SIM.t0||TG0)[k])}</td><td class="r">${s[k]}</td><td>${inU?`<b style="color:var(--ok)">${x('Accord conclu','Deal done')}</b>`:!ok?`<span class="note">${x('Aucun accord possible','No deal possible')}</span>`:tried?`<span class="note">${tried}</span>`:pre?`${off?`<div class="note" style="margin-bottom:4px">📨 ${x(P[k].n+' vous propose un accord.',P[k].n+' is offering you a deal.')}</div>`:''}<div class="layers" style="margin:0">${UNIONOK(SIM.me,k)?`<button data-pact="${k}" data-pt="union">${x('Candidatures communes','Joint candidates')}</button>`:''}<button data-pact="${k}" data-pt="desist">${x('Désistement réciproque','Mutual withdrawal')}</button></div>`:'—'}</td></tr>`};
+ return `${pre?preHero():''}<div class="grid ${pre?'pre':''}"><div>
  <div class="card"><h2>${x('Accords électoraux','Electoral pacts')}</h2><p>${x('Avant le dépôt des candidatures, les partis négocient. Une <b>union</b> présente un seul candidat par circonscription (les circonscriptions sont partagées selon le poids de chacun). Un <b>désistement réciproque</b> garde des candidats séparés au 1er tour, mais le moins bien placé se retire au second.','Before nominations close, parties negotiate. A <b>union</b> fields one candidate per seat (seats are shared out by strength). A <b>mutual withdrawal</b> keeps separate candidates in the first round, but the weaker one stands down in the run-off.')}</p>
  <p class="note">${x('Les partis acceptent quand l’accord leur rapporte des sièges et qu’ils vous sont proches. Une seule tentative par parti.','Parties accept when the deal gains them seats and they are close to you. One attempt per party.')}</p>
  <table class="t"><thead><tr><th>${x('Parti','Party')}</th><th class="r">${x('Intentions','Polling')}</th><th class="r">${x('Sièges proj.','Proj. seats')}</th><th>${x('Proposition','Offer')}</th></tr></thead><tbody>${cand.map(row).join('')}</tbody></table>
- ${pre?`<button class="act vbtn" data-begin style="margin-top:14px;width:100%"><b>${x('Déposer les candidatures et lancer la campagne','File nominations and start the campaign')}</b><small>${x('Les accords seront figés. Premier tour le ','Pacts are then locked. First round on ')+R1DATE()}</small></button>`:''}</div>
+ ${pre?`<div class="pre-foot"><span>${x('Les accords seront figés. Premier tour le ','Pacts are then locked. First round on ')+R1DATE()}</span><button class="pre-go" data-begin>${x('Déposer les candidatures','File nominations')} →</button></div>`:''}</div>
  <div class="card"><h3>${x('Accords entre les autres partis','Deals between other parties')}</h3>${others.length?others.map(p=>`<div style="margin:6px 0">${pactLine(p)}</div>`).join(''):`<p class="note">${x('Aucun pour l’instant : chacun part seul.','None so far: everyone runs alone.')}</p>`}
  ${mine.length?`<h3 style="margin-top:12px">${x('Vos accords','Your deals')}</h3>${mine.map(p=>`<div style="margin:6px 0">${pactLine(p)}</div>`).join('')}`:''}</div></div>
  <div>${seatCard(s,null,x('Projection si l’on votait aujourd’hui','Projection if the vote were today'))}</div></div>`}
-function seatCard(s,r,title){return `<div class="card"><h3>${title}</h3>${hemicycle(s,{label:x('Majorité : ','Majority: ')+MAJ})}${seatLegend(s,r&&r.lo,r&&r.hi)}<p class="note">${x('Majorité absolue : 289 sièges sur 577.','Absolute majority: 289 of 577 seats.')}</p></div>`}
+function seatCard(s,r,title){return `<div class="card"><h3>${title}</h3>${hemicycle(s,{label:x('Majorité : ','Majority: ')+MAJ})}${seatLegend(s,r&&r.lo,r&&r.hi)}<p class="note"></p></div>`}
 /* ===== campaign map view ===== */
 function vMap(){const ph=SIM.phase;if(ph==='pacts'||ph==='r1')projSeats();else if(ph==='r2c')r2Projection();
  const layers=PRES()?(ph==='r2c'?[['proj',x('Le duel : qui mène','The duel: who leads')],['r1',x('1er tour : en tête','First round: leader')],['share',x('Score au 1er tour','First-round share')]]:ph==='ral'?[['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par candidat','Candidate vote share')]]:[['r1',x('En tête','Leader')],['share',x('Score par candidat','Candidate strength')]]):ph==='end'?[['res',x('Élus','Winners')],['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par parti','Party strength')],['y24',x('Élus 2024','2024 winners')]]:ph==='r2w'?[['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par parti','Party strength')],['y24','2024']]:[['proj',x('Vainqueur','Winner')],['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par parti','Party strength')],['marg',x('Marge','Margin')],['y24',x('Élus 2024','2024 winners')]];
@@ -4526,7 +4933,7 @@ function actionsHTML(){const d=st.sel!=null?C[st.sel]:null,late=SIM.phase==='r1'
  return `<div class="card"><h3>🗳️ ${x('Actions de campagne','Campaign actions')}</h3>${nat}${loc}</div>`}
 /* the platform, as the "campaign trail" card of the action column */
 function platCard(){const me=SIM.me,c=platCost(me)+(SIM.costAdj||0),cr=credOf(me),top=salTheme();
- return `<div class="card"><h3>📜 ${x('Programme','Platform')}</h3>${pfSummary()}<p class="note">${x('Chaque annonce ajoute une mesure chiffrée. Un programme trop coûteux entame votre crédibilité : vos annonces portent moins.','Each announcement adds a costed measure. A platform that costs too much dents your credibility: your announcements land less.')}</p>
+ return `<div class="card"><h3>📜 ${x('Programme','Platform')}</h3>${pfSummary()}
  <div class="tick"><b>🔥 ${x('Sujet du moment : ','Top issue: ')}${x(TH[top][0],TH[top][1])}</b><br><span class="note">${x('Les électeurs font le plus confiance à ','Voters trust ')}${P[OWN.map((o,k)=>[o[top],k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0])[0][1]].n}${x('.',' most on it.')}</span></div>
  <p style="margin:8px 0 4px"><b>${SIM.plat.length}</b> ${x('mesure(s)','measure(s)')} · <b>${c>0?'+':''}${c} ${x('Md€/an','bn€/yr')}</b> · ${x('crédibilité','credibility')} <b>${Math.round(cr*100)} %</b></p>
  ${SIM.plat.length?SIM.plat.map(m=>`<div class="note">• ${mName(m)} <span style="opacity:.8">(${MEAS[m][4]>0?'+':''}${MEAS[m][4]} ${x('Md€','bn€')})</span></div>`).join(''):`<p class="note">${x('Aucune mesure : utilisez « Annonce de programme ».','No measures yet: use “Policy announcement”.')}</p>`}
@@ -4760,14 +5167,17 @@ const AUTOKEY='frsim_auto6'/* new key 2026-10-20: measure list changed, older sa
 const MODES=[['leg','Législatives anticipées','Snap legislative election','Le président dissout l’Assemblée. Trois semaines de campagne, deux tours, 577 circonscriptions.','The President dissolves the Assembly. Three weeks of campaigning, two rounds, 577 seats.',1],['pres','Présidentielle 2027','2027 presidential election','Quatre semaines de course à l’Élysée : ralliements, vote utile, débat de l’entre-deux-tours et duel final.','Four weeks of racing for the Élysée: rallies, tactical voting, the run-off debate and the final duel.',1]];
 let ss={mode:'leg',party:null,theme:null,diff:'normal'};try{const d=localStorage.getItem('frsim_diff');if(['easy','normal','hard'].includes(d))ss.diff=d}catch(e){}
 function drawStart(){const el=$('#startscreen');if(!el)return;let has=false;try{has=!!localStorage.getItem(AUTOKEY)}catch(e){}
- el.innerHTML=`<div class="st-hero"><div class="st-tools"><div class="seg"><button data-lang="fr" aria-pressed="${lang==='fr'}">FR</button><button data-lang="en" aria-pressed="${lang==='en'}">EN</button></div><button class="seg" data-theme style="padding:6px 12px;background:none" aria-label="Thème / Theme">◐</button></div>
- <p style="margin:0 0 8px;letter-spacing:.14em;font-weight:700;font-size:13px">${x('SIMULATEUR ÉLECTORAL','ELECTION SIMULATOR')}</p><h1>${x('ÉLECTIONS<br>EN FRANCE','FRENCH<br>ELECTIONS')}</h1>
- ${has?`<button class="gobtn" data-cont style="background:#fff;color:#14307a;margin-top:6px">${x('Continuer la partie sauvegardée','Continue saved game')}</button>`:''}</div>
- <div class="st-body"><h2>${x('Choisissez l’élection','Choose the election')}</h2><div class="mgrid">${MODES.map(m=>`<button class="mode-choice ${ss.mode===m[0]?'selected':''}" data-mode="${m[0]}" ${m[5]?'':'disabled'}><b>${x(m[1],m[2])}</b></button>`).join('')}</div>
- <h2>${x('Choisissez votre parti','Choose your party')}</h2><div class="pgrid">${ORD.map(k=>[P[k],k]).map(([p,k])=>p.pl?`<button class="party-choice ${ss.party===k?'selected':''}" style="--party:${pc(k)}" data-sp="${k}">${LOGO[k]?`<span class="pc-logo"><img src="${LOGO[k]}" alt="${p.n}"></span>`:''}<b>${p.n}</b><small>${pfull(k)}</small><small>${x('Intentions : ','Polling: ')}${pct((ss.mode==='pres'?TGP:TG0)[k],0)} · ${x('sièges 2024 : ','2024 seats: ')}${SEATS24[k]}</small></button>`:'').join('')}</div>
- <h2>${x('Votre thème central','Your central issue')}</h2><div class="layers">${THm((t,j)=>`<button class="${ss.theme===j?'on':''}" data-sth="${j}">${x(t[0],t[1])}</button>`).join('')}</div>
- <h2>${x('Difficulté','Difficulty')}</h2><div class="layers">${[['easy','Facile','Easy'],['normal','Normal','Normal'],['hard','Difficile','Hard']].map(d=>`<button class="${ss.diff===d[0]?'on':''}" data-sdiff="${d[0]}">${x(d[1],d[2])}</button>`).join('')}</div>
- <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="gobtn" data-go ${ss.party==null||ss.theme==null?'disabled':''}>${ss.mode==='pres'?x('ENTRER EN CAMPAGNE →','ENTER THE RACE →'):x('NÉGOCIER LES ALLIANCES →','NEGOTIATE ALLIANCES →')}</button><input id="seedin" type="number" placeholder="${x('Graine (facultatif)','Seed (optional)')}" style="margin-top:22px;padding:10px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--ink);width:11em"></div></div>`}
+ const slips=ORD.map(k=>[P[k],k]).filter(([p])=>p.pl).map(([p,k])=>{const v=(ss.mode==='pres'?TGP:TG0)[k];return `<button class="sx-slip ${ss.party===k?'on':''}" style="--party:${pc(k)};--w:${Math.min(100,v/.4*100).toFixed(0)}%" data-sp="${k}" aria-pressed="${ss.party===k}">${LOGO[k]?`<span class="sx-logo"><img src="${LOGO[k]}" alt=""></span>`:''}<b>${p.n}</b><span class="sx-full">${pfull(k)}</span><span class="sx-stat"><em>${pct(v,0)}</em>${x('intentions','polling')}</span><span class="sx-bar"><i></i></span><span class="sx-seat">${x('Sièges 2024 ','2024 seats ')}${SEATS24[k]}</span></button>`}).join('');
+ el.innerHTML=`<div class="st-hero"><div class="st-tools"><div class="seg"><button data-lang="fr" aria-pressed="${lang==='fr'}">FR</button><button data-lang="en" aria-pressed="${lang==='en'}">EN</button></div><button class="seg" data-theme style="padding:6px 12px;background:none" aria-label="Thème / Theme">◐</button>${tipTogBtn()}</div>
+ <p style="margin:0 0 8px;letter-spacing:.14em;font-weight:700;font-size:13px">${x('Cinquième République Française','Fifth French Republic')}</p><h1>${x('LE CHOIX<br>FRANÇAIS','THE FRENCH<br>CHOICE')}</h1>
+ ${has?`<button class="gobtn" data-cont style="background:#fff;color:#14307a">${x('Continuer la partie sauvegardée','Continue saved game')}</button>`:''}</div>
+ <div class="sx">
+ <div class="sx-row"><div class="sx-lab">${x('Élection','Election')}</div><div><div class="sx-seg">${MODES.map(m=>`<button class="${ss.mode===m[0]?'on':''}" data-mode="${m[0]}" ${m[5]?'':'disabled'}>${x(m[1],m[2])}</button>`).join('')}</div></div></div>
+ <div class="sx-row"><div class="sx-lab">${x('Votre parti','Your party')}</div><div class="sx-slips ${ss.party!=null?'has-sel':''}">${slips}</div></div>
+ <div class="sx-row"><div class="sx-lab">${x('Thème central','Central issue')}</div><div class="sx-chips">${THm((t,j)=>`<button class="${ss.theme===j?'on':''}" data-sth="${j}">${x(t[0],t[1])}</button>`).join('')}</div></div>
+ <div class="sx-row sx-foot"><div class="sx-lab" style="padding-top:0">${x('Difficulté','Difficulty')}</div><div class="sx-seg">${[['easy','Facile','Easy'],['normal','Normal','Normal'],['hard','Difficile','Hard']].map(d=>`<button class="${ss.diff===d[0]?'on':''}" data-sdiff="${d[0]}">${x(d[1],d[2])}</button>`).join('')}</div>
+ <div class="sx-end"><span class="sx-hint" ${ss.party==null||ss.theme==null?'':'hidden'}>${x('Choisissez un parti et un thème pour continuer.','Pick a party and a central issue to continue.')}</span><button class="sx-go" data-go ${ss.party==null||ss.theme==null?'disabled':''}>${ss.mode==='pres'?x('Entrer en campagne','Enter the race'):x('Négocier les alliances','Negotiate alliances')}</button></div></div></div>`}
+function startSync(){const r=$('#startscreen');if(!r)return;r.querySelectorAll('[data-sp]').forEach(b=>{const on=+b.dataset.sp===ss.party;b.classList.toggle('on',on);b.setAttribute('aria-pressed',on)});const g=r.querySelector('.sx-slips');if(g)g.classList.toggle('has-sel',ss.party!=null);r.querySelectorAll('[data-sth]').forEach(b=>b.classList.toggle('on',+b.dataset.sth===ss.theme));r.querySelectorAll('[data-sdiff]').forEach(b=>b.classList.toggle('on',b.dataset.sdiff===ss.diff));const ok=ss.party!=null&&ss.theme!=null,go=r.querySelector('[data-go]'),h=r.querySelector('.sx-hint');if(go)go.disabled=!ok;if(h)h.hidden=ok}
 function showStart(){let el=$('#startscreen');if(!el){el=document.createElement('section');el.id='startscreen';document.body.appendChild(el)}drawStart()}
 function hideStart(){const el=$('#startscreen');if(el)el.remove()}
 /* ===== save / load ===== */
@@ -4780,8 +5190,8 @@ document.addEventListener('click',ev=>{const t=ev.target.closest('button,[data-r
  if(D.lang){lang=D.lang;try{localStorage.setItem('frsim_lang',lang)}catch(e){}if($('#startscreen'))drawStart();render();return}
  if(D.theme!==undefined&&t.hasAttribute('data-theme')){const r=document.documentElement,dark=isDark();r.dataset.theme=dark?'light':'dark';try{localStorage.setItem('frsim_theme',r.dataset.theme)}catch(e){}if($('#startscreen'))drawStart();render();return}
  /* start screen */
- if(D.mode){ss.mode=D.mode;return drawStart()}if(D.sp){ss.party=+D.sp;return drawStart()}if(D.sth){ss.theme=+D.sth;return drawStart()}if(D.sdiff){ss.diff=D.sdiff;try{localStorage.setItem('frsim_diff',ss.diff)}catch(e){}return drawStart()}
- if(t.hasAttribute('data-go')){if(ss.party==null||ss.theme==null)return;const sd=$('#seedin')&&$('#seedin').value;hideStart();newGame({party:ss.party,theme:ss.theme,diff:ss.diff,mode:ss.mode,seed:sd});return}
+ if(D.mode){ss.mode=D.mode;return drawStart()}if(D.sp){ss.party=+D.sp;return startSync()}if(D.sth){ss.theme=+D.sth;return startSync()}if(D.sdiff){ss.diff=D.sdiff;try{localStorage.setItem('frsim_diff',ss.diff)}catch(e){}return startSync()}
+ if(t.hasAttribute('data-go')){if(ss.party==null||ss.theme==null)return;hideStart();newGame({party:ss.party,theme:ss.theme,diff:ss.diff,mode:ss.mode});return}
  if(t.hasAttribute('data-cont')){if(load()){hideStart();render();if(SIM.night)runNight()}return}
  if(t.hasAttribute('data-newgame')){if(!confirmNew())return;try{localStorage.removeItem(AUTOKEY)}catch(e){}for(const k in SIM)delete SIM[k];$('#main').innerHTML='';showStart();return}
  if(!SIM.phase)return;
@@ -4824,4 +5234,3 @@ document.addEventListener('dragover',e=>{if(e.target.closest&&e.target.closest('
 document.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-mslot]:not([disabled])');if(c&&st.mpick!=null){e.preventDefault();c.click()}});
 
 </script></body></html>
-
