@@ -2169,6 +2169,14 @@ const canDissolve=G=>G.m-G.lastDiss>=12;
 function canResign(G){if(G.pm==null)return{ok:false,why:''};if(G.vote&&!G.vote.done)return{ok:false,why:x('Un vote est en cours.','A vote is under way.')};
  /* the Prime Minister can resign at any time, even right after being appointed (Logan 2026-10-23) */
  return{ok:true}}
+/* a junior partner leaves the government (Logan 2026-10-23): its ministers go and the PM's party fills the posts; it stays on as a no-censure partner or goes into opposition.
+   Walking out of an unpopular government pays off in the polls, out of a popular one it costs */
+function govLeave(G,k,to){if(k===G.pm||!G.gov.includes(k)||(G.vote&&!G.vote.done))return;const unpop=G.appr.pm<UNPOP;
+ G.gov=G.gov.filter(j=>j!==k);G.dem=G.dem.filter(d=>d.k!==k);G.deals=(G.deals||[]).filter(d=>d.k!==k);G.sup=G.sup.filter(j=>j!==k);
+ const min={};for(const s in G.min||{})if(!(MP[G.min[s]]&&MP[G.min[s]][1]===k))min[s]=G.min[s];G.min=autoCab(G,G.gov,G.pm,min);G.cab={};G.gov.forEach(j=>{const n=cabCount(G.min,j);if(n)G.cab[j]=n});
+ if(to==='nc'&&!G.nc.includes(k))G.nc.push(k);G.nc=to==='nc'?G.nc:G.nc.filter(j=>j!==k);
+ G.coh=cl(G.coh-6);G.appr.pm-=1.5;G.vrec=G.vrec||P.map(()=>0);G.vrec[k]+=unpop?.25:-.12;G.rel[G.pm]=cl((G.rel[G.pm]||40)-12);
+ G.log.push({m:G.m,t:'🚪 '+P[k].n+x(' quitte le gouvernement'+(to==='nc'?' mais ne votera pas la censure.':' et passe dans l’opposition.'),' leaves the government'+(to==='nc'?' but will not vote to censure it.':' and goes into opposition.'))})}
 function govResign(G,how){if(!canResign(G).ok)return;const old=G.pm,ai=how==='ai',unpop=G.appr.pm<35;G.resN=(G.resN||0)+1;G.fellQ=G.q;if(unpop)G.dismissed=old;
  G.log.push({m:G.m,t:'🚪 '+x('Le Premier ministre ('+P[old].n+') remet la démission de son gouvernement au président de la République.','The Prime Minister ('+P[old].n+') hands the government’s resignation to the President.')});
  G.appr.pres=clamp(G.appr.pres-1,12,68);G.vrec=G.vrec||P.map(()=>0);G.vrec[old]-=unpop?.05:.12;
@@ -4956,7 +4964,11 @@ function gQBar(G){const N=20,q=Math.max(0,Math.floor((G.m-G.lastDiss)/3)),pq=Mat
  const lab=Array.from({length:N},(_,i)=>{const t=[];if(i%4===0)t.push(`<b>${Math.floor((mo(i)+3)/12)}</b>`);if(mo(i)%12>=9)t.push(`<span title="${x('Budget','Budget')}">💶</span>`);if(i===pq)t.push(`<span class="qtag">🗳️ ${x('Présidentielle','Presidential')}</span>`);if(i===N-1)t.push(`<span class="qtag">🏛️ ${x('Législatives','Legislative')}</span>`);return `<span class="${i===N-1?'r':''}${i%4===3&&i<N-1?' y':''}">${t.join(' ')}</span>`}).join('');
  return `<div class="qbar" role="img" aria-label="${x('Trimestre','Quarter')} ${Math.min(q+1,N)} / ${N}">${Array.from({length:N},(_,i)=>`<i class="${i<q?'d':i===q?'c':''}${i===pq?' p':''}${i%4===3&&i<N-1?' y':''}"></i>`).join('')}</div><div class="qlab" aria-hidden="true">${lab}</div>`}
 const budFailedNow=G=>budgetDue(G)&&(G.bills||[]).some(b=>b.bud&&b.q===G.q&&b.st==='failed');
-function gResign(G){const me=SIM.me;if(G.pm!==me)return'';const r=canResign(G),pr=G.pres===me,cd=canDissolve(G);
+function gLeave(G){const me=SIM.me;if(G.pm===me||!G.gov.includes(me))return'';const busy=G.vote&&!G.vote.done,btn=(a,b,c)=>`<button class="act" data-leave="${a}" style="max-width:320px"><b>${b}</b><small>${c}</small></button>`;
+ const body=busy?`<p class="note">${x('Un vote est en cours.','A vote is under way.')}</p>`:!st.leaveAsk?btn('ask',x('Quitter le gouvernement','Leave the government'),x('Vos ministres démissionnent','Your ministers resign')):
+  `<div style="display:flex;gap:8px;flex-wrap:wrap">${btn('nc',x('Partir sans censurer','Leave but don’t censure'),x('Pacte de non-censure','No-censure pact'))}${btn('opp',x('Passer dans l’opposition','Go into opposition'),x('Libre de voter la censure','Free to vote censure'))}<button class="act" data-leave="no" style="max-width:200px"><b>${x('Annuler','Cancel')}</b></button></div>`;
+ return `<div class="card"><h3>🚪 ${x('Quitter le gouvernement','Leave the government')}</h3><p class="note">${x('Vous êtes partenaire du gouvernement de '+P[G.pm].n+' ('+(G.cab[me]||0)+' ministres). Approbation du gouvernement : ','You are a partner in the '+P[G.pm].n+' government ('+(G.cab[me]||0)+' ministers). Government approval: ')+Math.round(G.appr.pm)} %. ${x('Quitter un gouvernement impopulaire peut payer dans les sondages ; quitter un gouvernement populaire coûte.','Leaving an unpopular government can pay off in the polls; leaving a popular one costs.')}</p>${body}</div>`}
+function gResign(G){const me=SIM.me;if(G.pm!==me)return gLeave(G);const r=canResign(G),pr=G.pres===me,cd=canDissolve(G);
  const btn=(a,b,c)=>`<button class="act" data-resign="${a}" style="max-width:320px"><b>${b}</b><small>${c}</small></button>`;
  const body=!r.ok?`<p class="note">${r.why}</p>`:!st.resAsk?btn('ask',x('Démissionner','Resign'),x('Remettre la démission du gouvernement','Hand in the government’s resignation')):
   `<p class="note">${pr?x('En tant que président, vous choisissez la suite.','As President, you choose what comes next.'):x('Le président '+P[G.pres].n+' nommera un nouveau gouvernement'+(cd?', ou dissoudra l’Assemblée.':'. Une dissolution n’est pas possible avant '+MONTHS(G.lastDiss+12)+'.'),'President '+P[G.pres].n+' will appoint a new government'+(cd?', or dissolve the Assembly.':'. A dissolution is not possible before '+MONTHS(G.lastDiss+12)+'.'))}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${pr?btn('form',x('Démissionner et nommer un nouveau gouvernement','Resign and appoint a new government'),x('Consultations à l’Élysée','Talks at the Élysée'))+(cd?btn('diss',x('Démissionner et dissoudre','Resign and dissolve'),x('Législatives anticipées','Snap election')):''):btn('go',x('Confirmer la démission','Confirm the resignation'),x('Le président décide de la suite','The President decides what comes next'))}<button class="act" data-resign="no" style="max-width:200px"><b>${x('Annuler','Cancel')}</b></button></div>`;
@@ -5114,6 +5126,7 @@ function govClick(t,D){const G=SIM.G;
  if(t.hasAttribute('data-censwhip')){censWhip();return R()}
  if(t.hasAttribute('data-budreset')){if(budOpen(G)){G.bu=G.budBase.bu.slice();G.tx=G.budBase.tx.slice();bxRestore(G,G.budBase)}return R()}
  if(t.hasAttribute('data-endq')){if(tourLeft()){const r=document.querySelector('.tour');if(r){r.scrollIntoView({block:'center'});r.classList.remove('tour-nag');void r.offsetWidth;r.classList.add('tour-nag')}return true}if(!t.hasAttribute('data-eqok')&&st.eqw!==G.q&&eqItems(G).length){st.eqw=G.q;st.eqo=G.q;render();return true}st.eqo=null;endQuarter();return true}
+ if(D.leave){const v=D.leave;if(v==='ask'){st.leaveAsk=1;return R()}st.leaveAsk=0;if(v!=='no')govLeave(G,SIM.me,v);return R()}
  if(D.resign){const v=D.resign;if(v==='ask'){st.resAsk=1;return R()}if(v==='no'){st.resAsk=0;return R()}st.resAsk=0;govResign(SIM.G,v==='go'?null:v);return true}
  if(t.hasAttribute('data-pdismiss')){presDismiss(SIM.G,false);return true}
  if(t.hasAttribute('data-diss')){dissolve(x('le président dissout l’Assemblée','the President dissolves the Assembly'));return true}
