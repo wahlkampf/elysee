@@ -1426,7 +1426,7 @@ function applyAct(k,i,c){const a=ACT[i],o=ps(k),d=c.d,g=c.g,gn=v=>gnk(k,v);let t
   t+=' · '+mName(m)}
  if(i===6){if(k!==SIM.me){o.prep=1;t=x('Préparation du débat','Debate prep')}else{if(c.tg!=null&&!SIM.prepRv.includes(c.tg))SIM.prepRv.push(c.tg);SIM.prep=1;t=x('Préparation du débat : étude de ','Debate prep: studying ')+P[c.tg??0].n}}
  if(i===7){const gg=Math.round(70/(1+.7*(o.fr||0))*(k===SIM.me?1:clamp((SIM.t0||TG0)[k]/.25,.3,1)));o.fr=(o.fr||0)+1;o.funds+=gg;t+=' +'+gg+' k€'}
- if(i===8){const out=OUTLETS[c.tg|0],v=out.tilt[k];bumpNat(k,gn(.016+.016*v));t+=' · '+x(out.f,out.e)+(v<-.2?x(' (accueil hostile)',' (hostile reception)'):'')}
+ if(i===8){const out=OUTLETS[c.tg|0],v=out.tilt[k];o.pr=(o.pr||0)+1;/* the tenth interview says less than the first (Logan 2026-10-23: no free press spam, for the player or the AI) */bumpNat(k,gn((.016+.016*v)/(1+.3*(o.pr-1))));t+=' · '+x(out.f,out.e)+(v<-.2?x(' (accueil hostile)',' (hostile reception)'):'')}
  return t}
 /* presidential run-off with the player knocked out (Logan 2026-10-21): the days still play, and the player campaigns for the finalist they endorsed */
 function presOut(){return PRES()&&r2mode()&&SIM.fin&&!SIM.fin.includes(SIM.me)}
@@ -1455,12 +1455,16 @@ function aiDay(){SIM.rv=[];const sh=natShares(true),r2=r2mode();
   const marg=d=>{if(r2){const p=d.pj2;return p?Math.abs(p.m)+(p.w===k?.02:0):1}const p=d.pj;if(!p)return 1;const inQ=p.cl&&p.cl.q.includes(k);return p.w===k?p.m:inQ?Math.abs(p.m)*.8:.3+rnd()*.3};
   while(o.ap>0&&guard++<6){const opts=[],cons=(i,sc,c)=>{const a=ACT[i];if(a.ap<=o.ap&&a.c<=o.funds)opts.push({i,sc:sc+rnd()*.35,c})};
    const tg=PRES()&&!r2?presAITarget(k):pool.slice().sort((a,b)=>marg(a)-marg(b)+(cnt(a,k,'rc')-cnt(b,k,'rc'))*.03)[0];
-   if(tg){cons(0,1.1/(1+cnt(tg,k,'rc')*.7),{d:tg});cons(2,(r2?1.4:1)/(1+cnt(tg,k,'cv')*.35),{d:tg});cons(1,.9/(1+(o.tc[tg.g]||0)*.8),{g:tg.g});cons(3,.8,{g:tg.g})}
-   cons(4,.8,{tg:rnd()<.5?topRival(k):null});
-   if(!r2){const sg=sigOf(k),cand=MEAS.map((m,j)=>[planAppeal(k,j)+(sg.includes(j)?1-sg.indexOf(j)*.06:-1),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,1/(1+o.an*.6),{m:cand[0][1]})}
+   /* the AI weighs actions by what they are worth in seats, as a player watching the projection would (Logan 2026-10-23): in the first round national media and announcements reach every seat, a rally only one */
+   const late=D1-SIM.day<=6;
+   if(tg){cons(0,(r2?1.1:.55)/(1+cnt(tg,k,'rc')*.7),{d:tg});cons(2,(r2?1.4:late?.75:.45)/(1+cnt(tg,k,'cv')*.35),{d:tg});cons(1,(r2?.9:1.1)/(1+(o.tc[tg.g]||0)*.8),{g:tg.g});cons(3,(r2?.8:1)/(1+.6*((o.lf||{})[tg.g]||0)),{g:tg.g})}
+   cons(4,(r2?.8:2.6)/(1+.5*(o.dg||0)),{tg:(u=>u<.2?topRival(k):u<.42?nearRival(k):null)(rnd())});
+   if(!r2){const sg=sigOf(k),cand=MEAS.map((m,j)=>[planAppeal(k,j)+(sg.includes(j)?1-sg.indexOf(j)*.06:-1),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,2.8/(1+o.an*.6),{m:cand[0][1]})}
    if(!o.prep&&SIM.day<SIM.debDay)cons(6,.3,{});
-   cons(7,o.funds<120?1.4:.15,{});cons(8,.6,{tg:OUTLETS.map((u,j)=>[u.tilt[k],j]).sort((a,b)=>b[0]-a[0])[0][1]});
+   cons(7,o.funds<120?1.4:.15,{});cons(8,(r2?.6:2.4)/(1+.4*(o.pr||0)),{tg:OUTLETS.map((u,j)=>[u.tilt[k],j]).sort((a,b)=>b[0]-a[0])[0][1]});
    if(!opts.length)break;opts.sort((a,b)=>b.sc-a.sc);const ch=opts[0];o.ap-=ACT[ch.i].ap;o.funds-=ACT[ch.i].c;const tx=applyAct(k,ch.i,ch.c);SIM.rv.push({k,t:tx})}}}
+/* the rival a party actually fights for voters: big and close to it, not always the front-runner */
+const nearRival=k=>{const s=natShares(true);return s.map((v,j)=>[j===k||j===7?-1:v*Math.exp(-TH.reduce((a,_,t)=>a+Math.abs(STANCE[k][t]-STANCE[j][t]),0)/NT/1.1),j]).sort((a,b)=>b[0]-a[0])[0][1]};
 const topRival=k=>{const s=natShares(true);return s.map((v,j)=>[v,j]).filter(a=>a[1]!==k&&a[1]!==7).sort((a,b)=>b[0]-a[0])[0][1]};
 /* ===== daily dynamics ===== */
 const UPS=[['décolle après une séquence réussie de son chef.','takes off after a strong run for its leader.'],['reçoit le soutien d’une figure respectée.','wins the backing of a respected figure.'],['impose son thème dans le débat.','sets the agenda for the day.']],DNS=[['trébuche : de vieux messages d’un candidat refont surface.','stumbles as a candidate’s old posts resurface.'],['est critiqué pour le coût de son programme.','takes heat over the cost of its platform.'],['voit son chef commettre une bourde en direct.','sees its leader blunder on live TV.'],['est éclaboussé par une affaire judiciaire.','is splashed by a legal case.']];
@@ -2082,9 +2086,13 @@ function govResign(G,how){if(!canResign(G).ok)return;const old=G.pm,ai=how==='ai
  if(pd&&canDissolve(G)){dissolve(x('après la démission du gouvernement','after the government resigned'));return'diss'}
  G.log.push({m:G.m,t:'🏛️ '+x('Le président ('+P[G.pres].n+') accepte la démission et ouvre des consultations pour nommer un nouveau gouvernement.','The President ('+P[G.pres].n+') accepts the resignation and opens talks to appoint a new government.')});
  G.pm=null;G.gov=[];G.sup=[];G.nc=[];G.prop={};SIM.phase='form';if(!ai){st.tab='form';st.resAsk=0;govProjection();save();render()}return'form'}
-/* an AI Prime Minister throws in the towel when deeply unpopular without a majority, a few quarters in */
-function aiResign(G){if(G.pm==null||G.pm===SIM.me||SIM.phase!=='gov'||G.appr.pm>=24||G.q-(G.govQ??-9)<3)return null;const mj=majParty(G);if(mj!=null&&G.gov.includes(mj))return null;
- if(rnd()>=.05+.02*(24-G.appr.pm))return null;return govResign(G,'ai')}
+/* how stuck the government is (Logan 2026-10-23): its bills keep failing, the budget was voted down, censure is within reach, it has no working majority */
+function deadlock(G){if(G.pm==null)return 0;const g0=G.govQ??-9,fail=(G.bills||[]).filter(b=>b.q>=Math.max(g0,G.q-3)&&b.by===G.pm&&b.st==='failed'&&!b.bud).length,bud=(G.bills||[]).some(b=>b.bud&&b.q>=G.q-3&&b.q>=g0&&b.st!=='passed')?1.5:0,
+ th=threat(G,0),cens=th>=MAJ-15?1:th>=MAJ-40?.5:0,minor=backing(G)<MAJ-40?.7:backing(G)<MAJ?.3:0;return Math.round((fail*.8+bud+cens+minor)*10)/10}
+/* an AI Prime Minister throws in the towel when deeply unpopular without a majority, a few quarters in, or when the Assembly is deadlocked */
+function aiResign(G){if(G.pm==null||G.pm===SIM.me||SIM.phase!=='gov')return null;const mj=majParty(G);if(mj!=null&&G.gov.includes(mj))return null;const dl=deadlock(G),age=G.q-(G.govQ??-9);
+ const p=(G.appr.pm<24&&age>=3?.05+.02*(24-G.appr.pm):0)+(dl>=2.5&&age>=2?.12+.1*(dl-2.5):0);if(rnd()>=Math.min(.6,p))return null;
+ if(dl>=2.5)G.log.push({m:G.m,t:'🧱 '+x('Le Premier ministre constate le blocage de l’Assemblée : « Je ne peux plus gouverner. »','The Prime Minister acknowledges the Assembly is deadlocked: “I can no longer govern.”')});return govResign(G,'ai')}
 /* ===== budget ===== */
 function budgetDue(G){return autumn(G)&&G.budY!==Math.floor(G.m/12)+1}
 /* the budget forced through with 49.3: a censure motion follows */
@@ -2228,7 +2236,9 @@ function aiDissolve(G){const c=campOf(G.pres),pk=G.pres,left=G.presM-G.m,end=60-
  const cs=a=>sum(a.filter((v,k)=>campOf(k)===c)),now=cs(G.seats),then=proj?cs(proj):now,gain=then-now,maj=then>=MAJ&&now<MAJ;
  const stuck=(G.falls||0)-(G.fallsD||0),fail=(G.bills||[]).filter(b=>b.q>=G.q-4&&b.by===G.pm&&b.st==='failed').length,minor=backing(G)<MAJ;
  const coh=cohab(G),ap=G.appr.pres;
- let sc=gain/35+(maj?1.2:0)+stuck*.9+fail*.2+(minor?.3:0)+(coh&&gain>0?.6:0)+(ap-40)/25-3.4;
+ const dl=G.pm!=null?deadlock(G):0;
+ /* a deadlocked Assembly pushes the President toward the polls, more so when the camp would gain (Logan 2026-10-23) */
+ let sc=gain/35+(maj?1.2:0)+stuck*.9+fail*.2+(minor?.3:0)+(coh&&gain>0?.6:0)+(ap-40)/25+Math.max(0,dl-1)*.45*(gain>-25?1:.4)-3.4;
  const pd=1/(1+Math.exp(-sc*1.6));G.dissP=Math.round(pd*100);
  if(pd>.12&&pd<.5&&rnd()<.5)G.log.push({m:G.m,t:'🏛️ '+x(`L’Élysée sonde les états-majors sur une dissolution (${P[pk].n} : ${now} sièges, ${then} projetés), puis y renonce pour l’instant.`,`The Élysée sounds out party leaders on a dissolution (${P[pk].n}'s camp: ${now} seats now, ${then} projected), then holds off for now.`)});
  return rnd()<pd*.5}
@@ -2489,17 +2499,18 @@ function budFxHTML(G){const pv=G.budBase,a=budSnap(G,pv.bu,pv.tx),b=budSnap(G,G.
 function budReact(G,old){const m=budMood(G),d=Math.max(-5,Math.min(3,(m.tot-old)*.7+(m.tot<-3?-1:0)));if(Math.abs(d)<.3)return;G.ev+=d;G.appr.pm+=d*.5;
  const why=[[m.cut,x('les coupes','the cuts')],[m.th,x('les hausses d’impôts','the tax hikes')],[m.tc,x('les baisses d’impôts','the tax cuts')],[m.add,x('les nouvelles dépenses','the new spending')],[m.def+m.debt,x('le déficit','the deficit')]].sort((a,b)=>d<0?a[0]-b[0]:b[0]-a[0])[0][1];
  G.log.push({m:G.m,t:(d>0?'📈 ':'📉 ')+x('Accueil du budget : '+(d>0?'bien reçu':'mal reçu')+', surtout pour '+why+' ('+(d>0?'+':'')+fn(d)+' de popularité).','Budget reception: '+(d>0?'well received':'badly received')+', mostly over '+why+' ('+(d>0?'+':'')+fn(d)+' approval).')})}
-/* ===== party budget platforms: w = appetite per ministry, t = taste for each tax (+ higher), f = deficit aversion, ask = public demands ===== */
+/* ===== party budget platforms: w = appetite per ministry, t = taste for each tax (+ higher), f = deficit aversion, ask = public demands =====
+   deficit aversion follows the parties' real stances (Logan 2026-10-23): MoDem (Bayrou's debt crusade) and Horizons most worried, then LR and Renaissance, Reconquête, the PS and RN in the middle, the Ecologists little, LFI not at all (it funds its spending with taxes on the rich instead) */
 const PB=[
- {w:[1.2,1.1,1.2,-.6,1.2,1.2,1.0,-.2,1.2,-.16,0],t:[.8,1,-1,0,0,-.5,0,1],f:-.4,ask:[{k:'bud',i:0,to:285},{k:'tax',i:1,to:2},{k:'code',id:'idx',to:0}]},
- {w:[1.0,.9,.9,.2,.9,.9,.8,.2,1.0,.16,0],t:[.4,.6,-.4,0,0,0,0,.6],f:.3,ask:[{k:'bud',i:1,to:98},{k:'tax',i:7,to:1},{k:'bud',i:0,to:275}]},
- {w:[.9,.85,.7,-.4,.7,1.0,1.4,-.2,.6,-.16,0],t:[.4,.6,-.3,0,0,.8,.3,.6],f:.1,ask:[{k:'bud',i:6,to:25},{k:'tax',i:5,to:1},{k:'bud',i:5,to:22}]},
+ {w:[1.2,1.1,1.2,-.6,1.2,1.2,1.0,-.2,1.2,-.16,0],t:[1.2,1.2,-1,0,0,-.5,0,1.2],f:-.3,ask:[{k:'bud',i:0,to:285},{k:'tax',i:1,to:2},{k:'code',id:'idx',to:0}]},
+ {w:[1.0,.9,.9,.4,.9,.9,.8,.2,1.0,.16,0],t:[.4,.6,-.4,0,0,0,0,.6],f:.5,ask:[{k:'bud',i:1,to:98},{k:'tax',i:7,to:1},{k:'bud',i:0,to:275}]},
+ {w:[.9,.85,.7,-.4,.7,1.0,1.4,-.2,.6,-.16,0],t:[.4,.6,-.3,0,0,.8,.3,.6],f:.2,ask:[{k:'bud',i:6,to:25},{k:'tax',i:5,to:1},{k:'bud',i:5,to:22}]},
  {w:[.6,.7,.1,1.0,.1,.2,.4,.6,-.3,.48,0],t:[-.4,-.6,0,0,-.6,0,0,-.2],f:1,ask:[{k:'bud',i:3,to:55},{k:'bud',i:1,to:97},{k:'tax',i:4,to:-1}]},
  {w:[.4,.25,-.6,1.1,-.6,-.4,-.6,1.1,-.4,.88,0],t:[-.8,-.8,0,-.4,-1,-.3,0,-1],f:1.2,ask:[{k:'bud',i:7,to:36},{k:'tax',i:7,to:-2},{k:'bud',i:4,to:30}]},
- {w:[.9,.2,.6,.9,.6,.2,-.8,1.2,1.2,.96,0],t:[-.6,0,-1,-.4,-.4,-1,0,-.6],f:.4,ask:[{k:'tax',i:5,to:-1.5},{k:'bud',i:7,to:37},{k:'code',id:'idx',to:0}]},
+ {w:[.9,.2,.6,.9,.6,.2,-.8,1.2,1.2,.96,0],t:[-.6,0,-1,-.4,-.4,-1,0,-.6],f:.5,ask:[{k:'tax',i:5,to:-1.5},{k:'bud',i:7,to:37},{k:'code',id:'idx',to:0}]},
  {w:[.3,.1,-.8,1.2,-.8,-.6,-1.0,1.4,.2,1.12,0],t:[-1,-.8,-.6,-.6,-1,-.8,0,-1.2],f:.9,ask:[{k:'bud',i:7,to:39},{k:'tax',i:7,to:-2},{k:'bud',i:6,to:18}]},
  {w:[.6,.45,.4,.4,.4,.5,.4,.5,.5,.4,0],t:[0,0,0,0,0,0,0,0],f:.5,ask:[{k:'bud',i:0,to:270},{k:'bud',i:5,to:20},{k:'bud',i:1,to:96}]},
- {w:[.8,.85,.3,.8,.3,.4,.5,.5,.0,.4,0],t:[-.2,-.3,0,0,-.4,0,0,0],f:.9,ask:[{k:'bud',i:1,to:98},{k:'bud',i:3,to:55},{k:'tax',i:4,to:-1}]},
+ {w:[.8,.85,.3,.8,.3,.4,.5,.5,.0,.4,0],t:[0,-.2,0,0,-.4,0,0,0],f:1.5,ask:[{k:'bud',i:1,to:98},{k:'bud',i:3,to:55},{k:'tax',i:4,to:-1}]},
  {w:[.5,.5,.0,1.1,.0,.0,.2,.8,-.3,.64,0],t:[-.6,-.6,0,-.2,-.8,0,0,-.5],f:1.3,ask:[{k:'bud',i:3,to:56},{k:'bud',i:7,to:36},{k:'tax',i:4,to:-1}]}];
 /* the EU contribution line: pro-European parties want it paid in full, sovereigntists want it cut */
 PB.forEach((p,k)=>{p.w[10]=Math.round(STANCE[k][7]*.5*100)/100;if(k<=2)p.w[9]=.5});
@@ -2556,7 +2567,11 @@ function aiBudget(G){const k=G.pm,p=PB[k],F=gfin(G),dp=-F.bal/gdpOf(G)*100,slow=
  G.bu=G.bu.map((v,i)=>{if(i===PEN)return BL(PEN);let dv=.2*(p.w[i]-wm)/mw+.005-.06*p.f+fis;if(i===PEN)dv*=.25;const fs=stub?null:G.fisc;if(fs&&fs.fa>1&&dv<0&&[0,1,4,5].includes(i))dv*=.4;if(fs&&fs.fr>1&&dv>0)dv*=.4;let tg=BL(i)*(1+dv);if(late&&tg<v)tg=v-(v-tg)*.4;return Math.round(Math.max(BMIN(i),Math.min(BMAX(i),v+(tg-v)*(.45+rnd()*.3)))*2)/2});
  G.tx=G.tx.map((v,j)=>{const T=TAXES[j];let tg=p.t[j]*2.5;if(dp>5.5&&p.f>.5&&tg<v)tg=v;if(late&&tg>v)tg=v+(tg-v)*.5;return Math.round(Math.max(T[3],Math.min(T[4],v+(tg-v)*(.4+rnd()*.3)))*2)/2});
  const L=[];G.bu.forEach((v,i)=>{const d=v-old[i];if(Math.abs(d)>=.5)L.push([Math.abs(d)/BASE[i],x(BU[i][0],BU[i][1])+' '+(d>0?'+':'−')+fn(Math.abs(d))+' Md€'])});G.tx.forEach((v,j)=>{const d=v-oldT[j];if(Math.abs(d)>=.5)L.push([Math.abs(d)*.08,x(TAXES[j][0],TAXES[j][1])+' '+(d>0?'+':'−')+fn(Math.abs(d))+' pt'])});L.sort((a,b)=>b[0]-a[0]);
+ /* a competent government checks the public reaction before tabling (the player sees it too): needless unpopularity is halved, deficit hawks accept more pain */
+ {const m1=budMood(G).tot,m0=budMood(G,old,oldT).tot;if(!stub&&m1<m0-(1.5+1.5*Math.max(0,p.f))){G.bu=G.bu.map((v,i)=>Math.round((v+old[i])/2*2)/2);G.tx=G.tx.map((v,j)=>Math.round((v+oldT[j])/2*2)/2)}}
  const C=[];for(const k2 of P.map((_,z)=>z).filter(z=>z!==k&&z!==SIM.me&&G.seats[z]>0).sort((a,b)=>bscore(G,b).tot+G.seats[b]/60-bscore(G,a).tot-G.seats[a]/60)){if(C.length>=3||gvote(G,null,'b',true).pass)break;PB[k2].ask.forEach(a=>{if(!askMet(G,a)&&C.length<3){askApply(G,a);C.push([9,x('Pour ','For ')+P[k2].n+' : '+askText(a)])}})}L.unshift(...C);
+ /* still short of a majority: negotiate abstentions, the same deal the player can offer */
+ for(let t=0;t<4&&!gvote(G,null,'b',true).pass;t++){const k3=P.map((_,z)=>z).filter(z=>z!==k&&z!==SIM.me&&z!==7&&G.seats[z]>0&&!G.gov.includes(z)&&!dealOf(G,z)&&dealReady(G,z,'abst')&&!(G.dtry&&G.dtry[z+'_'+G.q+'_abst'])).sort((a,b)=>G.seats[b]*dealP(G,b,'abst')-G.seats[a]*dealP(G,a,'abst'))[0];if(k3==null)break;G.dtry=G.dtry||{};G.dtry[k3+'_'+G.q+'_abst']=1;if(rnd()<dealP(G,k3,'abst')){newDeal(G,k3,'abst',[]);G.rel[k3]=cl(G.rel[k3]+4);L.unshift([9,dealName('abst')+' · '+P[k3].n])}}
  G.aiBud={q:G.q,k,ch:L.slice(0,6).map(z=>z[1])};G.log.push({m:G.m,t:'📒 '+P[k].n+x(' présente son budget',' presents its budget')+(L.length?' : '+L.slice(0,3).map(z=>z[1]).join(' · '):x(' sans grand changement.',' with few changes.'))})}
 function aiBudNote(G){const a=G.aiBud&&G.aiBud.q===G.q?G.aiBud:null;return a?`<p class="note" style="margin:8px 0 0"><b>📒 ${x('Budget proposé par ','Budget proposed by ')}${P[a.k].n}</b> : ${a.ch.length?a.ch.join(' · '):x('peu de changements','few changes')}</p>`:''}
 /* ===== budget card ===== */
@@ -3209,8 +3224,8 @@ function finishVote(){const G=SIM.G,v=G.vote;if(!v||v.applied)return;v.applied=t
   if(v.pass){applyEff(G,v.priv?{...b,ap:0}:b,true);passBill(G,v.bi,v.priv,v);G.log.push({m:G.m,t:x('Adopté : ','Passed: ')+x(b.f,b.e)+' ('+v.f+'–'+v.a+')'});if(v.priv&&v.sponsor===SIM.me){G.v[SIM.me]*=1.015;normV(G)}}
   else{if(b.dealK!=null){G.rel[b.dealK]=cl(G.rel[b.dealK]-6);G.ang[b.dealK]=(G.ang[b.dealK]||0)+.15;G.log.push({m:G.m,t:P[b.dealK].n+x(' est furieux : le texte promis dans l’accord est rejeté.',' is furious: the bill promised in the deal was defeated.')})}pjActFail(G,b);if(own){G.coh=cl(G.coh-3);G.appr.pm-=1.5}else if(v.priv&&ctrl())G.appr.pm+=.5;G.log.push({m:G.m,t:x('Rejeté : ','Defeated: ')+x(b.f,b.e)+' ('+v.f+'–'+v.a+')'})}
   billRec(G,v,b);
-  /* a defeated AI government bill may be forced through with 49.3 once a session; it happens when the quarter closes */
-  if(!v.pass&&own&&!ctrl()&&(G.aib||[]).includes(v.bi)&&(G.u493||0)<1&&G.p493==null&&rnd()<.45)G.p493={bi:v.bi,f:v.f,a:v.a,pos:v.pos.slice()}}
+  /* a defeated AI government bill may be forced through with 49.3 once a session, but only when the censure that follows would fail, as a careful player would check; it happens when the quarter closes */
+  if(!v.pass&&own&&!ctrl()&&(G.aib||[]).includes(v.bi)&&(G.u493||0)<1&&G.p493==null&&ai493(G,v.bi))G.p493={bi:v.bi,f:v.f,a:v.a,pos:v.pos.slice()}}
  else{const old=budMood(G,G.budBase.bu,G.budBase.tx).tot,agst=v.pos.map((p,k)=>p<0&&G.seats[k]>0?k:-1).filter(k=>k>=0),fors=v.pos.map((p,k)=>p>0&&!G.gov.includes(k)&&G.seats[k]>0?k:-1).filter(k=>k>=0),nm=l=>l.length?l.map(k=>P[k].n).join(', '):'—';
   if(v.pass){budgetPassed(G,'vote',v);G.log.push({m:G.m,t:x('Budget adopté (','Budget passes (')+v.f+'–'+v.a+x('). Soutiens hors gouvernement : ','). Backing from outside the government: ')+nm(fors)+x(' · contre : ',' · against: ')+nm(agst)});budReact(G,old)}
   else{G.appr.pm-=2;G.log.push({m:G.m,t:x('Budget rejeté (','Budget defeated (')+v.f+'–'+v.a+x('). Contre : ','). Against: ')+nm(agst)});if(ctrl())G.msg=G.pm===SIM.me?x('Le budget est rejeté. Engagez le 49.3, modifiez-le ou remettez la démission du gouvernement.','The budget is defeated. Use 49.3, change it, or resign.'):x('Le budget est rejeté. Engagez le 49.3 ou modifiez-le.','The budget is defeated. Use 49.3 or change it.');else G.pb493={f:v.f,a:v.a,pos:v.pos.slice()}}
@@ -3234,10 +3249,18 @@ function oppBills(G){const pool=P.map((_,k)=>k).filter(k=>k!==7&&k!==SIM.me&&!G.
   const w=c.map(k=>Math.sqrt(G.seats[k])*(G.q-(G.niche[k]??-9)>=2?1.6:.5)),tot=w.reduce((a,b)=>a+b,0);let r=rnd()*tot,k=c[0];for(let j=0;j<c.length;j++){r-=w[j];if(r<=0){k=c[j];break}}
   let bi=null;for(let t=0;t<5&&bi==null;t++){const z=LEG.aiPick(G,k);if(z!=null&&!L.some(o=>o.bi===z)&&!(G.offer||[]).includes(z)&&!G.done.includes(z))bi=z}if(bi==null)continue;const b=B(bi);if(b.by==null)b.by=k;G.niche[k]=G.q;L.push({bi,sp:k})}
  return L}
+/* an AI government chooses its bills the way a player reads the agenda (Logan 2026-10-23: AI as competent as a player): it drafts several, checks the vote forecast,
+   and prefers bills that pass, are popular, keep a pledge before its deadline, honour the coalition contract or answer a crisis */
+function aiGovPick(G,taken){const pm=G.pm,L=[];for(let t=0;t<7;t++){const bi=LEG.aiPick(G,pm);if(bi!=null&&!taken.includes(bi)&&!L.includes(bi)&&!G.done.includes(bi))L.push(bi)}if(!L.length)return null;
+ const sc=bi=>{const b=B(bi);if(!b)return -9;const v=gvote(G,b.st,bi,false,false,pm),m=(v.f-v.a)/SEATS,pl=(G.prom||[]).find(p=>p.i===bi&&!p.s&&p.dl!=null&&G.gov.includes(p.k)),dm=(G.dem||[]).some(d=>d.m===bi);
+  return (v.pass?2:-2.5)+clamp(m*5,-1,1)+lcl(+(b.ap||0),-3,3)*.3+(pl?1.2+Math.max(0,4-(pl.dl-G.q))*.3:0)+(dm?1:0)+(b.tag==='crisis'?.8:0)-G.gov.filter(k=>k!==pm&&b.st[k]<0).length*.6+rnd()*.3};
+ const R=L.map(bi=>[sc(bi),bi]).sort((a,b)=>b[0]-a[0]);return R[0][0]>-1?R[0][1]:null}
+/* 49.3 on a defeated government bill: routine when the censure that follows would fail; when it would pass, only as a way out of deadlock for a bill that matters (a pledge, the coalition contract, a crisis) (Logan 2026-10-23) */
+function ai493(G,bi){const b=B(bi);if(!b)return false;if(threat(G,.08)<MAJ)return rnd()<.6;const dl=deadlock(G),key=(G.prom||[]).some(p=>p.i===bi&&!p.s&&G.gov.includes(p.k))||(G.dem||[]).some(d=>d.m===bi)||b.tag==='crisis';return dl>=2&&key&&rnd()<.25+.1*(dl-2)}
 /* new agenda each quarter */
 function newOffer(G){try{codeOf(G);codeSync(G)}catch(e){}G.offer=LEG.offer(G);crOffer(G);G.tabled=0;G.mv={};G.mb=null;G.askTried={};G.nres=null;G.counter=null;
  G.oppL=oppBills(G);
- G.aib=[];if(!ctrl()&&G.pm!=null){const n=1+(rnd()<.5?1:0);for(let i=0;i<n;i++){const bi=LEG.aiPick(G,G.pm);if(bi!=null&&!G.aib.includes(bi)){const b=B(bi);if(b.by==null)b.by=G.pm;G.aib.push(bi)}}(G.crq||[]).forEach(bi=>{if(B(bi)&&!G.aib.includes(bi)&&!G.done.includes(bi))G.aib.push(bi)})}G.crq=[];
+ G.aib=[];if(!ctrl()&&G.pm!=null){const n=1+(rnd()<.5?1:0);for(let i=0;i<n;i++){const bi=aiGovPick(G,G.aib);if(bi!=null&&!G.aib.includes(bi)){const b=B(bi);if(b.by==null)b.by=G.pm;G.aib.push(bi)}}(G.crq||[]).forEach(bi=>{if(B(bi)&&!G.aib.includes(bi)&&!G.done.includes(bi))G.aib.push(bi)})}G.crq=[];
  /* forget generated bills nobody refers to any more */
  const keep=new Set([...G.offer,...G.aib,...crKeep(G),...(G.vq||[]),...(G.oppL||[]).map(o=>o.bi),...(G.vote?[G.vote.bi]:[])]);(G.bl||[]).forEach((b,j)=>{if(b&&!keep.has(j+BL0)&&G.done.includes(j+BL0)===false)G.bl[j]=0})}
 /* ===== Assembly pane: agenda, opposition bill, government bills when the player is not in charge, desk ===== */
@@ -3770,7 +3793,8 @@ function crMoRoll(G,c){const o=crMoOdds(G,c);if(!o)return 0;const r=rnd(),v=r<o[
  if(v<0)crAp(G,-.5);return v}
 const crFunded=(G,C)=>C.bl!=null&&G.bu&&G.bu[C.bl]>=BL(C.bl)*1.03;
 /* the AI government's response (player not in charge): minister, ministry budget and a response bill that comes to a real vote next quarter */
-function crAIOdds(G,c){return Math.min(.95,.3+.09*c.sev+.2*(c.prs||0)+(G.appr.pm<35?.08:0))}
+/* an AI government now acts on most crises, as a player would (Logan 2026-10-23); opposition pressure still makes it likelier */
+function crAIOdds(G,c){return Math.min(.95,.62+.07*c.sev+.15*(c.prs||0)+(G.appr.pm<35?.05:0))}
 function crAI(G,c){const C=crDef(c.id),a=crAIOdds(G,c),M=crMf(c),gr=c.gr=c.gr||[],add=(t,v)=>{gr.unshift({q:G.q,t,v});if(gr.length>6)gr.pop();crLog(G,'🏛️ '+crNm(c)+x(' : ',': ')+x(t[0],t[1]))};let g=0,did=0;
  if(rnd()<a){did=1;const r=rnd(),v=r<.6?25:r<.85?12:-8;g+=v;if(v>0)crFx(G,{imb:c.id==='heat'?-.012*v:0,cush:c.id==='slow'?.006*v:0,v:c.id==='rec'?.02*v:0});
   add([M[0]+' ('+MIN[c.sl][3]+')'+(v>12?' : réussi.':v>0?' : résultats mitigés.':' : bourde.'),M[1]+' ('+MIN[c.sl][4]+')'+(v>12?': it works.':v>0?': mixed results.':': a fumble.')],v)}
