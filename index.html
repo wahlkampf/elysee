@@ -1,4 +1,4 @@
- <!doctype html>
+<!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>⚜ Élysée</title>
@@ -1289,7 +1289,7 @@ const REGT=[
 REGT.length=NT;
 /* Measures a party can put in its platform: issue, position (−2 left … +2 right), cost in € bn a year (negative = savings). */
 const MEAS=[
- [0,-2,'Blocage des prix des produits de première nécessité','Freeze prices on essentials',8],[0,-1.5,'SMIC à 1 600 € net','Raise the minimum wage to €1,600 net',4],[0,1.4,'TVA à 5,5 % sur l’énergie','Cut VAT on energy to 5.5%',12],[0,.6,'Baisse des cotisations sur les salaires','Cut payroll contributions',9],[0,.2,'Prime de pouvoir d’achat défiscalisée','Tax-free cost-of-living bonus',2],
+ [0,-2,'Blocage des prix des produits de première nécessité','Freeze prices on essentials',8],[0,-1.5,'SMIC à 1 600 € net','Raise the minimum wage to €1,600 net',4],[0,-.6,'TVA à 5,5 % sur l’énergie','Cut VAT on energy to 5.5%',12],[0,.6,'Baisse des cotisations sur les salaires','Cut payroll contributions',9],[0,.2,'Prime de pouvoir d’achat défiscalisée','Tax-free cost-of-living bonus',2],
  [1,2,'Exécution systématique des OQTF','Enforce every deportation order',1],[1,1.6,'Suppression de l’aide médicale d’État','Scrap state medical aid for undocumented migrants',-1],[1,.8,'Durcir le regroupement familial','Tighter family reunification rules',0],[1,-.6,'Régularisation des travailleurs des métiers en tension','Regularise workers in short-staffed trades',-1],[1,-1.8,'Accueil digne et voies légales','Humane reception and legal routes',2],
  [2,1.8,'Peines planchers et 20 000 places de prison','Minimum sentences and 20,000 prison places',4],[2,1,'10 000 policiers et gendarmes de plus','10,000 more police officers',2],[2,-.4,'Police de proximité','Community policing',1.5],[2,-1.6,'Prévention et éducateurs de rue','Prevention and youth workers',1],
  [3,-1.8,'Plan d’urgence pour l’hôpital public','Emergency plan for public hospitals',10],[3,-.6,'Fin des déserts médicaux : régulation de l’installation','End medical deserts: regulate where doctors set up',1],[3,.6,'Franchises médicales doublées','Double medical co-payments',-3],[3,.2,'Services publics de proximité dans les campagnes','Local public services in rural areas',3],
@@ -1302,7 +1302,12 @@ const MEAS=[
  [7,1.6,'Grand emprunt européen commun','Joint EU borrowing for investment',0],
  [10,-1.8,'Encadrement des loyers partout','Rent caps everywhere',0],[10,-1,'200 000 logements sociaux par an','200,000 social homes a year',10],[10,.8,'Choc d’offre : permis de construire accélérés','Supply shock: faster building permits',0],[10,1.4,'Prêt à taux zéro et baisse des droits de mutation','Zero-rate loans and lower property transfer tax',4]];
 /* a party only proposes measures in line with its platform (Logan 2026-10-22): no rent caps for Renaissance, no tax cuts for LFI */
-const mFits=(k,i)=>k==null||k<0||k===7||Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]])<=1.5;
+/* each party's real programme, most emblematic first (2024 legislative programmes: NFP, Ensemble, LR, RN, Reconquête); AI platforms, announcements and default pledges draw from it (Logan 2026-10-23) */
+const SIG={0:[18,0,1,26,14,43,22,30,38,34,9],1:[19,27,1,14,44,15,35,12,22,8],2:[22,23,27,19,44,43,41,42,9,34],3:[28,4,24,37,32,45,11,7,42,20],4:[10,6,3,29,7,36,28,24,21,11],5:[5,2,19,6,25,10,31,36,11,7],6:[5,6,7,10,29,36,25,31,40],8:[28,32,42,17,35,4,24,15],9:[21,28,11,3,45,40,37,32,7]};
+const sigOf=k=>(SIG[k]||[]).filter(i=>MEAS[i]&&mFits(k,i));
+/* measures that belong to another camp even where the axis says close: the far right does not 'disobey the treaties' or leave NATO's command */
+const MNO={5:[30,38],6:[30,38],4:[30,38]};
+const mFits=(k,i)=>k==null||k<0||k===7||!(MNO[k]||[]).includes(i)&&Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]])<=1.5;
 const mName=m=>x(MEAS[m][2],MEAS[m][3]);
 const ACT=[
  {em:'🎤',f:'Meeting',e:'Rally',df:'Un grand meeting dans la circonscription, l’effet déborde chez les voisines.',de:'A big rally in the seat that spills into neighbouring seats.',c:35,ap:1,sc:'c'},
@@ -1340,7 +1345,7 @@ function newGame(o){const pfPrev=SIM.pfPub||null;SIM.prevAvg=null;SIM.r2b=null;c
  SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;
  if(SIM.mode!=='pres')C.forEach(d=>{SIM.inc[d.i]=SIM.K&&SIM.K.inc?SIM.K.inc[d.i]:d.w});
  /* AI starting platforms: two signature measures each */
- P.forEach((p,k)=>{if(k===SIM.me||k===7)return;const pool=MEAS.map((m,i)=>[Math.abs(m[1]-STANCE[k][m[0]])-OWN[k][m[0]]*.8+rnd()*.6,i]).filter(a=>mFits(k,a[1])).sort((a,b)=>a[0]-b[0]);SIM.ai[k].plat=pool.slice(0,3).map(a=>a[1])});
+ P.forEach((p,k)=>{if(k===SIM.me||k===7)return;const sg=sigOf(k),L=sg.slice(0,1),rest=sg.slice(1,6);while(L.length<3&&rest.length){const j=Math.min(rest.length-1,Math.floor(rnd()*rnd()*rest.length*1.6));L.push(rest.splice(j,1)[0])}SIM.ai[k].plat=L});
  /* scenario mood: a few points of drift already under way */
  SIM.trend=P.map(()=>gauss()*.05);
  if(SIM.diff==='hard')SIM.trend[SIM.me]-=.04;if(SIM.diff==='easy')SIM.trend[SIM.me]+=.04;
@@ -1452,7 +1457,7 @@ function aiDay(){SIM.rv=[];const sh=natShares(true),r2=r2mode();
    const tg=PRES()&&!r2?presAITarget(k):pool.slice().sort((a,b)=>marg(a)-marg(b)+(cnt(a,k,'rc')-cnt(b,k,'rc'))*.03)[0];
    if(tg){cons(0,1.1/(1+cnt(tg,k,'rc')*.7),{d:tg});cons(2,(r2?1.4:1)/(1+cnt(tg,k,'cv')*.35),{d:tg});cons(1,.9/(1+(o.tc[tg.g]||0)*.8),{g:tg.g});cons(3,.8,{g:tg.g})}
    cons(4,.8,{tg:rnd()<.5?topRival(k):null});
-   if(!r2){const cand=MEAS.map((m,j)=>[planAppeal(k,j),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,1/(1+o.an*.6),{m:cand[0][1]})}
+   if(!r2){const sg=sigOf(k),cand=MEAS.map((m,j)=>[planAppeal(k,j)+(sg.includes(j)?1-sg.indexOf(j)*.06:-1),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,1/(1+o.an*.6),{m:cand[0][1]})}
    if(!o.prep&&SIM.day<SIM.debDay)cons(6,.3,{});
    cons(7,o.funds<120?1.4:.15,{});cons(8,.6,{tg:OUTLETS.map((u,j)=>[u.tilt[k],j]).sort((a,b)=>b[0]-a[0])[0][1]});
    if(!opts.length)break;opts.sort((a,b)=>b.sc-a.sc);const ch=opts[0];o.ap-=ACT[ch.i].ap;o.funds-=ACT[ch.i].c;const tx=applyAct(k,ch.i,ch.c);SIM.rv.push({k,t:tx})}}}
@@ -1567,7 +1572,9 @@ const THE=[['Blocage des prix, hausse des salaires','Baisse des charges et des i
  ['Encadrer les loyers, logement social','Construire : libérer l’offre','Rent caps and social housing','Build more: free up supply']];
 const brandOf=k=>STANCE[k].map(v=>Math.max(-2,Math.min(2,Math.round(v))));
 const pfUsed=v=>v.reduce((a,z)=>a+Math.abs(z),0);
-function pfTrim(v){v=v.slice();let u=pfUsed(v);while(u>PLBUD){let mi=0;v.forEach((z,i)=>{if(Math.abs(z)>Math.abs(v[mi]))mi=i});v[mi]-=Math.sign(v[mi]);u--}return v}
+/* trimming the party line to the budget keeps its signature issues sharp: the issues least central to its programme give way first (Logan 2026-10-23) */
+function pfPri(k){const sg=sigOf(k);return TH.map((_,t)=>{const r=sg.findIndex(i=>MEAS[i][0]===t);return (k!=null&&OWN[k]?OWN[k][t]:0)+(r<0?0:1.2-r*.1)})}
+function pfTrim(v,k=SIM.me){v=v.slice();const pr=pfPri(k);let u=pfUsed(v);while(u>PLBUD){let mi=-1,ms=1e9;v.forEach((z,i)=>{if(!z)return;const sc=pr[i]+(Math.abs(z)===1?.7:0);if(sc<ms){ms=sc;mi=i}});if(mi<0)break;v[mi]-=Math.sign(v[mi]);u--}return v}
 /* credibility of a stance: one step from the party's line is free, further costs believability */
 function pfCred(t,v){const b=STANCE[SIM.me][t];return clamp(1-.17*Math.max(0,Math.abs(v-b)-1),.35,1)}
 /* where voters actually place you on an issue: the stance, discounted by credibility */
@@ -2683,7 +2690,7 @@ const lArcs=d=>Object.keys(LARC);
 const LT={
  health:{inv:['Projet de loi de programmation pour l’hôpital et les urgences','Hospital and A&E Funding Bill'],reg:['Projet de loi sur l’accès aux soins et les délais d’attente','Access to Care and Waiting Times Bill'],mkt:['Projet de loi sur l’ouverture de l’offre de soins au privé','Private Provision of Care Bill'],cut:['Projet de loi de maîtrise des dépenses de santé','Health Spending Control Bill'],inc:['Projet de loi sur les incitations à l’installation des soignants','Health Workers Settlement Incentives Bill']},
  edu:{inv:['Projet de loi de programmation pour l’école','Schools Funding Bill'],reg:['Projet de loi sur les effectifs par classe et l’encadrement','Class Size and Staffing Bill'],mkt:['Projet de loi sur la liberté de choix scolaire','School Choice Bill'],cut:['Projet de loi d’optimisation des dépenses scolaires','School Spending Efficiency Bill'],inc:['Projet de loi sur les bourses et l’apprentissage','Grants and Apprenticeships Bill']},
- econ:{inv:['Projet de loi pour l’investissement productif et l’emploi','Productive Investment and Jobs Bill'],reg:['Projet de loi sur la concurrence et le droit du travail','Competition and Labour Law Bill'],mkt:['Projet de loi de simplification de la vie économique','Red Tape Reduction Bill'],cut:['Projet de loi de réduction des aides aux entreprises','Business Subsidies Reduction Bill'],inc:['Projet de loi sur le crédit d’impôt innovation','Innovation Tax Credit Bill']},
+ econ:{inv:['Projet de loi pour l’investissement productif et l’emploi','Productive Investment and Jobs Bill'],reg:['Projet de loi sur la concurrence et le droit du travail','Competition and Labour Law Bill'],mkt:['Projet de loi de simplification de la vie économique','Red Tape Reduction Bill'],cut:['Projet de loi de réduction des agences et opérateurs de l’État','State Agencies Reduction Bill'],inc:['Projet de loi sur le crédit d’impôt innovation','Innovation Tax Credit Bill']},
  hous:{inv:['Projet de loi pour le logement social','Social Housing Bill'],reg:['Projet de loi sur l’encadrement des loyers','Rent Control Bill'],mkt:['Projet de loi d’accélération des permis de construire','Building Permits Acceleration Bill'],cut:['Projet de loi de recentrage des aides au logement','Housing Aid Refocus Bill'],inc:['Projet de loi sur l’accession à la propriété','First-Time Buyers Bill']},
  clim:{inv:['Projet de loi de planification écologique et des transports','Ecological Planning and Transport Bill'],reg:['Projet de loi sur les normes d’émissions','Emission Standards Bill'],mkt:['Projet de loi sur le prix du carbone','Carbon Price Bill'],cut:['Projet de loi de report des objectifs climatiques','Climate Targets Deferral Bill'],inc:['Projet de loi sur les aides aux équipements verts','Green Equipment Rebates Bill']},
  energy:{inv:['Projet de loi sur l’investissement public dans l’énergie','Public Energy Investment Bill'],reg:['Projet de loi sur les tarifs réglementés de l’électricité','Regulated Electricity Prices Bill'],mkt:['Projet de loi d’ouverture du marché de l’énergie','Energy Market Opening Bill'],cut:['Projet de loi de rationalisation des aides énergétiques','Energy Subsidies Rationalisation Bill'],inc:['Projet de loi sur les incitations aux renouvelables','Renewables Incentives Bill']},
@@ -2698,7 +2705,7 @@ const LT={
 const LV={
  health:{inv:['Financer l’hôpital','Fund hospitals'],reg:['Encadrer l’accès aux soins','Regulate access to care'],mkt:['Ouvrir au privé','Open to private'],cut:['Maîtriser les dépenses','Control spending'],inc:['Inciter à l’installation','Settlement incentives']},
  edu:{inv:['Réinvestir dans l’école','Reinvest in schools'],reg:['Effectifs et encadrement','Class sizes and staffing'],mkt:['Choix scolaire','School choice'],cut:['Optimiser les dépenses','Trim spending'],inc:['Bourses et apprentissage','Grants and apprenticeships']},
- econ:{inv:['Investir','Invest'],reg:['Concurrence et droit du travail','Competition and labour rules'],mkt:['Simplifier','Cut red tape'],cut:['Réduire les aides aux entreprises','Cut business subsidies'],inc:['Crédits d’impôt','Tax credits']},
+ econ:{inv:['Investir','Invest'],reg:['Concurrence et droit du travail','Competition and labour rules'],mkt:['Simplifier','Cut red tape'],cut:['Réduire les agences de l’État','Cut state agencies'],inc:['Crédits d’impôt','Tax credits']},
  hous:{inv:['Logement social','Social housing'],reg:['Encadrer les loyers','Rent control'],mkt:['Accélérer les permis','Fast-track permits'],cut:['Recentrer les aides','Refocus housing aid'],inc:['Aide à l’accession','Buyer aid']},
  clim:{inv:['Planification et transports','Planning and transport'],reg:['Normes d’émissions','Emission standards'],mkt:['Prix du carbone','Carbon price'],cut:['Reporter les objectifs','Defer targets'],inc:['Aides vertes','Green rebates']},
  energy:{inv:['Investir dans l’énergie','Invest in energy'],reg:['Tarifs réglementés','Regulated prices'],mkt:['Ouvrir le marché','Open the market'],cut:['Rationaliser les aides','Streamline subsidies'],inc:['Inciter aux renouvelables','Renewables incentives']},
@@ -2748,7 +2755,7 @@ const LRID={
  cit:{f:'convention citoyenne',e:'citizens’ convention',ap:.5,coh:-.2,ax:[.2,.1,0,0]},
  fast:{f:'procédure accélérée',e:'fast-track procedure',k:-1,coh:-1.5,ap:-.3,ax:[0,0,0,.1]}};
 /* measures a party will not table */
-const PNO={0:['safe|mkt','health|mkt','soc|cut','tax|cut','tax|inc','def|inv','def|inc'],2:['def|inc'],3:['liv|reg','tax|inv','def|cut'],8:['liv|reg','tax|inv','def|cut'],9:['liv|reg','tax|inv','hous|reg','def|cut'],4:['hous|reg','liv|reg','energy|reg','tax|inv','def|cut'],5:['immig|inv','immig|mkt','immig|inc','def|cut','def|mkt'],6:['immig|inv','immig|mkt','immig|inc','eur|inv','def|cut','def|mkt']},pNo=(k,d,a)=>(PNO[k]||[]).includes(d+'|'+a);
+const PNO={0:['safe|mkt','safe|reg','health|mkt','health|cut','edu|cut','edu|mkt','hous|cut','liv|cut','soc|cut','tax|cut','tax|inc','def|inv','def|inc','clim|mkt','clim|cut','immig|cut','immig|reg'],1:['hous|cut','liv|cut','soc|cut','health|cut','clim|cut','eur|cut','immig|cut'],2:['def|inc','hous|cut','liv|cut','clim|cut','energy|inv','eur|cut','eur|reg','immig|cut'],3:['liv|reg','tax|inv','def|cut','safe|cut','eur|cut','eur|reg'],8:['liv|reg','tax|inv','def|cut','safe|cut','eur|cut','eur|reg'],9:['liv|reg','tax|inv','hous|reg','def|cut','safe|cut','eur|cut','eur|reg'],4:['hous|reg','liv|reg','energy|reg','tax|inv','def|cut','safe|cut','safe|inc','clim|mkt','clim|reg','immig|inv','immig|mkt'],5:['immig|inv','immig|mkt','immig|inc','def|cut','def|mkt','safe|cut','safe|inc','clim|mkt','clim|reg','eur|inv','eur|mkt','health|cut','soc|cut','hous|cut','tax|inv'],6:['immig|inv','immig|mkt','immig|inc','eur|inv','eur|mkt','def|cut','def|mkt','safe|cut','safe|inv','safe|inc','clim|mkt','clim|reg','clim|inv','tax|inv','hous|inv']},pNo=(k,d,a)=>(PNO[k]||[]).includes(d+'|'+a);
 /* which pledge theme (TH index, side: −1 left, +1 right) a bill of this domain and measure moves */
 function billTh(dom,arc,dir){const L=-1,R=1;switch(dom){
  case'health':return arc==='inv'||arc==='reg'?[3,L]:arc==='mkt'||arc==='cut'?[3,R]:null;
@@ -2780,7 +2787,7 @@ const billThs=b=>[b&&b.th,...((b&&b.ths)||[])].filter((t,i,a)=>t&&a.findIndex(u=
 /* pledges: the player's platform measures; a bill keeps one when it moves the same theme the same way */
 /* a party's programme: its campaign measures, or the measures closest to its stances */
 function progFor(k,n){let L=((k===SIM.me?SIM.plat:(SIM.ai[k]&&SIM.ai[k].plat))||[]).slice();
- if(L.length<2){const c=MEAS.map((m,i)=>i).filter(i=>Math.abs(MEAS[i][1])>=.5&&Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]])<.7).sort((a,b)=>Math.abs(MEAS[a][1]-STANCE[k][MEAS[a][0]])-Math.abs(MEAS[b][1]-STANCE[k][MEAS[b][0]]));c.forEach(i=>{if(L.length<n&&!L.some(j=>MEAS[j][0]===MEAS[i][0]))L.push(i)})}
+ if(L.length<2){const pv=k===SIM.me&&SIM.pfPub,ok=i=>!pv||(pv[MEAS[i][0]]!==0&&Math.sign(pv[MEAS[i][0]])===Math.sign(MEAS[i][1]));sigOf(k).filter(ok).forEach(i=>{if(L.length<n&&!L.includes(i)&&!L.some(j=>MEAS[j][0]===MEAS[i][0]))L.push(i)});const c=MEAS.map((m,i)=>i).filter(i=>ok(i)&&Math.abs(MEAS[i][1])>=.5&&Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]])<.7).sort((a,b)=>Math.abs(MEAS[a][1]-STANCE[k][MEAS[a][0]])-Math.abs(MEAS[b][1]-STANCE[k][MEAS[b][0]]));c.forEach(i=>{if(L.length<n&&!L.some(j=>MEAS[j][0]===MEAS[i][0]))L.push(i)})}
  return L.slice(0,n)}
 const mkP=(i,k,o)=>({i,t:MEAS[i][0],v:MEAS[i][1],p:0,s:'',k,...(o||{})});
 function mkProm(){return progFor(SIM.me,6).map(i=>mkP(i,SIM.me))}
@@ -2862,7 +2869,9 @@ const LEG={
   const heat=G.heat||{},stress=lcl((G.debt-110)/15,0,1),doms=LCORE,mine=party===SIM.me;
   const dw=k=>{let w=1+Math.max(0,50-G.ind[k])/8+(heat[k]||0)*1.2;if(mine&&LTH[k]!=null&&myProm(G).some(p=>p.t===LTH[k]&&p.s!=='kept'))w+=1.2;
    w*=Math.pow(.65,(G.laws||[]).filter(l=>l.act&&l.dom===k&&G.q-l.q<=2).length);return w};
-  const dom=o.dom||lPick(doms,dw),gap=50-(G.ind[dom]??50)+(heat[dom]||0)*3;
+  /* besides the six core files, each party also legislates on the issues it owns: immigration for the RN, Europe for the centre, the cost of living for LFI (Logan 2026-10-23) */
+  const XD=['liv','immig','eur','tax','def','lab','soc','energy'],xw=d=>party>=0&&party!==7&&OWN[party]?Math.max(0,OWN[party][DCAT[d]]-.05)*2.4:0;
+  const dom=o.dom||lPick(doms.concat(XD),k=>XD.includes(k)?xw(k):dw(k)),gap=50-(G.ind[dom]??50)+(heat[dom]||0)*3;
   const aw=a=>{if(pNo(party,dom,a))return 0;const A=LARC[a],ef=A.i*((LDOM[dom].flip&&LDOM[dom].flip[a])?-1:1);let w=.6+Math.max(0,ldot(A.ax,LPAR[party]))*1.4;
    if(gap>12&&ef>0)w+=1.5;if(gap<-8&&ef<0)w+=.8;if(stress>.5&&A.c<0)w+=1.2*stress;if(stress>.5&&A.c>0)w*=1-.4*stress;if(o.relief&&ef<0)w=0;
    if(mine&&G.prom){const th=billTh(dom,a,ef);const pp=th&&myProm(G).find(p=>p.t===th[0]&&p.s!=='kept'&&p.s!=='broken'&&Math.abs(p.v)>=.5);if(pp)w*=Math.sign(pp.v)===th[1]?2.5:.1}return w};
@@ -2903,7 +2912,7 @@ const LEG={
   const elig=i=>fit(BLS[i])&&!G.passed.includes(i)&&codeLive(G,BLS[i])&&G.q-((G.lastBillQ||{})[i]??-99)>=2&&!G.passed.some(p=>MEAS[p][0]===MEAS[i][0]&&Math.abs(MEAS[p][1]-MEAS[i][1])>1.5)&&(opp?(BLS[i].st[me]>0&&!govPl(G,BLS[i])):!promBreaks(G,BLS[i]));
   /* the coalition contract and the player's own pledges come first among platform measures */
   if(!opp)(G.dem||[]).forEach(d=>{if(elig(d.m)&&!list.includes(d.m))list.push(d.m)});
-  if(nStatic){const own=SIM.plat.filter(i=>elig(i)&&!list.includes(i)),el=own.length&&rnd()<.6?own:BLS.map((b,i)=>i).filter(i=>elig(i)&&!list.includes(i)&&(opp||BLS[i].st[G.pm]>=0));if(el.length)list.push(pick(el))}
+  if(nStatic){const own=SIM.plat.filter(i=>elig(i)&&!list.includes(i)),near=(k,i)=>Math.abs(MEAS[i][1]-STANCE[k][MEAS[i][0]])<.9,el=own.length&&rnd()<.6?own:BLS.map((b,i)=>i).filter(i=>elig(i)&&!list.includes(i)&&near(me,i)&&(opp||near(G.pm,i)));if(el.length)list.push(pick(el))}
   for(let i=list.length-1;i>0;i--){const j=(rnd()*(i+1))|0;[list[i],list[j]]=[list[j],list[i]]}
   return list.slice(0,6)},
  /* one bill a given party would sponsor (AI government, opposition proposals, deal concessions) */
@@ -3034,7 +3043,7 @@ Object.assign(LEG,{
   const b=n?LEG.multi(D,G):null;
   const tok=(label,opts,tt)=>`<button type="button" class="tok" data-tok="${safeText(JSON.stringify(opts))}"${tt?` title="${safeText(tt)}"`:''}>${safeText(label)}</button>`;
   const need=LCORE.map(k=>({k,s:G.ind[k]-(G.heat&&G.heat[k]||0)*3})).sort((a,z)=>a.s-z.s).slice(0,3);
-  const sug=`<div class="dk-row" style="align-items:center;margin:0 0 10px"><span class="note">${x('Sujets du moment :','Pressing issues:')}</span>${need.map(({k})=>{const ia=domInfo(k),arc=G.ind[k]<50||pNo(SIM.me,k,'reg')?'inv':'reg';return `<button class="chip" data-dk="sug|${k}|${arc}">${x(ia[1],ia[2])} · ${metSummary(G,k)} · ${x(LV[k][arc][0],LV[k][arc][1])}</button>`}).join('')}</div>`;
+  const sug=`<div class="dk-row" style="align-items:center;margin:0 0 10px"><span class="note">${x('Sujets du moment :','Pressing issues:')}</span>${need.map(({k})=>{const ia=domInfo(k),arc=deskArc(G,k);return `<button class="chip" data-dk="sug|${k}|${arc}">${x(ia[1],ia[2])} · ${metSummary(G,k)} · ${x(LV[k][arc][0],LV[k][arc][1])}</button>`}).join('')}</div>`;
   const money=v=>(v>0?'+':'')+fn(v)+' Md€/'+x('an','yr');
   const termTok=tok(x(PTERM[D.du][0],PTERM[D.du][1]),Object.keys(PTERM).map(z=>[x(PTERM[z][0],PTERM[z][1]),'du|'+z,D.du===z]));
   const ridList=Object.keys(LRID).filter(z=>!LRID[z].only||D.cl.some(c=>LRID[z].only.includes(c.dom)));
@@ -3060,6 +3069,8 @@ Object.assign(LEG,{
    <header class="bill-paper-head">${anHead(G,{gov:ctrl(),no:D.no,title:''}).replace(/<div class="anh-title">[\s\S]*?<\/div><\/div>$/,'</div>')}<div class="bill-paper-title">${safeText((D.t||(b?x(b.f,b.e):x('Projet de loi','Bill'))).trim())}</div></header>
    <hr class="bill-paper-sep">${sec1}${clauses}<div class="bill-paper-addrow"><button type="button" data-dk="add">＋ ${x('Ajouter un article','Add a clause')}</button></div>${analysis}
    <footer class="bill-paper-file"><p>${x('Le texte rejoint le programme législatif. Le capital est payé au dépôt en séance.','The bill joins the agenda. Capital is paid when it is tabled in the chamber.')}</p><div><button type="button" data-dk="reset">${x('Réinitialiser','Reset')}</button><button type="button" class="bill-paper-submit vbtn" data-dk="table" ${(!n||dis)?'disabled':''}>${x('Déposer le texte','File the bill')}</button></div></footer></article></section>`}});
+/* the suggested measure for a pressing issue: one that helps and that the player's party would actually table */
+function deskArc(G,k){const me=SIM.me,L=Object.keys(LARC).filter(a=>!pNo(me,k,a)).map(a=>{const A=LARC[a],ef=A.i*((LDOM[k].flip&&LDOM[k].flip[a])?-1:1),th=billTh(k,a,ef),fit=th&&STANCE[me]?Math.abs(th[1]*(ARCMAG[a]||1.1)-STANCE[me][th[0]]):1;return [a,(ef>0?2:0)+Math.max(0,ldot(A.ax,LPAR[me]||[0,0,0,0,0]))-fit*.8+(a==='inv'&&G.ind[k]<50?.3:0)]}).sort((a,b)=>b[1]-a[1]);return L.length?L[0][0]:'inv'}
 /* token menus on the bill paper */
 function tokMenu(btn){closeTok();let opts=[];try{opts=JSON.parse(btn.dataset.tok)}catch(e){return}const m=document.createElement('div');m.className='tok-menu';m.setAttribute('role','menu');
  m.innerHTML=opts.map(o=>`<button type="button" role="menuitem" class="${o[2]?'on':''}" data-dk="${safeText(o[1])}">${safeText(o[0])}</button>`).join('');document.body.appendChild(m);
@@ -3280,7 +3291,7 @@ function hansardHTML(G){const H=(G.hans||[]).slice().reverse(),op=!!(st.det&&st.
 const CODE={
  pen:{f:'Retraites',e:'Pensions',ic:'🧓',th:4,p:[
   {id:'age',f:'Âge légal de départ',e:'Legal retirement age',o:[['60 ans','60'],['62 ans','62'],['62 ans et 9 mois','62 years 9 months'],['63 ans','63'],['64 ans','64'],['65 ans','65'],['67 ans','67']],s:2,pub:1,w:3,
-   yr:[60,62,62.75,63,64,65,67],sav:[-32,-10,0,3,12,18,30],eco:[-3,-1,0,.4,1.4,2,3],pf:[0,1,1,4,5,1,4,3,4,4]},
+   yr:[60,62,62.75,63,64,65,67],sav:[-32,-10,0,3,12,18,30],eco:[-3,-1,0,.4,1.4,2,3],pf:[0,1,1,4,5,1,4,3,4,5]},
   {id:'qtr',f:'Durée de cotisation (taux plein)',e:'Contribution period (full pension)',o:[['160 trimestres (40 ans)','160 quarters (40 years)'],['166 trimestres','166 quarters'],['168 trimestres','168 quarters'],['170 trimestres','170 quarters'],['172 trimestres','172 quarters'],['174 trimestres','174 quarters']],s:3,pub:2.2,w:1.5,
    sav:[-18,-6,-3,0,3,6],eco:[-1.5,-.5,-.2,0,.3,.6],pf:[0,4,2,4,5,1,4,3,4,4]},
   {id:'reg',f:'Régimes spéciaux',e:'Special pension schemes',o:[['Ouverts aux nouveaux embauchés','Open to new hires'],['Fermés aux nouveaux embauchés','Closed to new hires'],['Alignés sur le régime général','Merged into the general scheme']],s:1,pub:1.6,w:1,
@@ -4937,7 +4948,7 @@ function platCard(){const me=SIM.me,c=platCost(me)+(SIM.costAdj||0),cr=credOf(me
  <div class="tick"><b>🔥 ${x('Sujet du moment : ','Top issue: ')}${x(TH[top][0],TH[top][1])}</b><br><span class="note">${x('Les électeurs font le plus confiance à ','Voters trust ')}${P[OWN.map((o,k)=>[o[top],k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0])[0][1]].n}${x('.',' most on it.')}</span></div>
  <p style="margin:8px 0 4px"><b>${SIM.plat.length}</b> ${x('mesure(s)','measure(s)')} · <b>${c>0?'+':''}${c} ${x('Md€/an','bn€/yr')}</b> · ${x('crédibilité','credibility')} <b>${Math.round(cr*100)} %</b></p>
  ${SIM.plat.length?SIM.plat.map(m=>`<div class="note">• ${mName(m)} <span style="opacity:.8">(${MEAS[m][4]>0?'+':''}${MEAS[m][4]} ${x('Md€','bn€')})</span></div>`).join(''):`<p class="note">${x('Aucune mesure : utilisez « Annonce de programme ».','No measures yet: use “Policy announcement”.')}</p>`}
- <details style="margin-top:8px"><summary><b>${x('Les programmes rivaux','Rival platforms')}</b></summary>${[0,1,2,3,4,5,6].filter(k=>k!==me&&!(PRES()&&!natShares(true)[k])).map(k=>`<div style="margin:6px 0">${chipP(k)} <span class="note">${platCost(k)} ${x('Md€','bn€')}</span><div class="note">${SIM.ai[k].plat.map(mName).join(' · ')||'—'}</div></div>`).join('')}</details>
+ <details style="margin-top:8px"><summary><b>${x('Les programmes rivaux','Rival platforms')}</b></summary>${ORD.filter(k=>k!==7&&k!==me&&!(PRES()&&!natShares(true)[k])).map(k=>`<div style="margin:6px 0">${chipP(k)} <span class="note">${platCost(k)} ${x('Md€','bn€')}</span><div class="note">${SIM.ai[k].plat.map(mName).join(' · ')||'—'}</div></div>`).join('')}</details>
  <details open style="margin-top:6px"><summary><b>${x('Ce qui préoccupe les Français','What voters care about')}</b></summary>${careHTML(120)}</details></div>`}
 function turnCard(){const ph=SIM.phase,me=SIM.me,L=SIM.last,r1=ph==='r1',D=r1?D1:D2,dn=r1?SIM.day:SIM.r2day,K=campK();
  let h=`<div class="card hq" id="turn" style="--pk:${pc(me)}"><div class="hq-top">${plogo(me,40)||`<span class="plogo-x">${P[me].n}</span>`}<div><b>${pfull(me)}</b><small>${x('Votre campagne','Your campaign')}</small></div></div>
@@ -4996,7 +5007,7 @@ function vPlat(){const me=SIM.me,c=platCost(me)+(SIM.costAdj||0),cr=credOf(me);
  return `<div class="two"><div class="card"><h2>${x('Votre programme','Your platform')}</h2><p class="note">${x('Chaque annonce ajoute une mesure. Un programme trop coûteux entame votre crédibilité : vos annonces portent moins.','Each announcement adds a measure. A platform that costs too much dents your credibility: your announcements land less.')}</p>
  <div class="kpis" style="margin:10px 0"><div class="kpi"><small>${x('Coût annuel','Yearly cost')}</small><b>${c>0?'+':''}${c} ${x('Md€','bn€')}</b></div><div class="kpi"><small>${x('Crédibilité','Credibility')}</small><b>${Math.round(cr*100)} %</b></div><div class="kpi"><small>${x('Thème central','Central issue')}</small><b style="font-size:16px">${x(TH[SIM.theme][0],TH[SIM.theme][1])}</b></div></div>
  ${SIM.plat.length?`<table class="t"><tbody>${SIM.plat.map(m=>`<tr><td>${x(TH[MEAS[m][0]][0],TH[MEAS[m][0]][1])}</td><td><b>${mName(m)}</b></td><td class="r">${MEAS[m][4]?(MEAS[m][4]>0?'+':'')+MEAS[m][4]:'0'} ${x('Md€','bn€')}</td></tr>`).join('')}</tbody></table>`:`<p>${x('Aucune mesure annoncée. Utilisez « Annonce de programme » dans l’onglet Campagne.','No measures yet. Use “Policy announcement” on the Campaign tab.')}</p>`}</div>
- <div class="card"><h2>${x('Les programmes rivaux','Rival platforms')}</h2>${[0,1,2,3,4,5,6].filter(k=>k!==me).map(k=>`<div style="margin:8px 0">${chipP(k)} <span class="note">${platCost(k)} ${x('Md€','bn€')}</span><div class="note">${SIM.ai[k].plat.map(mName).join(' · ')||'—'}</div></div>`).join('')}
+ <div class="card"><h2>${x('Les programmes rivaux','Rival platforms')}</h2>${ORD.filter(k=>k!==7&&k!==me).map(k=>`<div style="margin:8px 0">${chipP(k)} <span class="note">${platCost(k)} ${x('Md€','bn€')}</span><div class="note">${SIM.ai[k].plat.map(mName).join(' · ')||'—'}</div></div>`).join('')}
  <h3 style="margin-top:14px">${x('Ce qui préoccupe les Français','What voters care about')}</h3>${careHTML(150)}</div></div>`}
 /* ===== polls ===== */
 /* the poll chart: dots for each poll, a smoothed line per party and its name at the end (rows: [{t,v}], t = day or quarter index) */
