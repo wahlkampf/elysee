@@ -2075,6 +2075,8 @@ function roleName(){const G=SIM.G,me=SIM.me;if(G.pm===me)return x('Premier minis
 const TUPS=[['profite d’une séquence réussie de son chef de file.','gets a lift from a strong run by its leader.'],['impose son thème dans le débat national.','sets the national agenda.'],['séduit avec une proposition très commentée.','wins attention with a much-discussed proposal.'],['bénéficie de la colère contre ses rivaux.','benefits from anger at its rivals.']],
  TDNS=[['est éclaboussé par une affaire judiciaire.','is hit by a court case.'],['se déchire en public sur sa ligne.','tears itself apart in public over its line.'],['subit une série de mauvaises interviews.','suffers a run of bad interviews.'],['voit un cadre de premier plan claquer la porte.','sees a senior figure walk out.']];
 function govShare(G,gv){gv=gv||G.gov;const c=gv.map(k=>(G.cab&&G.cab[k])||0),T=sum(c);const w=T?c:gv.map(k=>G.seats[k]||0),W=sum(w)||1;const o={};gv.forEach((k,i)=>o[k]=w[i]/W);return o}
+/* below this Government approval a government counts as unpopular */
+const UNPOP=40;
 function normV(G){const T=sum(G.v);G.v=G.v.map(v=>v/T)}
 /* ===== censure ===== */
 /* ===== censure motions: a roll-call vote that tests the coalition's cohesion =====
@@ -2268,7 +2270,7 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  {const h=G.ah||[],a3=h.length>=3?h[h.length-3].pm:null;if(a3!=null&&h[h.length-3].pmk===pm0){const d=G.appr.pm-a3;gp.forEach(k=>{G.pmo[k]+=.035*Math.tanh(d/8)*Math.min(1.5,(sh[k]||0)*gp.length)})}}
  G.v=G.v.map((v,k)=>{if(k===7)return v;G.pmo[k]=G.pmo[k]*.7+gauss()*.05*VOL.term*Math.sqrt(Math.max(1,smallF(v)));return Math.max(.004,v*Math.exp(G.pmo[k]+.09*Math.log(Math.max(.004,G.vb[k])/Math.max(.004,v*Math.exp(-(G.gao&&G.gao[k]||0)-(G.vro&&G.vro[k]||0)-(G.cso&&G.cso[k]||0))))))});
  /* the news of the quarter: one party has a moment (or a bad patch) that moves the polls */
- if(rnd()<Math.min(.85,.5*VOL.term)){const c=[0,1,2,3,4,5,6].filter(k=>G.v[k]>.03),k=c[Math.floor(rnd()*c.length)],up=rnd()<.5,m=.08+rnd()*.14,L=up?TUPS:TDNS,t=L[Math.floor(rnd()*L.length)];
+ if(rnd()<Math.min(.85,.5*VOL.term)){const c=[0,1,2,3,4,5,6].filter(k=>G.v[k]>.03),k=c[Math.floor(rnd()*c.length)],up=rnd()<.5&&!(k===pm0&&G.appr.pm<UNPOP),m=.08+rnd()*.14,L=up?TUPS:TDNS,t=L[Math.floor(rnd()*L.length)];
   G.v[k]*=Math.exp(up?m:-m);G.pmo[k]+=up?m*.35:-m*.35;G.log.push({m:G.m,t:(up?'📈 ':'📉 ')+P[k].n+' '+x(t[0],t[1])})}
  /* what the government sheds goes mostly to the parties furthest from it (before renormalising, so it isn't spread evenly) */
  /* Logan 2026-10-22: not only RN. Lost voters go (a) to the parties closest to the one they leave, (b) to whoever owns the reason the government is unpopular, (c) a share to every opposition party */
@@ -2276,6 +2278,8 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  /* an unpopular government rallies the opposite camp (Logan 2026-10-20: the left should surge against an unpopular right-wing government, and vice versa): a bounded level, swapped each quarter */
  {const dis=Math.tanh(Math.max(0,38-G.appr.pm)/12),W=campCauseW(G,pm0,gp);G.cso=G.cso||P.map(()=>0);G.v=G.v.map((v,k)=>{const o=gp.includes(k)?0:.2*dis*(W[k]||0)*Math.min(1,Math.sqrt(.18/Math.max(.01,v))),d=o-(G.cso[k]||0);G.cso[k]=o;return v*Math.exp(d)})}
  normV(G);G.v=G.v.map(v=>Math.max(.004,v));normV(G);
+ /* the party leading an unpopular government never gains in the polls while it leads it (Logan 2026-10-23): any rise is cut back and goes to the opposition */
+ if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0&&G.v[pm0]>v0[pm0]){const cap=v0[pm0]*(1-.004-rnd()*.012),ex=G.v[pm0]-cap,op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));G.v[pm0]=cap;if(T>0)op.forEach(k=>G.v[k]+=ex*G.v[k]/T);G.pmo[pm0]=Math.min(0,G.pmo[pm0])}
  G.ang=G.ang.map(v=>v*.8);G.deals=(G.deals||[]).filter(d=>d.until>G.q);
  /* coalition partners lose patience when their measure waits; an angry partner walks out to the back benches */
  /* a partner short-changed on cabinet posts grows restless */
