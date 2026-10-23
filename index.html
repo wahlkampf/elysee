@@ -1402,7 +1402,9 @@ function newGame(o){const pfPrev=SIM.pfPub||null;SIM.prevAvg=null;SIM.r2b=null;c
  Object.assign(SIM,{seed:sd,me:o.party,theme:o.theme,diff:o.diff||'normal',mode:o.mode||'leg',phase:'pacts',day:0,ap:3,funds:600,nat:Array(NP).fill(0),trend:Array(NP).fill(0),reg:FR.REG.map(()=>Array(NP).fill(0)),mom:Array(NP).fill(0),sal:TH.map((_,t)=>t===0?1.5:t===1||t===3?1.2:t===2?1.1:1),
   ai:P.map((p,k)=>({ap:3,funds:Math.round(600*clamp((o.tg||(SIM.mode==='pres'?TGP:TG0))[k]/.25,.3,1)),an:0,fr:0,prep:0,tc:Array(NREG).fill(0),plat:[]})),
   plat:[],an:0,fr:0,prep:0,prepRv:[],tc:Array(NREG).fill(0),atk:Array(NP).fill(0),log:[],news:[],hist:[],polls:[],pend:[],msg:'',barrage:2.6,barLFI:1,turn:null,front:{},cons:{},wd:null,pacts:[],offers:[],inc:{}});
- SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;if(SIM.mode==='pres')try{lpRoll(0,null)}catch(e){console.error(e)}
+ SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;
+ /* prices and jobs at the end of the term set how much the cost of living matters in the campaign (Logan 2026-10-23) */
+ if(SIM.rec&&SIM.rec.infl!=null)SIM.sal[0]=Math.min(2.2,SIM.sal[0]+Math.max(0,SIM.rec.infl-2.5)*.15+Math.max(0,-(SIM.rec.rw||0))*.1+Math.max(0,SIM.rec.un-8)*.08);if(SIM.mode==='pres')try{lpRoll(0,null)}catch(e){console.error(e)}
  if(SIM.mode!=='pres')C.forEach(d=>{SIM.inc[d.i]=SIM.K&&SIM.K.inc?SIM.K.inc[d.i]:d.w});
  /* AI starting platforms: two signature measures each */
  P.forEach((p,k)=>{if(k===SIM.me||k===7)return;const sg=sigOf(k),L=sg.slice(0,1),rest=sg.slice(1,6);while(L.length<3&&rest.length){const j=Math.min(rest.length-1,Math.floor(rnd()*rnd()*rest.length*1.6));L.push(rest.splice(j,1)[0])}SIM.ai[k].plat=L});
@@ -2325,13 +2327,13 @@ function aiDissolve(G){const c=campOf(G.pres),pk=G.pres,left=G.presM-G.m,end=60-
 function dissolve(why){const G=SIM.G,K=careerK();G.fallsD=G.falls||0;G.log.push({m:G.m,t:x('Dissolution de l’Assemblée nationale : ','The National Assembly is dissolved: ')+why});
  K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;const keep=JSON.parse(JSON.stringify(SIM.G));
  const start=new Date(Math.floor(G.m/12),G.m%12,15).toISOString();
- newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:G.v.slice(),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
+ newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:G.v.slice(),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
 function presElection(){const G=SIM.G,K=careerK();K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;try{lpRoll(G.m,G)}catch(e){console.error(e)}const keep=JSON.parse(JSON.stringify(G));
  /* presidential intentions: the term's polls blended with personal standing */
  /* presidential intentions start from the in-game polls as they stand (Logan 2026-10-23) */
  const tg=G.v.slice();const T=sum(tg);
  const pm=Math.max(G.m,G.presM-1),start=new Date(Math.floor(pm/12),pm%12,1).toISOString();
- newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres}:null});SIM.G=keep;save();render()}
+ newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.G=keep;save();render()}
 /* after a presidential election: the winner keeps or dissolves the Assembly */
 function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=careerK(),me=SIM.me;const d=new Date(START);d.setDate(d.getDate()+D1+14);const m=d.getFullYear()*12+d.getMonth()+1;
  K.presK=w;K.presM=m+59;K.presN=(K.presN||0)+1;K.presAppr=55;K.presStart=m;SIM.K=K;const G=SIM.G;if(G){G.pres=w;G.presM=K.presM;G.appr.pres=55;G.m=m;G.log.push({m,t:P[w].n+x(' entre à l’Élysée.',' enters the Élysée.')})}
@@ -2370,7 +2372,7 @@ const titleMetric=s=>String(s).replace(/\b([a-zA-Z][a-zA-Z’'-]*)/g,w=>w.charAt
 const metNum=(v,d,fr,sg)=>{const t=Math.abs(v).toFixed(d).replace('.',fr?',':'.');return (v<0?'−':(sg?'+':''))+t};
 function indRowsHTML(G){const fr=lang==='fr';return MET.map(m=>{const v=m.f(G.ind[m.k]),pv=m.f(G.prev[m.k]??G.ind[m.k]),dv=v-pv,th=Math.pow(10,-m.d)*.5,up=dv>th,dn=dv<-th,good=(up&&m.g>0)||(dn&&m.g<0);
  return `<div class="bar"><span class="n" style="width:230px">${x(m.fr,m.en)}</span><span class="v" style="width:auto;flex:1;text-align:right">${metNum(v,m.d,fr,m.sg)} ${mU(m)} <span style="color:${up||dn?(good?'var(--ok)':'var(--bad)'):'inherit'}">${up?'▲':dn?'▼':'–'}</span></span></div>`}).join('')}
-function metSummary(G,k){const m=MET.find(z=>z.k===k),fr=lang==='fr';if(m)return x(m.fr,m.en)+' '+metNum(m.f(G.ind[k]),m.d,fr,m.sg)+' '+mU(m);if(k==='econ')return x('Inflation','Inflation')+' '+fn(G.infl)+' %, '+x('chômage','unemployment')+' '+fn(G.unemp)+' %';if(k==='safe')return x('Violences','Assaults')+' '+Math.round(G.crime)+x(' / 100 000',' per 100k');return''}
+function metSummary(G,k){const m=MET.find(z=>z.k===k),fr=lang==='fr';if(m)return x(m.fr,m.en)+' '+metNum(m.f(G.ind[k]),m.d,fr,m.sg)+' '+mU(m);if(k==='econ')return x('Inflation','Inflation')+' '+fn(G.infl)+' %, '+x('chômage','unemployment')+' '+fn(G.unemp)+' % ('+x('jeunes','youth')+' '+fn(unYouth(G))+' %)';if(k==='safe')return x('Violences','Assaults')+' '+Math.round(G.crime)+x(' / 100 000',' per 100k');return''}
 /* 2025 French baselines */
 const ARR0=337; /* first residence permits issued, thousands a year (2024) */
 const CR0=570; /* recorded physical assaults per 100,000 people (SSMSI, 2024) */
@@ -2443,14 +2445,15 @@ function gfin(G,bu,tx,ex){G=G||SIM.G;budMig(G);bu=bu||G.bu;tx=tx||G.tx;ex=ex||G;
  return{sp,rev,bal:rev-sp,pr,ds,reserve,ministries,pens,chom,fam,coll,eu,ops,taxes,ta,other,nontax,div,xs,xr}}
 /* ===== business cycle (booms and busts) with ECB rates ===== */
 function bcTick(G){const C=G.bc||(G.bc={v:-.2,imb:.3,rec:0,boom:0,rate:2,rAvg:2,st:'slow'}),inf=G.infl,un=G.unemp,gg=G.gdpGr;
- const rT=Math.max(0,Math.min(6,2+.7*(inf-1.2)+.2*(gg-.9)-.15*(un-7.6)));C.rate=Math.round((C.rate+(rT-C.rate)*.5)*4)/4;C.rAvg+=(C.rate-C.rAvg)*.08;
+ /* zero lower bound (Logan 2026-10-23): when the economy needs a rate below 0 the ECB is stuck at 0; asset purchases make up only part of the missing stimulus */
+ const rR=2+.7*(inf-1.2)+.2*(gg-.9)-.15*(un-7.6),rT=Math.max(0,Math.min(6,rR)),z0=C.zlb||0;C.zlb=Math.max(0,-rR);if(C.zlb>.3&&z0<=.3)G.log.push({m:G.m,t:x('🏦 La BCE est au plancher : son taux est à 0 % et elle relance les rachats de dette. Elle ne peut guère faire plus pour soutenir l’économie.','🏦 The ECB hits the floor: its rate is at 0% and it restarts bond buying. It can do little more to prop up the economy.')});C.rate=Math.round((C.rate+(rT-C.rate)*.5)*4)/4;C.rAvg+=(C.rate-C.rAvg)*.08;
  let sh=(rnd()-.5)*.7,ev=null;
  if(C.rec>0){sh-=C.rs;C.rec--;if(!C.rec){ev='rcv';C.cd=4}}
  else if(C.boom>0)sh+=C.bs,C.boom--;
  else{C.cd=Math.max(0,(C.cd||0)-1);const pb=C.cd>0?0:Math.min(.12,.025+.03*C.imb+.02*Math.max(0,C.rate-3))*(1-.35*(C.cush||0));C.cush=(C.cush||0)*.85;
   if(rnd()<pb){C.rec=2+(rnd()*3|0);C.rs=(1.1+C.imb*.7+rnd()*.7);C.imb=0;C.nb=1;ev='bust'}
   else if(rnd()<.05+.03*Math.max(0,2-C.rate)){C.boom=3+(rnd()*4|0);C.bs=.4+rnd()*.5;ev='boom'}}
- C.v=C.v*.65+sh-(C.rate-2)*.25;
+ C.v=C.v*.65+sh-(C.rate-2)*.25-.07*Math.min(3,C.zlb||0);
  C.imb=Math.max(0,Math.min(4,C.imb*.97+.22*Math.max(0,C.v)+.12*Math.max(0,2-C.rate)-.04));
  C.st=C.rec>0||C.v<-1.2?'rec':C.v>1?'boom':C.v<-.4?'slow':'exp';
  if(ev)G.log.push({m:G.m,t:ev==='bust'?x('📉 Retournement économique : l’investissement recule et une récession s’amorce.','📉 The economy turns: investment pulls back and a recession begins.'):ev==='boom'?x('📈 Embellie : l’investissement repart et l’économie accélère.','📈 Upswing: investment picks up and the economy speeds up.'):x('🌱 La récession prend fin ; la reprise s’amorce.','🌱 The recession ends and recovery begins.')});
@@ -2462,7 +2465,7 @@ function themeInit(G){G.thm={};IND.forEach(([k])=>{G.thm[k]=Math.max(-10,Math.mi
 function themeStep(G){if(!G.thm)themeInit(G);if(G.q%2===1)IND.forEach(([k])=>{G.thm[k]=Math.max(-12,Math.min(12,G.thm[k]*.85+(rnd()-.5)*8))})}
 function coupl(k,I0){let s=0;const c=COUP[k]||{};for(const j in c)s+=c[j]*(I0[j]-50);return s}
 /* fields of the economic model, carried from one government to the next */
-const ECK=['nb','nt','ntEnd','frz','frzY','ssp','sspY','exR','fsR','fsL','dp0','dpR','ext','spr','sprA','sprH','sprEv','bix','bixY','gap','edp','edpY','gdp','pop','gdpGr','cpi','infl','unemp','arr','debt','crime','cost','rev','ind','off','prev','bc','thm','ph','rat','bu','tx','sm','budBase','bref','tref','laws','heat','lawN','done','bl','start','bmood','iOne','cOne','aOne','hans','pjs','pjp','pjact','pjab','cr','crDone','crUsed','crb','cn','crq','lfx','gfx'];
+const ECK=['nb','nt','ntEnd','frz','frzY','ssp','sspY','exR','fsR','fsL','dp0','dpR','ext','spr','sprA','sprH','sprEv','bix','bixY','gap','edp','edpY','gdp','pop','gdpGr','cpi','infl','unemp','nairu','unA','unLT','unH','wg','wOne','smicC','dfl','arr','debt','crime','cost','rev','ind','off','prev','bc','thm','ph','rat','bu','tx','sm','budBase','bref','tref','laws','heat','lawN','done','bl','start','bmood','iOne','cOne','aOne','hans','pjs','pjp','pjact','pjab','cr','crDone','crUsed','crb','cn','crq','lfx','gfx'];
 function econInit(G,prev){if(prev&&prev.ind){ECK.forEach(k=>{if(prev[k]!==undefined)G[k]=JSON.parse(JSON.stringify(prev[k]))})}
  else Object.assign(G,{edp:{on:1,w:0},gdp:GDP0,pop:POP0,gdpGr:.8,cpi:CPI0,infl:1.1,unemp:7.7,arr:ARR0,debt:115.6,crime:CR0,cost:0,rev:0,ind:{health:50,edu:50,econ:48,hous:46,clim:50,safe:50},off:{},prev:{},ph:rnd()*16,
   rat:4,bu:BASE.slice(),tx:Array(8).fill(0),sm:BASE.slice(),laws:[],heat:{},done:[],bl:[],hans:[]});
@@ -2507,11 +2510,24 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  const fs=(.6*(F.ministries-bsum())-.8*taxDrag(G))/gd0*100;if(G.fsR==null){G.fsR=fs;G.fsL=0;G.dp0=defP;G.dpR=defP}
  const fl0=G.fsL;G.fsL+=((fs-G.fsR)-G.fsL)*.25;G.fsR+=(fs-G.fsR)*.07;const imp=Math.max(-3,Math.min(3,4*(G.fsL-fl0)));
  const dpT=.15*Math.max(-1.5,Math.min(2,G.dp0))+.15*Math.max(-1.5,Math.min(1.5,defP-G.dpR));G.dpR+=(defP-G.dpR)*.07;
- const gr=Math.max(-4,Math.min(6,.6+(ec-50)*.05+imp+dpT+cyc-(if0-1.4)*.12-(cr0/CR0-1)*1.5-(un0-7.6)*.05+(G.arr-ARR0)*.002));
+ const gr=Math.max(-4,Math.min(6,.6+(ec-50)*.05+imp+dpT+cyc-(if0-1.4)*.12-(cr0/CR0-1)*1.5-(un0-7.6)*.05+(G.arr-ARR0)*.002-Math.max(0,.5-if0)*.4));
  const gN=(gr+if0)/400;G.gdp=gd0*(1+gN);G.gdpGr=(Math.pow(1+gr/400,4)-1)*100;(G.grH=G.grH||[]).push(+gr.toFixed(2));G.gap=Math.max(-6,Math.min(4,(G.gap||0)*.8+(gr-1.0)*.25));if(G.grH.length>8)G.grH.shift();if(G.bc&&G.grH.length>=2&&G.grH.slice(-2).every(v=>v<0))G.bc.st='rec';G.pop=popN(G)*(1+.0007+(ec-50)*.00003);
  G.debt=Math.max(10,(G.debt*gd0-F.bal*25)/G.gdp);
- const unT=7.6-(ec-50)*.05-(gr-1.0)*.4+Math.max(0,if0-4)*.12+(cr0/CR0-1)*.8+(G.off.unemp||0)+(G.pjJobs||0)-cabInd(G,'jobs')*.03+G.tx[4]*TAXES[4][2]*ngf(G)/gd0*100*.3;G.unemp=Math.max(3,Math.min(14,un0+(unT-un0)*.35));
- const rd=-F.bal/gd0*100,ifT=1.4+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(7.6-G.unemp)*.1+G.tx[2]*.04+G.tx[5]*.06+(G.off.infl||0)+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
+ /* jobs (Logan 2026-10-23: 'make sure unemployment is modelled accurately'): Okun's law on the output gap around a structural rate (G.nairu, ~7.4 % in 2025);
+    layoffs come fast, hiring back is slow; long spells of high unemployment raise the structural rate (hysteresis), tight years slowly lower it */
+ if(G.nairu==null){G.nairu=7.4;G.unA=un0;G.unLT=.26;G.wg=2.2;G.smicC=G.cpi;G.unH=[un0]}
+ const unT=G.nairu-.5*G.gap-(gr-1.0)*.15-(ec-50)*.02+Math.max(0,if0-4)*.12+(cr0/CR0-1)*.8+(G.off.unemp||0)+(G.pjJobs||0)-cabInd(G,'jobs')*.03+G.tx[4]*TAXES[4][2]*ngf(G)/gd0*100*.3;G.unemp=Math.max(3,Math.min(14,un0+(unT-un0)*(unT>un0?.45:.28)));
+ G.nairu=Math.max(6,Math.min(10,G.nairu+(G.unemp>G.nairu+1?.04*(G.unemp-G.nairu-1):0)-(G.unemp<G.nairu?.02:0)+(7.4-G.nairu)*.01));
+ G.unA+=(G.unemp-G.unA)*.25;G.unLT=Math.max(.15,Math.min(.55,G.unLT+(.26+.035*(G.unA-7.4)-G.unLT)*.15));G.unH.push(+G.unemp.toFixed(2));if(G.unH.length>5)G.unH.shift();
+ /* wages follow last year's prices, less so when jobs are scarce; the SMIC is raised automatically once prices are up 2 % since its last rise */
+ G.wg+=((1.0+.7*if0-.35*(G.unemp-G.nairu)+(G.wOne||0))-G.wg)*.4;G.wOne=(G.wOne||0)*.5;
+ if(G.cpi/G.smicC-1>.02){const r=(G.cpi/G.smicC-1)*100;G.smicC=G.cpi;G.wg+=.3;G.unemp=Math.min(14,G.unemp+.02);G.log.push({m:G.m,t:x('💶 Le SMIC est revalorisé automatiquement de '+fn(r)+' % : les prix ont augmenté de plus de 2 % depuis la dernière hausse.','💶 The minimum wage (SMIC) rises automatically by '+fn(r)+'%: prices are up more than 2% since its last rise.')})}
+ const rd=-F.bal/gd0*100,ifT=1.4+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(G.nairu-G.unemp)*.12+(G.wg-2.2)*.2+G.tx[2]*.04+G.tx[5]*.06+(G.off.infl||0)+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1.5,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
+ /* deflation: households wait for lower prices and debts weigh more as incomes fall in euros (growth term above; debt/GDP rises through nominal GDP) */
+ if(G.infl<0&&!G.dfl){G.dfl=1;G.log.push({m:G.m,t:x('📉 Les prix baissent ('+fn(G.infl)+' %) : les ménages repoussent leurs achats et la dette pèse plus lourd à mesure que les revenus reculent.','📉 Prices are falling ('+fn(G.infl)+'%): households put off purchases, and debt weighs more as incomes shrink.')})}else if(G.infl>.5)G.dfl=0;
+ /* high inflation eating into pay: unions strike for wages that keep up (Logan 2026-10-23) */
+ {const rw=G.wg-G.infl,sk=typeof crGet==='function'?crGet(G,'strike'):null;if(sk)G.wOne+=.25*sk.sev;
+  if(!sk&&G.pm!=null&&G.infl>3.5&&rw<-.8&&typeof crOpen==='function'&&rnd()<.3+.1*(G.infl-3.5)-.2*rw)try{G.log.push({m:G.m,t:x('🪧 Les syndicats exigent que les salaires suivent les prix : '+fn(G.infl)+' % d’inflation, salaires réels en baisse.','🪧 Unions demand wages that keep up with prices: '+fn(G.infl)+'% inflation and falling real pay.')});crOpen(G,'strike',G.infl>5?3:2)}catch(e){console.error(e)}}
  /* assaults: economy, welfare and justice budgets, security bills */
  const f=.04*(G.unemp-7.6)+.015*Math.max(0,G.infl-3)-(ec-50)*.004-(G.ind.hous-50)*.002-(G.sm[4]-BL(4))*.016-(G.sm[7]-BL(7))*.01-((G.off.safe||0)+(G.cOne||0))*.012-cabInd(G,'crime')*.004+Math.sin((G.q+1+(G.ph||0))*.4)*.01;
  G.crime=Math.max(250,Math.min(900,cr0+(CR0*(1+f)-cr0)*.25));G.cOne=(G.cOne||0)*.7;G.ind.safe=cl(50-(G.crime/CR0-1)*120);
@@ -2521,7 +2537,7 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  /* government approval: services, jobs, prices, safety, growth, cohesion, debt, events and the budget itself */
  const I=G.ind,jd=G.sm[7]-BL(7),crA=G.crime/CR0-1;
  /* government approval, in parts: economy, public services and safety, the budget, cohesion, pledges, public mood and trends, events */
- const eco=.2*I.econ-10-.9*(G.unemp-7.6)-1.0*Math.max(0,G.infl-3)-.5*Math.max(0,.5-G.infl)+.4*(G.gdpGr-1.0)-Math.max(0,G.debt-118)*.4-Math.max(0,(G.spr||80)-100)*.04,
+ const eco=.2*I.econ-10-.9*(G.unemp-7.6)-.8*Math.max(0,G.unemp-(G.unH[0]??G.unemp))-1.0*Math.max(0,G.infl-3)-.5*Math.max(0,.5-G.infl)+.6*Math.max(-4,Math.min(2,G.wg-G.infl-.8))+.4*(G.gdpGr-1.0)-Math.max(0,G.debt-118)*.4-Math.max(0,(G.spr||80)-100)*.04,
   soc=.22*I.health+.15*I.hous+.1*I.edu+.08*I.clim-27.5-15*crA+1.5*Math.tanh(jd/6),coh=(G.coh-50)*.1,bud=(G.bmood=budMood(G,G.sm,G.tx,F).tot),pl=plRecord(G),md=moodTick(G),cr=crPress(G),lw=codeMood(G);
  G.abd={eco,soc,bud,coh,pl,md,cr,lw,ev:G.ev};
  const tgt=36.5+eco+soc+coh+pl+md+cr+lw+G.ev+bud;
@@ -2531,6 +2547,8 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  P.forEach((_,k)=>G.rel[k]=cl(G.rel[k]+(38-G.rel[k])*.1));
  const me=SIM.me,qr=.5,rg=Math.min(6,Math.round(1+(G.seats[me]||0)/54+1.5*qr));G.cap=Math.min(6,Math.max(G.cap,rg));G.sw={}}
 /* how far the economy has moved since the start of the term */
+/* youth and long-term unemployment, worked out from the headline rate (INSEE 2025: ~19 % of 15–24s, ~26 % of jobseekers out of work over a year) */
+const unYouth=G=>Math.min(45,G.unemp*2.45+Math.max(0,G.unemp-7.4)*.6),unTip=G=>x('Jeunes de 15 à 24 ans : ','Ages 15–24: ')+fn(unYouth(G))+x(' % · chômage de longue durée : ',' % · long-term: ')+Math.round((G.unLT??.26)*100)+x(' % des chômeurs · taux structurel ','% of jobseekers · structural rate ')+fn(G.nairu??7.4)+' %';
 function termD(G,k){const s=G.start;if(!s)return'';const v={debt:G.debt,gdp:G.gdp,gdppc:G.gdp/G.pop,cpi:G.cpi,infl:G.infl,unemp:G.unemp,crime:G.crime,arr:G.arr}[k],v0={debt:s.debt,gdp:s.gdp,gdppc:s.gdp/s.pop,cpi:s.cpi,infl:s.infl,unemp:s.unemp,crime:s.crime,arr:s.arr}[k];if(v==null||v0==null)return'';
  const pc=k==='gdp'||k==='gdppc'||k==='crime',d=pc?(v/v0-1)*100:v-v0;if(Math.abs(d)<.05)return'';return (d>0?'+':'−')+fn(Math.abs(d))+(pc?' %':k==='arr'?' k':' pt')}
 /* stats ribbon: politics, economy, society */
@@ -2540,15 +2558,15 @@ function kDonut(v,max,col,lab,cap){const r=26,c=2*Math.PI*r,f=Math.max(0,Math.mi
 function kribbon(G){const F=gfin(G),pm=G.pm!=null?Math.round(G.appr.pm):null,pr=Math.round(G.appr.pres),gr=G.gdpGr;
  if(!G.kh||G.kh.q!==G.q)G.kh={q:G.q,prev:G.kh?G.kh.cur:{pm,pr},cur:{pm,pr}};else G.kh.cur={pm,pr};
  const chg=(v,p)=>{if(v==null||p==null)return'';const d=v-p;return `<em class="kch" style="color:${d>0?'var(--ok)':d<0?'var(--bad)':'var(--mute)'}">${d>0?'▲ '+d:d<0?'▼ '+(-d):'–'}</em>`};
- const cell=(l,v,u,sub,c,bad)=>{const sc=sub&&/^\+/.test(sub)?'var(--ok)':sub&&/^[-−]/.test(sub)?'var(--bad)':'var(--mute)';return `<div class="kc"><small><i style="background:${c}"></i>${l}</small><b${bad?' style="color:var(--bad)"':''}>${v}${u?`<u>${u}</u>`:''}${sub?`<em style="color:${sc}">${sub}</em>`:''}</b></div>`},
+ const cell=(l,v,u,sub,c,bad,tt)=>{const sc=sub&&/^\+/.test(sub)?'var(--ok)':sub&&/^[-−]/.test(sub)?'var(--bad)':'var(--mute)';return `<div class="kc"${tt?` title="${tt}"`:''}><small><i style="background:${c}"></i>${l}</small><b${bad?' style="color:var(--bad)"':''}>${v}${u?`<u>${u}</u>`:''}${sub?`<em style="color:${sc}">${sub}</em>`:''}</b></div>`},
  grp=(t,cells)=>`<div class="krow"><h5>${t}</h5>${cells.join('')}</div>`,inv=s=>s?(s[0]==='+'?'−'+s.slice(1):s[0]==='−'?'+'+s.slice(1):s):'';
  return `<div class="kribbon kr2"><section class="kgrp kpol"><h5>${x('Politique','Politics')}</h5><div class="kdons">${kDonut(pm||0,100,G.pm!=null?pc(G.pm):'var(--line)',pm!=null?pm+'%':'—',x('Gouvernement','Government')+' '+chg(pm,G.kh.prev.pm))}${kDonut(pr,100,pc(G.pres),pr+'%',x('Président','President')+' '+chg(pr,G.kh.prev.pr))}</div></section><section class="kright">
  ${grp(x('Économie','Economy'),[
   cell(x('PIB','GDP'),lang==='fr'?Math.round(G.gdp).toLocaleString('fr-FR'):'€'+fn(G.gdp/1000,2),x('Md€','tn'),(gr>=0?'+':'−')+fn(Math.abs(gr))+' %','var(--fleur)'),
   cell(x('PIB / habitant','GDP per capita'),fn(G.gdp/G.pop),'k€',termD(G,'gdppc'),'var(--fleur)'),
-  cell(x('Chômage','Unemployment'),fn(G.unemp),'%',inv(termD(G,'unemp')),G.unemp>7.5?'var(--bad)':'var(--ok)'),
+  cell(x('Chômage','Unemployment'),fn(G.unemp),'%',inv(termD(G,'unemp')),G.unemp>7.5?'var(--bad)':'var(--ok)',0,unTip(G)),
   cell(x('Taux de la BCE','ECB rate'),fn(G.bc?G.bc.rate:2,2),'%','','var(--fleur)'),
-  cell(x('Inflation','Inflation'),fn(G.infl),'%','',G.infl>3?'var(--bad)':'var(--ok)'),
+  cell(x('Inflation','Inflation'),fn(G.infl),'%','',G.infl>3||G.infl<0?'var(--bad)':'var(--ok)',0,x('Salaires : ','Wages: ')+fn(G.wg??2.2)+x(' % sur un an · pouvoir d’achat ','% a year · real pay ')+((G.wg??2.2)-G.infl>=0?'+':'−')+fn(Math.abs((G.wg??2.2)-G.infl))+' %'+(G.bc&&G.bc.zlb>.3?x(' · BCE au plancher',' · ECB at the floor'):'')),
   cell(x('Déficit','Deficit'),fn(-F.bal/gdpOf(G)*100),x('% du PIB','% of GDP'),'',-F.bal/gdpOf(G)>.03?'var(--bad)':'var(--ok)'),
   cell(x('Dette / PIB','Debt / GDP'),fn(G.debt),'%','',G.debt>118?'var(--bad)':'var(--ok)',G.debt>125)])}
  ${grp(x('Société','Society'),[
@@ -3852,7 +3870,7 @@ const CR=[
 {id:'strike',em:'🪧',f:'Grèves contre la vie chère',e:'Strikes over the cost of living',dom:'econ',sl:7,bl:4,esc:.5,
  df:'Les syndicats appellent à la grève reconductible : raffineries, transports et écoles sont touchés.',de:'Unions call rolling strikes: refineries, transport and schools are hit.',
  rg:[['en Île-de-France','in Île-de-France',[7],'idf'],['dans les grandes villes','in the big cities',[7,0,12,10,6],'all'],['partout en France','nationwide',null,'all']],
- hit:{v:-.2,ind:{econ:-.6}},w:G=>1+(G.infl>3?1:0)+(G.coh<45?.3:0),
+ hit:{v:-.2,ind:{econ:-.6},infl:.05},w:G=>1+Math.max(0,G.infl-2.5)*.7+Math.max(0,-((G.wg??2.2)-G.infl))*.5+(G.coh<45?.3:0),
  sc:(b,I,a,d)=>(I.econ||0)*.4+(I.hous||0)*.5+(I.health||0)*.3+(['lab','soc','liv'].includes(d)?(a==='inv'||a==='reg'||a==='inc'?1.2:a==='cut'||a==='mkt'?-1.2:0)*(b.p?b.p.mag:2)*.5:0),
  bills:[{f:'Projet de loi sur les salaires et la conférence sociale',e:'Wages and Social Conference Bill',c:2,ind:{econ:-.2,hous:.6},ap:1.5,st:[1,1,1,0,-1,1,0,0,0,0],cv:55,df:'Coup de pouce au SMIC, indexation des minima de branche et conférence salariale annuelle.',de:'A minimum wage rise, indexed sector pay floors and an annual pay conference.'},
   {f:'Projet de loi sur le service minimum dans les transports',e:'Minimum Service in Transport Bill',c:0,ind:{econ:.8},ap:.5,coh:-1,st:[-1,-1,-1,1,1,1,1,0,1,1],cv:40,df:'Un niveau de service garanti aux heures de pointe pendant les grèves.',de:'A guaranteed level of service at rush hour during strikes.'}]},
@@ -4133,7 +4151,7 @@ function crTick(G){if(!G||G.pm==null)return;G.cr=G.cr||[];G.crDone=G.crDone||[];
    if(c.ctl>=100)end='win';else if(c.crit>=2)end='fail';else if(G.q-c.q0>=(c.lim||8))end=c.ctl>=60?'part':'fail'}
   if(!end){crHit(G,C,c.sev*(c.hm||1)*.5);crPol(G,c);crMap(G,c,-.004*c.sev);if(c.sp)G.ind[c.sp]=cl(G.ind[c.sp]-.4*c.sev);if(G.q-c.q0>=1&&rnd()<.33)crTwist(G,c);if(c.sev>sv0)crPopAdd(G,c,'up')}else crEnd(G,c,end)}
  crSpawn(G);if(G.bc)G.bc.nb=0;
- for(const k in CN0){const t=CN0[k]+G.cr.reduce((a,c)=>a+(crDef(c.id).dom===k?.5*c.sev:0)+(c.sp===k?.25*c.sev:0),0)+Math.max(0,45-(G.ind[k]??50))*.03+(k==='tax'?Math.max(0,((G.debt||110)-110)/25):k==='pen'&&G.strike?.5*(G.strike.sev||1):0)+codeCn(G,k);G.cn[k]=G.cn[k]??CN0[k];G.cn[k]=G.cn[k]+(t-G.cn[k])*.5}}
+ for(const k in CN0){const t=CN0[k]+G.cr.reduce((a,c)=>a+(crDef(c.id).dom===k?.5*c.sev:0)+(c.sp===k?.25*c.sev:0),0)+Math.max(0,45-(G.ind[k]??50))*.03+(k==='econ'?Math.max(0,G.infl-2.5)*.35+Math.max(0,-((G.wg??2.2)-G.infl))*.2+Math.max(0,G.unemp-8)*.12:0)+(k==='tax'?Math.max(0,((G.debt||110)-110)/25):k==='pen'&&G.strike?.5*(G.strike.sev||1):0)+codeCn(G,k);G.cn[k]=G.cn[k]??CN0[k];G.cn[k]=G.cn[k]+(t-G.cn[k])*.5}}
 const CRPOL={aust:{0:1,1:.8,2:.5},reform:{0:1,5:.7,1:.4},strike:{0:1,5:.6,1:.2},farm:{5:1,4:.6,6:.3},migr:{5:1,6:.7,4:.35},riot:{5:1,6:.5,4:.3},terr:{5:.8,4:.5,6:.4},dom:{0:.6,5:.4},hous:{0:.6,1:.4},urg:{1:.5,0:.5},nrj:{5:.6,0:.4},debt:{4:.5,5:.5}};
 /* political fallout: serious crises feed the parties that own the grievance, strain the majority and cost the Élysée */
 function crPol(G,c){const W=CRPOL[c.id];if(!W||c.sev<2)return;const s=c.sev-1,ctlF=1-Math.min(100,c.ctl||0)/140;if(ctlF<=.3)return;const f=s*ctlF;
@@ -4278,6 +4296,19 @@ const XS=[
  {id:'glob',em:'🌐',f:'Ralentissement mondial',e:'Global slowdown',df:'La Chine et les États-Unis ralentissent : les commandes à l’export reculent.',de:'China and the US slow down: export orders fall.',
   w:()=>.45,dur:[2,3],q:{gr:-.18,un:.05},
   o:[{f:'Plan de relance',e:'Stimulus package',fx:{appr:1},mit:.55,cost:6,spr:5},{f:'Soutien à l’investissement',e:'Investment tax credit',fx:{},mit:.3,cost:2},{f:'Tenir les comptes',e:'Keep the books tight',fx:{appr:-1},mit:0,spr:-3}]},
+ /* inflationary and deflationary periods from outside (Logan 2026-10-23): longer than the other shocks, they move prices for a year or more */
+ {id:'food',em:'🌾',f:'Flambée des prix alimentaires',e:'Food price surge',df:'Sécheresses et mauvaises récoltes dans le monde : le blé, l’huile et le café s’envolent et les prix en rayon suivent.',de:'Droughts and poor harvests worldwide: wheat, oil and coffee soar and supermarket prices follow.',
+  w:()=>.3,dur:[3,5],q:{infl:.3,gr:-.03},
+  o:[{f:'Trimestre anti-inflation avec la grande distribution',e:'Price-restraint deal with supermarkets',fx:{appr:.8},mit:.35,cost:.5},{f:'Chèque alimentaire pour les ménages modestes',e:'Food cheque for low-income households',fx:{appr:1.2},mit:.5,cost:3},{f:'Ne rien faire',e:'Do nothing',fx:{appr:-1.5},mit:0}]},
+ {id:'eurx',em:'💱',f:'Chute de l’euro',e:'The euro slumps',df:'L’euro tombe face au dollar : le pétrole et les importations coûtent plus cher, les exportateurs respirent.',de:'The euro falls against the dollar: oil and imports cost more, while exporters get some relief.',
+  w:()=>.25,dur:[3,5],q:{infl:.25,gr:.04},
+  o:[{f:'Baisser les taxes sur le carburant',e:'Cut fuel taxes',fx:{appr:1},mit:.4,cost:3},{f:'Miser sur les exportations',e:'Lean on exports',fx:{appr:-.3},mit:.1},{f:'Laisser faire',e:'Let it run',fx:{appr:-1},mit:0}]},
+ {id:'defl',em:'🧊',f:'Menace de déflation en zone euro',e:'Euro-area deflation scare',df:'La demande s’effondre en Europe : les prix reculent, les entreprises gèlent embauches et investissements.',de:'Demand collapses across Europe: prices fall and firms freeze hiring and investment.',
+  w:()=>.22,dur:[3,5],q:{infl:-.4,gr:-.08,un:.03},
+  o:[{f:'Plan de relance budgétaire',e:'Fiscal stimulus',fx:{appr:.8},mit:.6,cost:6,spr:5},{f:'Pousser la BCE à agir',e:'Press the ECB to act',fx:{appr:.3},mit:.3,spr:-3},{f:'Attendre',e:'Wait it out',fx:{appr:-1},mit:0}]},
+ {id:'glut',em:'🚢',f:'Afflux de produits chinois à bas prix',e:'Flood of cheap Chinese goods',df:'Voitures électriques, acier et panneaux solaires bradés inondent l’Europe : les prix baissent, l’industrie souffre.',de:'Cut-price electric cars, steel and solar panels flood Europe: prices fall and industry suffers.',
+  w:()=>.28,dur:[3,4],q:{infl:-.25,gr:-.05,un:.04},
+  o:[{f:'Exiger des droits antidumping européens',e:'Push for EU anti-dumping duties',fx:{appr:.8},mit:.5,end:.25},{f:'Aides à l’industrie',e:'Aid for industry',fx:{appr:.5},mit:.4,cost:2.5},{f:'Accepter les prix bas',e:'Accept the low prices',fx:{appr:.3},mit:0,ang:{5:.05,0:.05}}]},
  {id:'cyber',em:'💻',f:'Cyberattaque majeure',e:'Major cyberattack',df:'Des hôpitaux et des collectivités sont paralysés par une attaque informatique.',de:'Hospitals and local councils are paralysed by a cyberattack.',
   w:()=>.3,dur:[1,1],q:{gr:-.04},
   o:[{f:'Plan d’urgence cyber',e:'Emergency cyber plan',fx:{appr:1},mit:.7,cost:1},{f:'Laisser les services gérer',e:'Leave it to the agencies',fx:{appr:-1},mit:.2}]}];
@@ -4296,7 +4327,7 @@ const xDef=id=>XS.find(z=>z.id===id)||XEU.find(z=>z.id===id);
 function xAI(G,D){const f=G.pm!=null&&PB[G.pm]?PB[G.pm].f:1;let b=0,bs=-1e9;D.o.forEach((o,i)=>{const s=((o.fx&&o.fx.appr)||0)+(o.mit||0)*2-(o.cost||0)*.25*f-(o.spr||0)*.05*f-((o.ang&&o.ang[G.pm])?3:0)+(o.cap?-.3:0)-(o.edp?1.5*f:0)+gauss()*.8;if(s>bs){bs=s;b=i}});return b}
 function extRoll(G){if(G.pm==null||G.xp)return;const qm=Math.floor((G.m%12)/3);
  if((qm===1||qm===3)&&G.euQ!==G.q&&G.q>0){G.euQ=G.q;const L=XEU.filter(z=>!z.need||z.need(G)).filter(z=>z.id!==G.euLast);if(L.length&&rnd()<.75){const D=L.find(z=>z.id==='edp')&&rnd()<.4?XEU[0]:pick(L);G.euLast=D.id;G.xp={id:D.id,q:G.q,sev:1};xNews(G,D);return}}
- G.ext=G.ext||[];const W=XS.map(D=>[D,G.ext.some(e=>e.id===D.id)?0:D.w(G)]).filter(z=>z[1]>0),tot=W.reduce((a,z)=>a+z[1],0);if(!tot||rnd()>=Math.min(.3,.14*tot))return;
+ G.ext=G.ext||[];const W=XS.map(D=>[D,G.ext.some(e=>e.id===D.id)?0:D.w(G)]).filter(z=>z[1]>0),tot=W.reduce((a,z)=>a+z[1],0);if(!tot||rnd()>=Math.min(.3,.1*tot))return;
  let r=rnd()*tot,D=W[0][0];for(const [d,w] of W){r-=w;if(r<=0){D=d;break}}G.xp={id:D.id,q:G.q,sev:1+(rnd()<.35?1:0)};xNews(G,D)}
 function xNews(G,D){G.log.push({m:G.m,t:(D.em||'🇪🇺')+' '+x(D.f,D.e)+x(' : ',': ')+x(D.df,D.de)});if(D.pres&&G.appr.pres!=null)G.appr.pres+=D.pres;if(!(ctrl()||G.pm===SIM.me))xDecide(G,xAI(G,D))}
 function xDecide(G,i){const p=G.xp;if(!p)return;const D=xDef(p.id),o=D.o[i];if(!o)return;G.xp=null;if(!(ctrl()||G.pm===SIM.me))G.xp0={id:p.id,q:G.q,ai:i};applyFx(G,o.fx||{});
