@@ -3577,7 +3577,11 @@ function aiGovPick(G,taken){const pm=G.pm,L=[];for(let t=0;t<7;t++){const bi=LEG
 /* 49.3 on a defeated government bill: routine when the censure that follows would fail; when it would pass, only as a way out of deadlock for a bill that matters (a pledge, the coalition contract, a crisis) (Logan 2026-10-23) */
 function ai493(G,bi){const b=B(bi);if(!b)return false;if(threat(G,.08)<MAJ)return rnd()<.6;const dl=deadlock(G),key=(G.prom||[]).some(p=>p.i===bi&&!p.s&&G.gov.includes(p.k))||(G.dem||[]).some(d=>d.m===bi)||b.tag==='crisis';return dl>=2&&key&&rnd()<.25+.1*(dl-2)}
 /* new agenda each quarter */
-function newOffer(G){try{codeOf(G);codeSync(G)}catch(e){}G.offer=LEG.offer(G);crOffer(G);G.tabled=0;G.mv={};G.mb=null;G.askTried={};G.nres=null;G.counter=null;
+/* Logan 2026-10-23: bills left on the agenda (e.g. not enough capital to table them) stay there next quarter, as long as the player's role
+   hasn't changed; new bills are added after them, up to 8 in all */
+function newOffer(G){try{codeOf(G);codeSync(G)}catch(e){}const c0=ctrl(),tt=bi=>{const b=B(bi);return b&&x(b.f,b.e)},
+  prev=(G.offerC===c0?(G.offer||[]):[]).filter(bi=>B(bi)&&!(G.done||[]).includes(bi)&&!(G.vq||[]).includes(bi)&&!(G.vote&&G.vote.bi===bi)).slice(0,6),pt=new Set(prev.map(tt));
+ G.offer=prev.concat(LEG.offer(G).filter(bi=>!prev.includes(bi)&&!pt.has(tt(bi)))).slice(0,Math.max(8,prev.length));G.offerC=c0;crOffer(G);G.tabled=0;G.mv={};G.mb=null;G.askTried={};G.nres=null;G.counter=null;
  G.oppL=oppBills(G);
  G.aib=[];if(!ctrl()&&G.pm!=null){const n=1+(rnd()<.5?1:0);for(let i=0;i<n;i++){const bi=aiGovPick(G,G.aib);if(bi!=null&&!G.aib.includes(bi)){const b=B(bi);if(b.by==null)b.by=G.pm;G.aib.push(bi)}}(G.crq||[]).forEach(bi=>{if(B(bi)&&!G.aib.includes(bi)&&!G.done.includes(bi))G.aib.push(bi)})}G.crq=[];
  /* forget generated bills nobody refers to any more */
