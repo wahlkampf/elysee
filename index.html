@@ -2114,7 +2114,7 @@ function censLeak(G,j,whip){const a=G.ang[j]||0,w=whip?.5:1;let d;
  else if(G.nc.includes(j))d=.03+a*.4;
  else d=.01+Math.max(0,hostility(j,G)-.5)*.04;
  return clamp(d*w,0,.6)}
-function censPos(G,by){return P.map((_,j)=>j===by?1:censures(j,G,.08)?1:0)}
+function censPos(G,by){return P.map((_,j)=>j===by&&!(j===SIM.me&&G.myc===false)?1:censures(j,G,.08)?1:0)}
 function censRoll(G,by,whip){const pos=censPos(G,by),me=SIM.me;
  const res=P.map((_,j)=>Array.from({length:G.seats[j]||0},()=>{if(j===me&&!(G.gov.includes(me)||G.sup.includes(me)))return pos[j];if(pos[j])return rnd()<.03?0:1;return rnd()<censLeak(G,j,whip&&(G.gov.includes(j)||G.sup.includes(j)))?1:0}));
  return {pos,res}}
@@ -2142,7 +2142,7 @@ function censHTML(G){const v=G.vote,cast=castCounts(v),me=SIM.me;let f=0,nv=0;v.
  /* per-group censure cards removed (Logan 2026-10-21) */
  const grp=v.order.filter(q=>v.res[q].length).map(q=>{const sh=cast[q]>0||dn,yesN=v.res[q].slice(0,cast[q]).filter(z=>z>0).length,camp=G.gov.includes(q)||G.sup.includes(q)||G.nc.includes(q),c=v.pos[q]?VR:camp?VG:VA;
   return `<div class="kpi" style="border-top-color:${c}"><small>${P[q].n}${camp?' · '+(q===G.pm?x('PM','PM'):G.gov.includes(q)?x('gouv.','gov'):G.sup.includes(q)?x('soutien','support'):x('non-censure','no-censure')):''}</small><b style="font-size:15px;color:${c}">${v.pos[q]?x('CENSURE','CENSURE'):x('NE VOTE PAS','HOLDS')}</b>${sh?`<small>${yesN} ${x('pour la censure','for censure')}${!v.pos[q]&&yesN?' ⚠':''}</small>`:`<small>${x('risque de dissidence ','rebel risk ')}${Math.round(censLeak(G,q,v.whip&&(G.gov.includes(q)||G.sup.includes(q)))*100)} %</small>`}</div>`}).join('');
- const myBtns=!dn&&!run&&!inG&&v.by!==me?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Votre groupe','Your group')}</b><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="chip ${v.pos[me]?'on':''}" data-censmy="1">${x('Voter la censure','Vote to censure')}</button><button class="chip ${!v.pos[me]?'on':''}" data-censmy="0">${x('Ne pas la voter','Don’t vote for it')}</button></div></div>`:'';
+ const myBtns=!dn&&!run&&G.pm!==me?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Votre groupe','Your group')}</b><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><button class="chip ${v.pos[me]?'on':''}" data-censmy="1">${x('Voter la censure','Vote to censure')}</button><button class="chip ${!v.pos[me]?'on':''}" data-censmy="0">${x('Ne pas la voter','Don’t vote for it')}</button></div></div>`:'';
  const whip=!dn&&!run&&inG?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Tenir la majorité','Hold the majority')}</b><p class="note">${x('Cohésion de la coalition : ','Coalition cohesion: ')}${Math.round(G.coh)} / 100. ${x('Mobiliser la majorité divise par deux le risque de dissidence dans le camp gouvernemental.','Whipping the majority halves the rebel risk in the government camp.')}</p><button class="chip ${v.whip?'on':''}" data-censwhip ${v.whip||G.cap<1?'disabled':''}>${v.whip?'✓ '+x('Majorité mobilisée','Majority whipped'):x('Mobiliser la majorité (1 capital)','Whip the majority (1 capital)')}</button></div>`:'';
  return `<div class="card votecard" id="votebox"><h3>⚠️ ${x('Motion de censure','Censure motion')} · ${v.by!=null&&P[v.by]?pfull(v.by):''} <span class="note">${safeText(v.why||'')}</span></h3>
  <p class="note">${x('Seuls les votes pour la censure sont comptés. Il en faut 289 pour renverser le gouvernement.','Only votes for censure are counted. It takes 289 to bring the government down.')} ${dn?'':x('Projection : ','Projection: ')+E.e+' ± '+E.sd}</p>
@@ -2166,18 +2166,18 @@ function govFalls(){const G=SIM.G;G.falls++;G.fellQ=G.q;G.appr.pres=clamp(G.appr
 const canDissolve=G=>G.m-G.lastDiss>=12;
 /* resignation (Logan 2026-10-22): the Prime Minister hands the government's resignation to the President, who appoints a new one
    or, when a dissolution is allowed, may send the country back to the polls. A player-President chooses; an AI President decides. */
-function canResign(G){if(G.pm==null)return{ok:false,why:''};if(G.vote&&!G.vote.done)return{ok:false,why:x('Un vote est en cours.','A vote is under way.')};
+function canResign(G){if(G.pm==null)return{ok:false,why:''};if(G.vote&&!G.vote.done&&G.vote.step)return{ok:false,why:x('Un vote est en cours.','A vote is under way.')};
  /* the Prime Minister can resign at any time, even right after being appointed (Logan 2026-10-23) */
  return{ok:true}}
 /* a junior partner leaves the government (Logan 2026-10-23): its ministers go and the PM's party fills the posts; it stays on as a no-censure partner or goes into opposition.
    Walking out of an unpopular government pays off in the polls, out of a popular one it costs */
-function govLeave(G,k,to){if(k===G.pm||!G.gov.includes(k)||(G.vote&&!G.vote.done))return;const unpop=G.appr.pm<UNPOP;
+function govLeave(G,k,to){if(k===G.pm||!G.gov.includes(k)||(G.vote&&!G.vote.done&&G.vote.step))return;const unpop=G.appr.pm<UNPOP;
  G.gov=G.gov.filter(j=>j!==k);G.dem=G.dem.filter(d=>d.k!==k);G.deals=(G.deals||[]).filter(d=>d.k!==k);G.sup=G.sup.filter(j=>j!==k);
  const min={};for(const s in G.min||{})if(!(MP[G.min[s]]&&MP[G.min[s]][1]===k))min[s]=G.min[s];G.min=autoCab(G,G.gov,G.pm,min);G.cab={};G.gov.forEach(j=>{const n=cabCount(G.min,j);if(n)G.cab[j]=n});
  if(to==='nc'&&!G.nc.includes(k))G.nc.push(k);G.nc=to==='nc'?G.nc:G.nc.filter(j=>j!==k);
  G.coh=cl(G.coh-6);G.appr.pm-=1.5;G.vrec=G.vrec||P.map(()=>0);G.vrec[k]+=unpop?.25:-.12;G.rel[G.pm]=cl((G.rel[G.pm]||40)-12);
  G.log.push({m:G.m,t:'🚪 '+P[k].n+x(' quitte le gouvernement'+(to==='nc'?' mais ne votera pas la censure.':' et passe dans l’opposition.'),' leaves the government'+(to==='nc'?' but will not vote to censure it.':' and goes into opposition.'))})}
-function govResign(G,how){if(!canResign(G).ok)return;const old=G.pm,ai=how==='ai',unpop=G.appr.pm<35;G.resN=(G.resN||0)+1;G.fellQ=G.q;if(unpop)G.dismissed=old;
+function govResign(G,how){if(!canResign(G).ok)return;if(G.vote&&!G.vote.done&&!G.vote.step){clearInterval(st.vt);G.vote=null;G.aiCens=null}const old=G.pm,ai=how==='ai',unpop=G.appr.pm<35;G.resN=(G.resN||0)+1;G.fellQ=G.q;if(unpop)G.dismissed=old;
  G.log.push({m:G.m,t:'🚪 '+x('Le Premier ministre ('+P[old].n+') remet la démission de son gouvernement au président de la République.','The Prime Minister ('+P[old].n+') hands the government’s resignation to the President.')});
  G.appr.pres=clamp(G.appr.pres-1,12,68);G.vrec=G.vrec||P.map(()=>0);G.vrec[old]-=unpop?.05:.12;
  const pd=how==='diss'||(how!=='form'&&G.pres!==SIM.me&&canDissolve(G)&&(rnd()<.2||aiDissolve(G)));
@@ -3443,6 +3443,8 @@ function billPaperHTML(G,bi,o){const b=B(bi);if(!b)return'';
  </article></div>`}
 /* ===== votes ===== */
 function posOf(G,k,st2,key,bud,priv,sponsor){const me=SIM.me;
+ /* the player's stance on the vote on the table always wins, whatever their role, deal or sponsorship (Logan 2026-10-23) */
+ if(k===me&&G.vote&&!G.vote.applied&&G.vote.my!=null&&(bud?G.vote.kind==='budget':G.vote.kind==='bill'&&G.vote.bi===key))return G.vote.my;
  if(priv&&k===sponsor)return 1;
  if(k===me&&bud&&G.vote&&!G.vote.applied&&G.vote.kind==='budget'&&G.vote.my!=null&&!((dealOf(G,me)||{}).t==='s'))return G.vote.my;
  if(k===me&&!bud&&G.vote&&!G.vote.applied&&G.vote.kind==='bill'&&G.vote.bi===key&&G.vote.my!=null)return G.vote.my;
@@ -3476,10 +3478,10 @@ function castCounts(v){let rem=v.step;const cast=Array(NP).fill(0);v.order.forEa
 function voteHTML(G){const v=G.vote;if(!v)return'';if(v.kind==='cens')return censHTML(G);const cast=castCounts(v);let f=0,a=0,ab=0;v.res.forEach((r,k)=>{for(let j=0;j<cast[k];j++){const z=r[j];z>0?f++:z<0?a++:ab++}});
  const dn=v.done||v.step>=v.tot,run=!dn&&v.step>0,ps=q=>v.pos[q]>0?x('POUR','FOR'):v.pos[q]<0?x('CONTRE','AGAINST'):x('ABSTENTION','ABSTAINS'),br=(l,n,c)=>`<div class="bar"><span class="n" style="width:90px">${l}</span><span class="t"><i style="width:${Math.min(100,n/MAJ*100)}%;background:${c}"></i></span><span class="v" style="width:40px">${n}</span></div>`;
  const vc=[];VORD.forEach(k=>{for(let j=0;j<(G.seats[k]||0);j++)vc.push(j<cast[k]?(v.res[k][j]>0?VG:v.res[k][j]<0?VR:VA):`color-mix(in srgb,${pc(k)} 55%,transparent)`)});
- const me=SIM.me,b=v.kind==='bill'?B(v.bi):null,stance=!dn&&!run&&v.step===0&&(v.kind==='bill'||v.kind==='budget')&&v.sponsor!==me&&!(v.kind==='budget'&&(dealOf(G,me)||{}).t==='s');
+ const me=SIM.me,b=v.kind==='bill'?B(v.bi):null,stance=!dn&&!run&&v.step===0&&(v.kind==='bill'||v.kind==='budget'),dlS=v.kind==='budget'&&(dealOf(G,me)||{}).t==='s';
  return `<div class="card votecard" id="votebox"><h3>${x('Vote à l’Assemblée','Assembly vote')} · ${safeText(v.title)}</h3>${b?billFold(G,v.bi,{sp:v.sponsor,priv:v.priv}):''}
   ${hemicycle(G.seats,{vc})}${voteTicker(v,cast,0)}${br(x('Pour','For'),f,VG)}${br(x('Contre','Against'),a,VR)}${br(x('Abstentions','Abstentions'),ab,VA)}
- ${stance?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Position de votre groupe','Your group’s stance')}</b><p class="note">${x('Choisissez la consigne de vote de vos députés avant d’appeler le vote.','Choose how your MPs vote before calling the vote.')}${G.gov.includes(me)&&!v.priv?' '+x('Voter contre un texte du gouvernement que vous soutenez fâche le Premier ministre.','Voting against a bill of the government you sit in angers the Prime Minister.'):''}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${[[1,'Pour','For'],[-1,'Contre','Against'],[0,'Abstention','Abstain']].map(o=>`<button class="chip ${v.pos[me]===o[0]?'on':''}" data-gvstance="${o[0]}">${x(o[1],o[2])}</button>`).join('')}</div></div>`:''}
+ ${stance?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Position de votre groupe','Your group’s stance')}</b><p class="note">${x('Choisissez la consigne de vote de vos députés avant d’appeler le vote. Vous pouvez en changer jusqu’au début du scrutin.','Choose how your MPs vote before calling the vote. You can change it until the roll call starts.')}${dlS?' '+x('Ne pas voter pour rompt votre accord de soutien sans participation.','Not voting for it breaks your confidence-and-supply deal.'):''}${v.sponsor===me?' '+x('C’est votre texte : voter contre le fera sans doute tomber.','This is your own text: voting against it will probably sink it.'):''}${G.gov.includes(me)&&!v.priv?' '+x('Voter contre un texte du gouvernement que vous soutenez fâche le Premier ministre.','Voting against a bill of the government you sit in angers the Prime Minister.'):''}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${[[1,'Pour','For'],[-1,'Contre','Against'],[0,'Abstention','Abstain']].map(o=>`<button class="chip ${v.pos[me]===o[0]?'on':''}" data-gvstance="${o[0]}">${x(o[1],o[2])}</button>`).join('')}</div></div>`:''}
  <p style="font:800 20px 'Bricolage Grotesque',sans-serif;margin:8px 0">${dn?(v.pass?'✓ '+x('ADOPTÉ','PASSED'):'✗ '+x('REJETÉ','DEFEATED'))+' ('+v.f+'–'+v.a+')':run?x('Vote en cours…','Voting…'):x('Prêt à voter','Ready to vote')}</p>${dn?`<button class="act" data-gvclose><b>${x('Fermer','Close')}</b></button>`:`<button class="act vbtn" data-gvgo style="display:inline-block"><b>${v.step?x('Continuer','Continue'):x('Appeler le vote','Call the vote')}</b></button> <button class="chip" data-gvskip>${x('Passer','Skip')}</button>`}</div>`}
 function drawVote(){const el=$('#votebox');if(el&&SIM.G)el.outerHTML=voteHTML(SIM.G)}
 function vtick(){const G=SIM.G,v=G&&G.vote;if(!v||v.done){clearInterval(st.vt);return}v.step=Math.min(v.tot,v.step+24);if(v.step>=v.tot){clearInterval(st.vt);finishVote();save();render()}else drawVote()}
@@ -4965,7 +4967,7 @@ function gQBar(G){const N=20,q=Math.max(0,Math.floor((G.m-G.lastDiss)/3)),pq=Mat
  return `<div class="qbar" role="img" aria-label="${x('Trimestre','Quarter')} ${Math.min(q+1,N)} / ${N}">${Array.from({length:N},(_,i)=>`<i class="${i<q?'d':i===q?'c':''}${i===pq?' p':''}${i%4===3&&i<N-1?' y':''}"></i>`).join('')}</div><div class="qlab" aria-hidden="true">${lab}</div>`}
 const budFailedNow=G=>budgetDue(G)&&(G.bills||[]).some(b=>b.bud&&b.q===G.q&&b.st==='failed');
 function gLeave(G){const me=SIM.me;if(G.pm===me||!G.gov.includes(me))return'';const busy=G.vote&&!G.vote.done,btn=(a,b,c)=>`<button class="act" data-leave="${a}" style="max-width:320px"><b>${b}</b><small>${c}</small></button>`;
- const body=busy?`<p class="note">${x('Un vote est en cours.','A vote is under way.')}</p>`:!st.leaveAsk?btn('ask',x('Quitter le gouvernement','Leave the government'),x('Vos ministres démissionnent','Your ministers resign')):
+ const body=busy&&G.vote.step?`<p class="note">${x('Un vote est en cours.','A vote is under way.')}</p>`:!st.leaveAsk?btn('ask',x('Quitter le gouvernement','Leave the government'),x('Vos ministres démissionnent','Your ministers resign')):
   `<div style="display:flex;gap:8px;flex-wrap:wrap">${btn('nc',x('Partir sans censurer','Leave but don’t censure'),x('Pacte de non-censure','No-censure pact'))}${btn('opp',x('Passer dans l’opposition','Go into opposition'),x('Libre de voter la censure','Free to vote censure'))}<button class="act" data-leave="no" style="max-width:200px"><b>${x('Annuler','Cancel')}</b></button></div>`;
  return `<div class="card"><h3>🚪 ${x('Quitter le gouvernement','Leave the government')}</h3><p class="note">${x('Vous êtes partenaire du gouvernement de '+P[G.pm].n+' ('+(G.cab[me]||0)+' ministres). Approbation du gouvernement : ','You are a partner in the '+P[G.pm].n+' government ('+(G.cab[me]||0)+' ministers). Government approval: ')+Math.round(G.appr.pm)} %. ${x('Quitter un gouvernement impopulaire peut payer dans les sondages ; quitter un gouvernement populaire coûte.','Leaving an unpopular government can pay off in the polls; leaving a popular one costs.')}</p>${body}</div>`}
 function gResign(G){const me=SIM.me;if(G.pm!==me)return gLeave(G);const r=canResign(G),pr=G.pres===me,cd=canDissolve(G);
@@ -5098,7 +5100,7 @@ function govClick(t,D){const G=SIM.G;
  if(t.hasAttribute('data-gvskip')){vskip();return true}
  if(t.hasAttribute('data-gvclose')){clearInterval(st.vt);G.vote=null;vqNext(G);return R()}
  if(D.gprio!=null){promPrio(+D.gprio);return R()}
- if(D.gvstance!=null){const v=G.vote;if(v&&!v.done&&!v.step){v.my=+D.gvstance;const {kind,bi,priv,sponsor}=v;v.done=true;startVote(kind,bi,priv,sponsor);if(G.vote.done)G.vote=v,v.done=false}return R()}
+ if(D.gvstance!=null){const v=G.vote;if(v&&!v.done&&!v.step){v.my=+D.gvstance;if(v.kind==='budget'&&v.my!==1){const dl=dealOf(G,SIM.me);if(dl&&dl.t==='s'){G.deals=G.deals.filter(d=>d!==dl);G.rel[G.pm]=cl((G.rel[G.pm]||40)-10);G.log.push({m:G.m,t:x('Vous rompez votre accord de soutien sans participation sur le budget.','You break your confidence-and-supply deal on the budget.')})}}const {kind,bi,priv,sponsor}=v;v.done=true;startVote(kind,bi,priv,sponsor);if(G.vote.done)G.vote=v,v.done=false}return R()}
  if(D.ldr!=null){LEG.draft(D.ldr);return R()}
  if(D.dk!=null){closeTok();LEG.deskAct(D.dk);return R()}
  if(D.tok!=null){tokMenu(t);return true}
@@ -5122,7 +5124,7 @@ function govClick(t,D){const G=SIM.G;
  if(D.scanopp!=null){const [i,h]=D.scanopp.split('|');scanOpp(G,(G.scan||[])[+i],h);return R()}
  if(D.qag!=null){if(D.qag==='start')qagStart();else if(D.qag==='next')qagNext();else qagChoose(+D.qag);return R()}
  if(D.cens){if(D.cens==='me'){if(!censOK(G,SIM.me))return true;G.myCensQ=G.q;startCens(SIM.me,x('déposée par ','filed by ')+P[SIM.me].n)}else startCens(G.aiCens,x('déposée par ','filed by ')+P[G.aiCens].n);st.gtab='asm';return true}
- if(D.censmy!=null){const v=G.vote;if(v&&v.kind==='cens'&&!v.step){G.myc=D.censmy==='1';const r=censRoll(G,v.by,v.whip);v.pos=r.pos;v.res=r.res}return R()}
+ if(D.censmy!=null){const v=G.vote;if(v&&v.kind==='cens'&&!v.step){G.myc=D.censmy==='1';const me=SIM.me;if(G.myc&&G.gov.includes(me)&&G.pm!==me)govLeave(G,me,'opp');if(G.myc&&G.sup.includes(me)){G.sup=G.sup.filter(j=>j!==me);G.deals=(G.deals||[]).filter(d=>d.k!==me);G.log.push({m:G.m,t:P[me].n+x(' retire son soutien au gouvernement.',' withdraws its support for the government.')})}if(G.myc)G.nc=G.nc.filter(j=>j!==me);const r=censRoll(G,v.by,v.whip);v.pos=r.pos;v.res=r.res}return R()}
  if(t.hasAttribute('data-censwhip')){censWhip();return R()}
  if(t.hasAttribute('data-budreset')){if(budOpen(G)){G.bu=G.budBase.bu.slice();G.tx=G.budBase.tx.slice();bxRestore(G,G.budBase)}return R()}
  if(t.hasAttribute('data-endq')){if(tourLeft()){const r=document.querySelector('.tour');if(r){r.scrollIntoView({block:'center'});r.classList.remove('tour-nag');void r.offsetWidth;r.classList.add('tour-nag')}return true}if(!t.hasAttribute('data-eqok')&&st.eqw!==G.q&&eqItems(G).length){st.eqw=G.q;st.eqo=G.q;render();return true}st.eqo=null;endQuarter();return true}
