@@ -2167,7 +2167,8 @@ const canDissolve=G=>G.m-G.lastDiss>=12;
 /* resignation (Logan 2026-10-22): the Prime Minister hands the government's resignation to the President, who appoints a new one
    or, when a dissolution is allowed, may send the country back to the polls. A player-President chooses; an AI President decides. */
 function canResign(G){if(G.pm==null)return{ok:false,why:''};if(G.vote&&!G.vote.done)return{ok:false,why:x('Un vote est en cours.','A vote is under way.')};
- if(G.q-(G.govQ??-9)<1&&!budFailedNow(G))return{ok:false,why:x('Le gouvernement vient d’être nommé.','The government has only just been appointed.')};return{ok:true}}
+ /* the Prime Minister can resign at any time, even right after being appointed (Logan 2026-10-23) */
+ return{ok:true}}
 function govResign(G,how){if(!canResign(G).ok)return;const old=G.pm,ai=how==='ai',unpop=G.appr.pm<35;G.resN=(G.resN||0)+1;G.fellQ=G.q;if(unpop)G.dismissed=old;
  G.log.push({m:G.m,t:'🚪 '+x('Le Premier ministre ('+P[old].n+') remet la démission de son gouvernement au président de la République.','The Prime Minister ('+P[old].n+') hands the government’s resignation to the President.')});
  G.appr.pres=clamp(G.appr.pres-1,12,68);G.vrec=G.vrec||P.map(()=>0);G.vrec[old]-=unpop?.05:.12;
