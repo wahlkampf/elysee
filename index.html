@@ -1048,6 +1048,19 @@ body.pre-one #nav{display:none}
 .acard.on{outline:2px solid var(--fleur)}
 path.unit.sel{stroke:var(--ink);stroke-width:2.4;filter:brightness(1.12)}
 @media(max-width:760px){.pc-cal{flex-wrap:wrap}.pc-cal>div{flex:1 1 30%}.pc-img{grid-template-columns:1fr 1fr 1fr}}
+/* spectator mode (fspec.js) */
+.sx-spec{border:1.5px solid var(--ink);border-radius:8px;background:transparent;color:var(--ink);font:700 15px "IBM Plex Sans",sans-serif;padding:12px 20px;cursor:pointer;margin-right:10px}
+.sx-spec:hover{background:var(--ice)}
+#specbar{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center;max-width:calc(100vw - 24px);background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:8px 12px;box-shadow:0 6px 24px rgba(0,0,0,.18);font:600 13px "IBM Plex Sans",sans-serif}
+#specbar button{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:7px;padding:5px 10px;font:600 13px "IBM Plex Sans",sans-serif;cursor:pointer}
+#specbar button[aria-pressed="true"]{background:var(--fleur);color:var(--onfleur);border-color:var(--fleur)}
+#specbar .sb-eye{font-weight:800}#specbar .sb-ph{color:var(--mute);min-width:120px}
+#specbar .sb-sp{display:inline-flex;gap:3px}
+body.spec{padding-bottom:70px}
+.sb-log{font-size:13px;padding:5px 0;border-bottom:1px solid var(--line)}
+.sb-log:last-child{border-bottom:0}
+body.spec #main [data-endq],body.spec #main .eq-bar,body.spec #turn .vbtn{display:none}
+body.spec #main .tour,body.spec #main .card:has([data-gevopp]),body.spec #main .card:has([data-xpopp]),body.spec #main .card:has([data-qag]){display:none}
 </style>
 </head><body>
 <header>
@@ -1948,7 +1961,7 @@ function startGov(fromPres){const K=careerK(),seats=(SIM.final||K.seats||SEATS24
  if(!K.lpRul&&SIM.lpRul)K.lpRul=SIM.lpRul;SIM.K=K;
  SIM.G={m,q:0,seats,pres:K.presK,presM:K.presM,lastDiss:fromPres&&prev?prev.lastDiss:m-1,pm:null,gov:[],sup:[],nc:[],
   appr:{pm:44,pres:K.presAppr??30},
-  v,vh:prev?prev.vh:[],ah:prev?prev.ah:[],log:prev?prev.log:[],ang:Array(NP).fill(0),passed:prev?prev.passed:[],bills:[],qb:0,u493:0,falls:0,pend:[],dem:[],prop:{},budY:prev?prev.budY:null,mv:{},hist:prev?prev.hist:[],noRes:wasP,elx:(prev&&prev.elx||[]).concat(prev&&prev.vh&&prev.vh.length?((wasP||prev.presM!==K.presM)?(fromPres?['pres']:['pres','leg']):['leg']).map(k=>({t:prev.vh.length-1,k,m})):[])};
+  v,vh:prev?prev.vh:[],ah:prev?prev.ah:[],log:prev?prev.log:[],ang:Array(NP).fill(0),passed:prev?prev.passed:[],bills:[],qb:0,u493:0,falls:0,pend:[],dem:[],prop:{},un:wasP||fromPres?(prev&&prev.un)||null:(SIM.pacts||[]).filter(p=>p.type==='union'&&p.m.length>1).map(p=>p.m.slice()),budY:prev?prev.budY:null,mv:{},hist:prev?prev.hist:[],noRes:wasP,elx:(prev&&prev.elx||[]).concat(prev&&prev.vh&&prev.vh.length?((wasP||prev.presM!==K.presM)?(fromPres?['pres']:['pres','leg']):['leg']).map(k=>({t:prev.vh.length-1,k,m})):[])};
  const G=SIM.G;G.code=(prev&&prev.code)||K.code||codeInit();K.code=G.code;if(fromPres&&prev){G.bno=prev.bno;G.bnoM=prev.bnoM;G.bnoN=prev.bnoN}econInit(G,prev);G.prom=prev&&prev.prom?prev.prom:mkProm();G.log.push({m,t:x('Nouvelle Assemblée : ','New Assembly: ')+ORD.filter(k=>seats[k]).map(k=>P[k].n+' '+seats[k]).join(' · ')});
  govProjection();SIM.phase='form';st.tab='form';st.gtab='asm';st.layer='proj';save();render()}
 /* will group j bring down a government made of gov (with outside support sup, non-censure pact nc)? */
@@ -2235,9 +2248,11 @@ function govLossW(G,gp,lostK){const opp=P.map((_,k)=>k).filter(k=>!gp.includes(k
  add(orig,.8-cs);const cw={};opp.forEach(k=>cw[k]=(C[k]||0)*rt(k));add(cw,cs);const fl={};opp.forEach(k=>fl[k]=rt(k));add(fl,.2);
  /* a third of them just stop answering 'who would you vote for' (undecided, abstention): that leaves the other parties' relative shares unchanged (Logan 2026-10-23) */
  const TV=opp.reduce((a,k)=>a+G.v[k],0)||1;opp.forEach(k=>out[k]=.67*(out[k]||0)+.33*G.v[k]/TV);
- G.lossW=out;return out}
+ const fo=famBlend(out,G.v);G.lossW=fo;return fo}
+/* within a political family, what goes to the family is shared out mostly by size, so a left surge lifts PS and ÉCO too, not just LFI (Logan 2026-10-23) */
+function famBlend(W,v){const o={...W};[0,1,3].forEach(b=>{const m=Object.keys(W).map(Number).filter(k=>BLOC[k]===b);if(m.length<2)return;const T=m.reduce((a,k)=>a+(W[k]||0),0),V=m.reduce((a,k)=>a+(v[k]||0),0);if(T<=0||V<=0)return;m.forEach(k=>o[k]=T*(.65*(v[k]||0)/V+.35*(W[k]||0)/T))});return o}
 function campCauseW(G,pm0,gp){const B=CAMPW[pm0]||{},C=govCauses(G),mx=Math.max(0,...Object.keys(C).filter(k=>!gp.includes(+k)).map(k=>C[k])),W={};
- for(let k=0;k<P.length;k++){const c=mx>0?(C[k]||0)/mx*Math.min(1,mx/1.2):0;W[k]=.5*(B[k]||0)+.5*c}return W}
+ for(let k=0;k<P.length;k++){const c=mx>0?(C[k]||0)/mx*Math.min(1,mx/1.2):0;W[k]=.5*(B[k]||0)+.5*c}return famBlend(W,G.v)}
 const CAMPW={0:{3:.7,8:.6,9:.7,4:.8,5:.5,6:.4},1:{3:.7,8:.6,9:.7,4:.8,5:.5,6:.4},2:{3:.7,8:.6,9:.7,4:.8,5:.5,6:.4},3:{0:.8,1:.6,2:.5,5:.8,4:.3,6:.3},4:{0:1,1:1,2:.8,3:.4,8:.4,9:.3},5:{0:1,1:1,2:.8,3:.5,8:.5,9:.5},6:{0:1,1:1,2:.8,3:.5,8:.5,9:.5}};CAMPW[8]=CAMPW[9]=CAMPW[3];
 function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')return render();const pm0=G.pm,gov0=G.gov.length?G.gov.slice():[G.pm];
  if(G.vote&&G.vote.kind==='cens'&&!G.vote.done){G.msg=x('Votez d’abord la motion de censure.','Vote on the censure motion first.');st.gtab='asm';save();return render()}
@@ -5373,9 +5388,16 @@ const HEMI=(()=>{const Q=HEMI_PLAN,cx=Q.center[0],cy=Q.center[1],dep=[],fixed=[]
 /* alliances on the hemicycle (Logan 2026-10-23, mock-up B): seats take their alliance's colour, with a Parties / Alliances switch shared by every chamber.
    Alliances = the joint-candidate pacts of the last election (NFP and Ensemble when there were none); not on roll-call votes, where seats show the vote */
 const HALLY=()=>st.hgrp!=='party'&&!PRES();
-function hAlly(){const U=(SIM.pacts||[]).filter(p=>p.type==='union'&&p.m.length>1).map(p=>p.m.slice()),G=U.length?U:[[0,1,2],ENSF.slice()];
+/* which joint-candidate unions polls and seat charts group by (Logan 2026-10-23): during a legislative campaign, the unions signed for it
+   (before any is signed, the ones the sitting Assembly was elected on); while governing, the unions of the election that chose this Assembly
+   (G.un, set in startGov); the 2024 Assembly was elected on NFP and Ensemble */
+const curUn=()=>(SIM.pacts||[]).filter(p=>p.type==='union'&&p.m.length>1).map(p=>p.m.slice());
+function unionsNow(){const ph=SIM.phase,camp=!['form','gov','pdue'].includes(ph)&&!PRES(),U=curUn();if(camp&&(U.length||!['pacts','plat'].includes(ph)))return U;
+ const L=SIM.G&&SIM.G.un;return L?L.map(m=>m.slice()):[[0,1,2],ENSF.slice()]}
+const leftNm=m=>m.filter(k=>k<=2).length===3,ensNm=m=>m.filter(isE).length>=2&&m.includes(3);
+function hAlly(){const G=unionsNow();
  return G.map(m=>{const L=m.filter(k=>k<=2).length,E=m.filter(isE).length,lead=L>=2&&m.includes(0)?0:E>=2&&m.includes(3)?3:m.slice().sort((a,b)=>TG0[b]-TG0[a])[0];
-  return{m:ORD.filter(k=>m.includes(k)),lead,n:L>=2?'Nouveau Front populaire':E>=2?'Ensemble pour la République':'Union '+ORD.filter(k=>m.includes(k)).map(pn).join('–')}})}
+  return{m:ORD.filter(k=>m.includes(k)),lead,n:leftNm(m)?'Nouveau Front populaire':ensNm(m)?'Ensemble pour la République':'Union '+ORD.filter(k=>m.includes(k)).map(pn).join('–')}})}
 const hAllyOf=(A,k)=>A.find(a=>a.m.includes(k));
 function hTog(){if(PRES())return '';const a=HALLY();return `<div class="layers hm-tog"><button class="${a?'':'on'}" data-hgrp="party">${x('Partis','Parties')}</button><button class="${a?'on':''}" data-hgrp="ally">${x('Alliances','Alliances')}</button></div>`}
 function hAllyLegend(seats,it,all){const A=hAlly(),tot=a=>a.m.reduce((s,k)=>s+(seats[k]||0),0),has=k=>all||seats[k],rest=ORD.filter(k=>has(k)&&!hAllyOf(A,k));it=it||(k=>`<span><i style="background:${pc(k)}"></i>${pn(k)} <b>${seats[k]}</b></span>`);
@@ -5518,9 +5540,9 @@ function vPlat(){const me=SIM.me,c=platCost(me)+(SIM.costAdj||0),cr=credOf(me);
    Each alliance is drawn in its biggest member's colour; ally() folds a party vector into those slots. */
 const ALLYON=()=>(st.pgrp||(SIM.G&&['form','gov','pdue'].includes(SIM.phase)?'party':'ally'))==='ally'&&!PRES();
 const allyLogo=(k,nm)=>!nm?k:/^NFP/.test(nm)?'nfp':/^Ensemble/.test(nm)?'ens':k;
-function allyGroups(){const G=[];if(!SIM.G&&SIM.pacts)SIM.pacts.filter(p=>p.type==='union'&&p.m.length>1).forEach(p=>G.push(p.m.slice()));else G.push([0,1,2],ENSF.slice());
+function allyGroups(){const G=unionsNow();
  const used=new Set(G.flat());P.forEach((_,k)=>{if(!used.has(k))G.push([k])});
- return G.map(m=>{const lead=m.filter(k=>k<=2).length>=2&&m.includes(0)?0:m.filter(isE).length>=2&&m.includes(3)?3:m.slice().sort((a,b)=>TG0[b]-TG0[a])[0],L=m.filter(k=>k<=2).length,E=m.filter(isE).length;return {m,lead,n:m.length<2?pn(lead):L>=2?(m.length>L?x('NFP +','NFP +')+' '+m.filter(k=>k>2).map(pn).join('+'):'NFP'):E>=2?(m.length>E?'Ensemble + '+m.filter(k=>!isE(k)).map(pn).join('+'):'Ensemble'):m.map(pn).join('+')}})}
+ return G.map(m=>{const lead=m.filter(k=>k<=2).length>=2&&m.includes(0)?0:m.filter(isE).length>=2&&m.includes(3)?3:m.slice().sort((a,b)=>TG0[b]-TG0[a])[0],L=m.filter(k=>k<=2).length,E=m.filter(isE).length;return {m,lead,n:m.length<2?pn(lead):leftNm(m)?(m.length>L?'NFP + '+m.filter(k=>k>2).map(pn).join('+'):'NFP'):ensNm(m)?(m.length>E?'Ensemble + '+m.filter(k=>!isE(k)).map(pn).join('+'):'Ensemble'):m.map(pn).join('+')}})}
 function ally(v,G){const o=Array(NP).fill(0);G.forEach(g=>g.m.forEach(k=>o[g.lead]+=v[k]||0));return o}
 function allyNames(G){const o=P.map((_,k)=>pn(k));G.forEach(g=>o[g.lead]=g.n);return o}
 function pgrpTog(){if(PRES())return '';const a=ALLYON();return `<div class="layers" style="margin:-2px 0 8px"><button class="${a?'':'on'}" data-pgrp="party">${x('Partis','Parties')}</button><button class="${a?'on':''}" data-pgrp="ally">${x('Alliances','Alliances')}</button></div>`}
@@ -5939,5 +5961,80 @@ document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev
 document.addEventListener('dragstart',e=>{const m=e.target.closest&&e.target.closest('[data-mp]');if(m){st.mpick=+m.dataset.mp;try{e.dataTransfer.setData('text/plain',m.dataset.mp)}catch(_){}}});
 document.addEventListener('dragover',e=>{if(e.target.closest&&e.target.closest('[data-mslot]:not([disabled])'))e.preventDefault()});
 document.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-mslot]:not([disabled])');if(c&&st.mpick!=null){e.preventDefault();c.click()}});
+
+/* ===== Spectator mode (Logan 2026-10-23: "Can you add a spectate mode") =====
+   The AI plays every party. The game runs with SIM.me = 7 (DIV), which every AI loop, debate, poll list and coalition already leaves out,
+   so all ten real parties campaign, negotiate and govern on their own. SIM.spec marks the game; a timer (specTick) presses the buttons a player
+   would press, at a watchable pace. Player controls are hidden or blocked; tabs, the map and the panes stay clickable. */
+const SPEC={on:0,pause:0,sp:1,t:null,ph:null,hold:0,vw:0,ff:0};
+const SPECME=7;
+/* how long each step stays on screen, in ms at 1× */
+const SPD={day:1600,show:3200,res:7000,quarter:3800,vote:2600};
+function specStart(mode){hideStart();SPEC.on=1;SPEC.pause=0;SPEC.ff=0;SPEC.ph=null;newGame({party:SPECME,theme:(rnd()*NT)|0,diff:'normal',mode:mode||'leg'});SIM.spec=1;st.tab=SIM.phase==='plat'?'build':st.tab;save();render();specBar();specTick()}
+function specExit(){SPEC.on=0;clearTimeout(SPEC.t);clearInterval(st.vt);try{clearInterval(nightTimer)}catch(e){}try{localStorage.removeItem(AUTOKEY)}catch(e){}
+ for(const k in SIM)delete SIM[k];document.body.classList.remove('spec');const b=$('#specbar');if(b)b.remove();$('#main').innerHTML='';showStart()}
+/* every later election starts a new game with party SIM.me: keep the flag */
+{const _ng=newGame;newGame=function(o){_ng(o);if(SPEC.on)SIM.spec=1}}
+{const _ld=load;load=function(){const r=_ld();if(r&&SIM.spec){SPEC.on=1;SPEC.ph=null;setTimeout(()=>{specBar();specTick()},50)}return r}}
+function specTick(){clearTimeout(SPEC.t);if(!SPEC.on||!SIM.spec)return;let d=800;if(!SPEC.pause){try{d=specStep()}catch(e){console.error(e);d=1500}}
+ const f=SPEC.ff?12:SPEC.sp;SPEC.t=setTimeout(specTick,Math.max(30,d/f));specBar()}
+/* first visit to a phase: let it be seen before acting */
+function specFirst(ph,ms){if(SPEC.ph!==ph){SPEC.ph=ph;SPEC.hold=Date.now()+ms/(SPEC.ff?12:SPEC.sp);return true}return Date.now()<SPEC.hold}
+function specClean(){SIM.fresp=null;['crpop','n49pop','respmodal','dbmodal'].forEach(i=>{const e=document.getElementById(i);if(e)e.remove()});if(SIM.G){SIM.G.crPop=[];SIM.G.pend=[]}}
+function specStep(){const ph=SIM.phase;specClean();
+ if(ph==='plat'){if(specFirst(ph,SPD.show))return 400;pfPublish();return 400}
+ if(ph==='pacts'){if(specFirst(ph,SPD.show))return 400;beginCampaign();return SPD.day}
+ if(ph==='r1'||ph==='r2c'){SPEC.ph=ph;if(st.tab!=='map'&&st.tab!=='polls'){st.tab='map'}SIM.dbt=null;SIM.dbPend=0;SIM.pend=[];nextDay();if(SPEC.ff&&ph==='r1')SPEC.ff=0;return SPD.day}
+ if(ph==='n1'||ph==='n2'){const N=SIM.night;if(!N){finishNight();return 400}const key=ph+':'+N.ord.length+':'+(SIM.seed||0)+':'+(SIM.r2day||0);
+  if(SPEC.nk!==key){SPEC.nk=key;SPEC.nh=0;try{clearInterval(nightTimer)}catch(e){}st.tab='night';render();return 800}
+  /* the night runs on the spectator clock, so pause and speed work and it carries on in other tabs */
+  if(N.t<300){const sp=SPEC.ff?12:SPEC.sp;N.t=Math.min(300,N.t+3*sp);N.n=Math.min(C.length,Math.floor(C.length*clamp((N.t-5)/290,0,1)));if(N.t>=300)N.n=C.length;if(st.tab==='night')drawNight();return 250*sp}
+  if(!SPEC.nh){SPEC.nh=1;save();render();SPEC.hold=Date.now()+SPD.res/(SPEC.ff?12:SPEC.sp);return 400}
+  if(Date.now()<SPEC.hold)return 400;SPEC.nh=0;SPEC.nk=null;finishNight();return 600}
+ if(ph==='r2w'){if(specFirst(ph,SPD.show))return 400;finishWithdrawals();return SPD.day}
+ if(ph==='ral'){if(specFirst(ph,SPD.show))return 400;startPresR2();return SPD.day}
+ if(ph==='end'){if(specFirst(ph,SPD.res))return 400;if(SIM.mode==='pres')afterPres(null);else startGov(false);return SPD.show}
+ if(ph==='form'){if(specFirst(ph+(SIM.G&&SIM.G.q),SPD.show))return 400;formAI();SPEC.ph=null;return SPD.show}
+ if(ph==='pdue'){if(specFirst(ph,SPD.res))return 400;presElection();return SPD.show}
+ if(ph==='gov')return specGov();
+ return 1000}
+function specGov(){const G=SIM.G;if(specFirst('gov'+G.m+':'+G.q,SPD.quarter))return 400;
+ const v=G.vote;
+ if(v&&!v.done){st.gtab='asm';if(!SPEC.vw){SPEC.vw=1;vgo();render();return 600}if(++SPEC.vw<40&&!SPEC.ff)return 500;vskip();SPEC.vw=0;return SPD.vote}
+ if(v&&v.done){SPEC.vw=0;clearInterval(st.vt);G.vote=null;vqNext(G);render();return 400}
+ if(G.aiCens!=null){startCens(G.aiCens,x('déposée par ','filed by ')+P[G.aiCens].n);return 600}
+ G.shuf=null;const q0=G.q;endQuarter();if(SIM.phase==='gov'&&SIM.G===G&&G.q===q0)return 600;
+ if(SIM.phase==='gov'){st.gtab='map';render()}return 600}
+/* skip ahead: run fast until the next campaign starts */
+function specFF(){SPEC.ff=1;SPEC.pause=0;specTick()}
+function specBar(){if(!SPEC.on||!SIM.spec)return;document.body.classList.add('spec');let b=$('#specbar');if(!b){b=document.createElement('div');b.id='specbar';document.body.appendChild(b)}
+ const ph=SIM.phase,G=SIM.G,lab=ph==='gov'||ph==='pdue'||ph==='form'?MONTHS(G.m):ph==='r1'?x('Campagne · jour ','Campaign · day ')+SIM.day:ph==='r2c'?x('Entre-deux-tours · jour ','Run-off campaign · day ')+(SIM.r2day||SIM.day):ph==='n1'||ph==='n2'?x('Soirée électorale','Election night'):ph==='end'?x('Résultats','Results'):'';
+ const s=`<span class="sb-eye">👁 ${x('Spectateur','Spectating')}</span><span class="sb-ph">${lab}</span>
+ <button data-specp >${SPEC.pause?'▶ '+x('Reprendre','Resume'):'❚❚ '+x('Pause','Pause')}</button>
+ <span class="sb-sp">${[1,2,4].map(v=>`<button data-specs="${v}" aria-pressed="${!SPEC.ff&&SPEC.sp===v}">${v}×</button>`).join('')}</span>
+ <button data-specff aria-pressed="${!!SPEC.ff}" title="${x('Avance rapide jusqu’à la prochaine campagne','Fast-forward to the next campaign')}">⏭ ${x('Prochaine élection','Next election')}</button>
+ <button data-specx>${x('Quitter','Exit')}</button>`;if(b.dataset.h!==s){b.innerHTML=s;b.dataset.h=s}}
+/* player panels become spectator panels */
+{const _a=actionsHTML;actionsHTML=function(){if(!SIM.spec)return _a();const L=(SIM.log||[]).map(t=>typeof t==='string'?t:(t&&t.t)||'').filter(t=>t&&!/:\s*$/.test(t)).slice(-14).reverse();
+ return `<div class="card"><h3>📰 ${x('Le fil de la campagne','Campaign feed')}</h3>${L.length?L.map(t=>`<div class="sb-log">${t}</div>`).join(''):`<p class="note">${x('La campagne commence.','The campaign is starting.')}</p>`}</div>`}}
+{const _t=turnCard;turnCard=function(){if(!SIM.spec)return _t();const ph=SIM.phase,sh=natShares(true),top=P.map((_,k)=>k).filter(k=>k!==7).sort((a,b)=>sh[b]-sh[a]).slice(0,3),r1=ph==='r1',D=r1?D1:D2,dn=r1?SIM.day:SIM.r2day;
+ return `<div class="card hq" id="turn"><div class="hq-top"><span style="font-size:34px;line-height:1">👁</span><div><b>${x('Mode spectateur','Spectator mode')}</b><small>${x('L’IA fait campagne pour chaque parti','The AI campaigns for every party')}</small></div></div>
+ <p style="margin:10px 0 4px">${x('Jour','Day')} <b>${dn||1}</b> / ${D}</p><div>${top.map((k,i)=>`<div class="grow" style="display:flex;justify-content:space-between"><span>${i+1}. <b style="color:${pc(k)}">${P[k].n}</b></span><span>${fn(sh[k]*100)} %</span></div>`).join('')}</div></div>`}}
+{const _h=header;header=function(){_h();if(SIM.spec)document.querySelectorAll('header .stat').forEach((e,i)=>{if(i>0)e.style.display='none'})}}
+{const _p=platCard;platCard=function(){return SIM.spec?'':_p()}}
+{const _r=roleName;roleName=function(){return SIM.spec?x('Spectateur','Spectator'):_r()}}
+{const _s=tipSync;tipSync=function(f){if(SIM.spec){document.querySelectorAll('.tp-card,.tp-ring').forEach(e=>e.remove());return}return _s(f)}}
+{const _l=tourLeft;tourLeft=function(){return SIM.spec?0:_l()}}
+/* start screen button */
+{const _d=drawStart;drawStart=function(){_d();const e=document.querySelector('#startscreen .sx-end');if(e&&!e.querySelector('[data-specgo]')){const b=document.createElement('button');b.className='sx-spec';b.dataset.specgo='';b.innerHTML='👁 '+x('Regarder l’IA jouer','Spectate');b.title=x('L’IA joue tous les partis ; vous regardez.','The AI plays every party; you watch.');e.prepend(b)}}}
+if($('#startscreen'))drawStart();
+/* in spectator mode only looking around is allowed: tabs, panes, map, zoom, layers, language and theme */
+const SPECOK=['t','gpane','layer','lp','city','zoom','unit','r','detk','pgrp','lang','theme'];
+document.addEventListener('click',ev=>{const t=ev.target.closest('button,[data-r],[data-city],[data-detk]');if(!t)return;const D=t.dataset;
+ if(t.hasAttribute('data-specgo')){ev.stopImmediatePropagation();specStart(ss.mode);return}
+ if(!SIM.spec||!SPEC.on)return;
+ if(t.closest('#specbar')){ev.stopImmediatePropagation();if(t.hasAttribute('data-specp')){SPEC.pause=!SPEC.pause;SPEC.ff=0;specTick()}else if(D.specs){SPEC.sp=+D.specs;SPEC.ff=0;st.speed=SPEC.sp;specTick()}else if(t.hasAttribute('data-specff'))specFF();else if(t.hasAttribute('data-specx'))specExit();specBar();return}
+ if(t.closest('header')||t.closest('#nav'))return;
+ if(!SPECOK.some(k=>k in D)){ev.stopImmediatePropagation();ev.preventDefault()}},true);
 
 </script></body></html>
