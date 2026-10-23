@@ -1400,7 +1400,7 @@ function newGame(o){const pfPrev=SIM.pfPub||null;SIM.prevAvg=null;SIM.r2b=null;c
  C.forEach(d=>{d.b=d.b0.slice();d.l=Array(NP).fill(0);d.res=null;d.r1=null;d.rc=0;d.cv=0;d.pj=null});
  for(const k in SIM)delete SIM[k];
  Object.assign(SIM,{seed:sd,me:o.party,theme:o.theme,diff:o.diff||'normal',mode:o.mode||'leg',phase:'pacts',day:0,ap:3,funds:600,nat:Array(NP).fill(0),trend:Array(NP).fill(0),reg:FR.REG.map(()=>Array(NP).fill(0)),mom:Array(NP).fill(0),sal:TH.map((_,t)=>t===0?1.5:t===1||t===3?1.2:t===2?1.1:1),
-  ai:P.map((p,k)=>({ap:3,funds:Math.round(600*clamp((SIM.mode==='pres'?TGP:TG0)[k]/.25,.3,1)),an:0,fr:0,prep:0,tc:Array(NREG).fill(0),plat:[]})),
+  ai:P.map((p,k)=>({ap:3,funds:Math.round(600*clamp((o.tg||(SIM.mode==='pres'?TGP:TG0))[k]/.25,.3,1)),an:0,fr:0,prep:0,tc:Array(NREG).fill(0),plat:[]})),
   plat:[],an:0,fr:0,prep:0,prepRv:[],tc:Array(NREG).fill(0),atk:Array(NP).fill(0),log:[],news:[],hist:[],polls:[],pend:[],msg:'',barrage:2.6,barLFI:1,turn:null,front:{},cons:{},wd:null,pacts:[],offers:[],inc:{}});
  SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;if(SIM.mode==='pres')try{lpRoll(0,null)}catch(e){console.error(e)}
  if(SIM.mode!=='pres')C.forEach(d=>{SIM.inc[d.i]=SIM.K&&SIM.K.inc?SIM.K.inc[d.i]:d.w});
@@ -1530,6 +1530,7 @@ const nearRival=k=>{const s=natShares(true);return s.map((v,j)=>[j===k||j===7?-1
 const topRival=k=>{const s=natShares(true);return s.map((v,j)=>[v,j]).filter(a=>a[1]!==k&&a[1]!==7).sort((a,b)=>b[0]-a[0])[0][1]};
 /* ===== daily dynamics ===== */
 const UPS=[['décolle après une séquence réussie de son chef.','takes off after a strong run for its leader.'],['reçoit le soutien d’une figure respectée.','wins the backing of a respected figure.'],['impose son thème dans le débat.','sets the agenda for the day.']],DNS=[['trébuche : de vieux messages d’un candidat refont surface.','stumbles as a candidate’s old posts resurface.'],['est critiqué pour le coût de son programme.','takes heat over the cost of its platform.'],['voit son chef commettre une bourde en direct.','sees its leader blunder on live TV.'],['est éclaboussé par une affaire judiciaire.','is splashed by a legal case.']];
+function recCaps(){const r=SIM.rec,o={};if(!r||r2mode())return o;const U=typeof UNPOP!=='undefined'?UNPOP:40;if(r.pm!=null&&r.appr<U)o[r.pm]=(r.appr+6)/100;if(PRES()&&r.pres!=null&&r.pappr!=null&&r.pappr<U)o[r.pres]=Math.min(o[r.pres]??1,(r.pappr+6)/100);return o}
 function campDynamics(){const sh=natShares(true),me=SIM.me,o=sh.map((v,k)=>[v,k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0]),ld=o[0][1];
  /* small random walk on every AI party */
  P.forEach((_,k)=>{if(k===me)return;SIM.trend[k]=SIM.trend[k]*.965+gauss()*.009*VOL.camp*ptF(sh[k])}); /* campaign swings partly fade, so polls wander but do not run away */
@@ -1539,7 +1540,9 @@ function campDynamics(){const sh=natShares(true),me=SIM.me,o=sh.map((v,k)=>[v,k]
  /* the RN's glass ceiling: gains beyond its starting level meet growing resistance (Logan 2026-10-22) */
  if(!PRES()&&!r2mode()&&SIM.t0){const fx=sh[5]+sh[6]-SIM.t0[5]-SIM.t0[6]-.01;if(fx>0)[5,6].forEach(k=>{if(sh[k]>SIM.t0[k])SIM.nat[k]-=fx*2})} /* RN and Reconquête together, so the far right can't break through via REC */
   /* loyal bases: LFI and RN keep a core that doesn't drift away, and a polarising image limits LFI's reach beyond it */
- if(!r2mode()&&SIM.t0)[[0,.82],[5,.86]].forEach(([k,c])=>{if(k===me||sh[k]<.01)return;const fl=c*SIM.t0[k];if(sh[k]<fl){SIM.nat[k]+=(fl-sh[k])*.6;if(SIM.trend[k]<0)SIM.trend[k]*=.6}});
+ /* the party leading an unpopular outgoing government (or the unpopular President's party, in a presidential race) gets no loyal floor and can't poll far above that approval (Logan 2026-10-23) */
+ const capd=recCaps();for(const k in capd){const v=sh[k];if(v>capd[k])SIM.nat[k]-=(v-capd[k])*.3}
+ if(!r2mode()&&SIM.t0)[[0,.82],[5,.86]].forEach(([k,c])=>{if(k===me||sh[k]<.01||capd[k]!=null)return;const fl=c*SIM.t0[k];if(sh[k]<fl){SIM.nat[k]+=(fl-sh[k])*.6;if(SIM.trend[k]<0)SIM.trend[k]*=.6}});
  if(!r2mode()&&SIM.t0&&me!==0){const ex=sh[0]-SIM.t0[0]-.025;if(ex>0)SIM.nat[0]-=ex*1.5}
  /* campaign moments */
  /* any party in the race can have its moment, not only the top four (Logan 2026-10-20: smaller parties were squeezed out) */
@@ -1814,14 +1817,16 @@ function finishNight(){const LN=SIM.lastNew=SIM.lastNew||{};if(PRES()){if(SIM.ph
 /* ===== Presidential election: rallies, vote utile, finalists, endorsements, run-off duel ===== */
 /* A rally is a 'union' pact whose every constituency goes to the head candidate. */
 function rallyPact(head,m){const p={m:m.slice().sort((a,b)=>a-b),type:'union',head,share:null,alloc:{}};C.forEach(d=>p.alloc[d.i]=head);return p}
+/* standings for rallies: the in-game polls when the race follows a played term (Logan 2026-10-23), else the 2026 presidential polls */
+const PSH=()=>SIM.tg||TGP;
 function aiRallies(){const me=SIM.me,free=k=>k!==me,P2=[];
- if(free(2)&&rnd()<.2){const h=[0,1].filter(free).sort((a,b)=>TGP[b]-TGP[a]+(rnd()-.5)*.04)[0];if(h!=null)P2.push(rallyPact(h,[h,2]))}
+ if(free(2)&&rnd()<.2){const h=[0,1].filter(free).sort((a,b)=>PSH()[b]-PSH()[a]+(rnd()-.5)*.04)[0];if(h!=null)P2.push(rallyPact(h,[h,2]))}
  /* Ensemble pour la République: Renaissance and MoDem usually stand down for the strongest of the three (Philippe in 2027) */
- const ef=ENSF.filter(free);let ep=null;if(ef.length===3&&rnd()<.85){const h=ef.slice().sort((a,b)=>TGP[b]-TGP[a]+(rnd()-.5)*.02)[0];ep=rallyPact(h,ef)}
+ const ef=ENSF.filter(free);let ep=null;if(ef.length===3&&rnd()<.85){const h=ef.slice().sort((a,b)=>PSH()[b]-PSH()[a]+(rnd()-.5)*.02)[0];ep=rallyPact(h,ef)}
  if(free(4)&&rnd()<.12){if(ep)ep=rallyPact(ep.head,[...ep.m,4]);else if(free(9))ep=rallyPact(9,[9,4])}if(ep)P2.push(ep);
  if(free(6)&&free(5)&&rnd()<.06)P2.push(rallyPact(5,[5,6]));
  SIM.pacts=P2}
-function offerRallies(){const me=SIM.me;SIM.offers=[];P.forEach((p,k)=>{if(k===me||k===7||!PACTOK(me,k)||SIM.pacts.some(q=>q.m.includes(k)))return;if(TGP[k]<TGP[me]*.7&&rnd()<(AFF[k][me]+AFF[me][k])/2)SIM.offers.push({k,type:'union'})})}
+function offerRallies(){const me=SIM.me;SIM.offers=[];P.forEach((p,k)=>{if(k===me||k===7||!PACTOK(me,k)||SIM.pacts.some(q=>q.m.includes(k)))return;if(PSH()[k]<PSH()[me]*.7&&rnd()<(AFF[k][me]+AFF[me][k])/2)SIM.offers.push({k,type:'union'})})}
 /* Would candidate k stand down and back the player? Weaker, closer candidates say yes more easily. */
 function rallyAccept(k){const me=SIM.me;if(!PACTOK(me,k))return {ok:false};const sh=natShares(true),aff=(AFF[k][me]+AFF[me][k])/2,rel=sh[me]/Math.max(.01,sh[k]);
  const p=clamp(-.25+aff*.5+Math.log(rel)*.35,.02,.9);return {ok:rnd()<p,p}}
@@ -1852,7 +1857,7 @@ function courtCand(k){const me=SIM.me;if(SIM.court[k])return;const o=SIM.ai[k],m
 /* Opening run-off standing anchored to the Elabe poll of 14-16 Oct 2026 (RN vs Philippe 52.5, vs LFI 69, vs PS 53.5; any Ensemble-family finalist takes Philippe's figure).
    Full weight for the first in-game presidential election, halved each one after, so later run-offs follow the game's own polling. */
 const R2POLL={3:.475,8:.475,9:.475,0:.31,1:.465};
-function r2Baseline(){SIM.r2b={};const [a,b]=SIM.fin,rn=[a,b].find(k=>k===5),o=[a,b].find(k=>k!==5);if(rn==null||R2POLL[o]==null)return;
+function r2Baseline(){SIM.r2b={};/* a race that follows a played term uses the game's own polling, not the Oct 2026 Elabe poll (Logan 2026-10-23) */if(SIM.tg)return;const [a,b]=SIM.fin,rn=[a,b].find(k=>k===5),o=[a,b].find(k=>k!==5);if(rn==null||R2POLL[o]==null)return;
  const w=Math.pow(.5,careerK().presN||0);if(w<.05)return;const lg=v=>Math.log(v/(1-v)),cur=()=>{r2Projection();return presR2Nat()[o]};
  const tgt=w*lg(R2POLL[o])+(1-w)*lg(cur());for(let i=0;i<4;i++){const e=(tgt-lg(cur()))/2;SIM.r2b[o]=(SIM.r2b[o]||0)+e;SIM.r2b[rn]=(SIM.r2b[rn]||0)-e}}
 /* the run-off debate without the player: the two finalists face off, a small swing to the winner */
@@ -2280,6 +2285,8 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  normV(G);G.v=G.v.map(v=>Math.max(.004,v));normV(G);
  /* the party leading an unpopular government never gains in the polls while it leads it (Logan 2026-10-23): any rise is cut back and goes to the opposition */
  if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0&&G.v[pm0]>v0[pm0]){const cap=v0[pm0]*(1-.004-rnd()*.012),ex=G.v[pm0]-cap,op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));G.v[pm0]=cap;if(T>0)op.forEach(k=>G.v[k]+=ex*G.v[k]/T);G.pmo[pm0]=Math.min(0,G.pmo[pm0])}
+ /* and it can't stay far above its own government's approval (Logan 2026-10-23: a sole RN government at 20-something % approval still polled 39 %): above approval + 6 pt it slides 40 % of the way down each quarter, its lost voters going where government losses go */
+ if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0){const ceil=(G.appr.pm+6)/100;if(G.v[pm0]>ceil){const ex=(G.v[pm0]-ceil)*.4,W=govLossW(G,gp,{[pm0]:ex});G.v[pm0]-=ex;let w=0;for(const k in W){G.v[+k]+=ex*W[k];w+=W[k]}if(w<.999){const op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));op.forEach(k=>G.v[k]+=ex*(1-w)*G.v[k]/T)}normV(G)}}
  G.ang=G.ang.map(v=>v*.8);G.deals=(G.deals||[]).filter(d=>d.until>G.q);
  /* coalition partners lose patience when their measure waits; an angry partner walks out to the back benches */
  /* a partner short-changed on cabinet posts grows restless */
@@ -2318,12 +2325,13 @@ function aiDissolve(G){const c=campOf(G.pres),pk=G.pres,left=G.presM-G.m,end=60-
 function dissolve(why){const G=SIM.G,K=careerK();G.fallsD=G.falls||0;G.log.push({m:G.m,t:x('Dissolution de l’Assemblée nationale : ','The National Assembly is dissolved: ')+why});
  K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;const keep=JSON.parse(JSON.stringify(SIM.G));
  const start=new Date(Math.floor(G.m/12),G.m%12,15).toISOString();
- newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:G.v.slice(),start,rec:G.pm!=null?{gov:G.gov.slice(),appr:G.appr.pm,sh:govShare(G,G.gov)}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
+ newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:G.v.slice(),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
 function presElection(){const G=SIM.G,K=careerK();K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;try{lpRoll(G.m,G)}catch(e){console.error(e)}const keep=JSON.parse(JSON.stringify(G));
  /* presidential intentions: the term's polls blended with personal standing */
- const tg=G.v.map((v,k)=>k===7?.03:v*.75+TGP[k]*.25);const T=sum(tg);
+ /* presidential intentions start from the in-game polls as they stand (Logan 2026-10-23) */
+ const tg=G.v.slice();const T=sum(tg);
  const pm=Math.max(G.m,G.presM-1),start=new Date(Math.floor(pm/12),pm%12,1).toISOString();
- newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),appr:G.appr.pm,sh:govShare(G,G.gov)}:null});SIM.G=keep;save();render()}
+ newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres}:null});SIM.G=keep;save();render()}
 /* after a presidential election: the winner keeps or dissolves the Assembly */
 function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=careerK(),me=SIM.me;const d=new Date(START);d.setDate(d.getDate()+D1+14);const m=d.getFullYear()*12+d.getMonth()+1;
  K.presK=w;K.presM=m+59;K.presN=(K.presN||0)+1;K.presAppr=55;K.presStart=m;SIM.K=K;const G=SIM.G;if(G){G.pres=w;G.presM=K.presM;G.appr.pres=55;G.m=m;G.log.push({m,t:P[w].n+x(' entre à l’Élysée.',' enters the Élysée.')})}
