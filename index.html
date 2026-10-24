@@ -1868,15 +1868,16 @@ function rallyPact(head,m){const p={m:m.slice().sort((a,b)=>a-b),type:'union',he
 /* standings for rallies: the in-game polls when the race follows a played term (Logan 2026-10-23), else the 2026 presidential polls */
 const PSH=()=>SIM.tg||TGP;
 function aiRallies(){const me=SIM.me,free=k=>k!==me,P2=[];
- if(free(2)&&rnd()<.2){const h=[0,1].filter(free).sort((a,b)=>PSH()[b]-PSH()[a]+(rnd()-.5)*.04)[0];if(h!=null)P2.push(rallyPact(h,[h,2]))}
+ if(free(2)&&rnd()<.2){const h=[0,1].filter(free).sort((a,b)=>PSH()[b]-PSH()[a])[0];if(h!=null)P2.push(rallyPact(h,[h,2]))}
  /* Ensemble pour la République: Renaissance and MoDem usually stand down for the strongest of the three (Philippe in 2027) */
- const ef=ENSF.filter(free);let ep=null;if(ef.length===3&&rnd()<.85){const h=ef.slice().sort((a,b)=>PSH()[b]-PSH()[a]+(rnd()-.5)*.02)[0];ep=rallyPact(h,ef)}
+ const ef=ENSF.filter(free);let ep=null;if(ef.length===3&&rnd()<.85){const h=ef.slice().sort((a,b)=>PSH()[b]-PSH()[a])[0];ep=rallyPact(h,ef)}
  if(free(4)&&rnd()<.12){if(ep)ep=rallyPact(ep.head,[...ep.m,4]);else if(free(9))ep=rallyPact(9,[9,4])}if(ep)P2.push(ep);
  if(free(6)&&free(5)&&rnd()<.06)P2.push(rallyPact(5,[5,6]));
  SIM.pacts=P2}
 function offerRallies(){const me=SIM.me;SIM.offers=[];P.forEach((p,k)=>{if(k===me||k===7||!PACTOK(me,k)||SIM.pacts.some(q=>q.m.includes(k)))return;if(PSH()[k]<PSH()[me]*.7&&rnd()<(AFF[k][me]+AFF[me][k])/2)SIM.offers.push({k,type:'union'})})}
 /* Would candidate k stand down and back the player? Weaker, closer candidates say yes more easily. */
 function rallyAccept(k){const me=SIM.me;if(!PACTOK(me,k))return {ok:false};const sh=natShares(true),aff=(AFF[k][me]+AFF[me][k])/2,rel=sh[me]/Math.max(.01,sh[k]);
+ if(sh[k]>=sh[me])return {ok:false,p:0,ahead:1};
  const p=clamp(-.25+aff*.5+Math.log(rel)*.35,.02,.9);return {ok:rnd()<p,p}}
 const finalists=()=>SIM.fin||[];
 /* national share of a in a duel a vs b */
@@ -1957,7 +1958,7 @@ function vRallies(){const me=SIM.me,sh=natShares(true),mine=SIM.pacts.find(p=>p.
  <div class="pre-foot"><span>${x('Premier tour le ','First round on ')+R1DATE()}</span><button class="pre-go" data-begin>${x('Déposer les parrainages','File sponsorships')} →</button></div></div>
  <div class="card"><h3>${x('Rassemblements entre les autres','Other joint runs')}</h3>${others.length?others.map(p=>`<div style="margin:6px 0">${p.m.filter(k=>k!==p.head).map(chipP).join(' ')} → ${chipP(p.head)}</div>`).join(''):`<p class="note">${x('Aucun pour l’instant : chacun part seul.','None so far: everyone runs alone.')}</p>`}</div></div>
  <div><div class="card"><h3>${x('Intentions de vote au 1er tour','First-round voting intention')}</h3>${pie(P.map((p,k)=>[sh[k],pc(k),p.n]).filter(r=>r[0]>0),180,.5)}<div class="pie-legend">${P.map((p,k)=>sh[k]?`<span><i style="background:${pc(k)}"></i>${p.n} ${pct(sh[k])}</span>`:'').join('')}</div></div>${presSide()}</div></div>`}
-function doRally(k){const me=SIM.me,r=rallyAccept(k);SIM.tried=SIM.tried||{};if(r.ok){let p=SIM.pacts.find(q=>q.head===me);const m=p?p.m.concat(k):[me,k];SIM.pacts=SIM.pacts.filter(q=>q!==p&&q.head!==k).map(q=>q.m.includes(k)?rallyPact(q.head,q.m.filter(j=>j!==k)):q).filter(q=>q.m.length>1);SIM.pacts.push(rallyPact(me,m));SIM.tried[k]=x('Accepté','Accepted');SIM.log.push(x(P[k].n+' se retire et vous soutient.',P[k].n+' stands down and backs you.'))}else SIM.tried[k]=x('Refusé','Turned down');SIM.offers=SIM.offers.filter(o=>o.k!==k);save();render()}
+function doRally(k){const me=SIM.me,r=rallyAccept(k);SIM.tried=SIM.tried||{};if(r.ok){let p=SIM.pacts.find(q=>q.head===me);const m=p?p.m.concat(k):[me,k];SIM.pacts=SIM.pacts.filter(q=>q!==p&&q.head!==k).map(q=>q.m.includes(k)?rallyPact(q.head,q.m.filter(j=>j!==k)):q).filter(q=>q.m.length>1);SIM.pacts.push(rallyPact(me,m));SIM.tried[k]=x('Accepté','Accepted');SIM.log.push(x(P[k].n+' se retire et vous soutient.',P[k].n+' stands down and backs you.'))}else SIM.tried[k]=r.ahead?x('Refusé : devant vous dans les sondages','Turned down: polling ahead of you'):x('Refusé','Turned down');SIM.offers=SIM.offers.filter(o=>o.k!==k);save();render()}
 function duelPollCard(){const s=presR2Nat(),[a,b]=SIM.fin,ps=(SIM.polls2||[]).slice().reverse();
  return `<div class="card"><h3>${x('Sondages du second tour','Run-off polls')}</h3><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">${pie([[s[a],pc(a),P[a].n],[s[b],pc(b),P[b].n]],160,.55)}<div><p>${chipP(a)} <b>${pct(s[a])}</b> · ${chipP(b)} <b>${pct(s[b])}</b></p><p class="note">${x('Projection fondée sur les reports de voix circonscription par circonscription.','Projection built from vote transfers seat by seat.')}</p></div></div><table class="t"><thead><tr><th>${x('Institut','Pollster')}</th><th>${x('Jour','Day')}</th><th class="r">${P[a].n}</th><th class="r">${P[b].n}</th></tr></thead><tbody>${ps.slice(0,8).map(p=>`<tr><td>${p.h}</td><td>${p.day}</td><td class="r">${f1(p.a)}</td><td class="r">${f1(1-p.a)}</td></tr>`).join('')}</tbody></table></div>`}
 function vPollsR2(){const s=presR2Nat(),[a,b]=SIM.fin,ps=(SIM.polls2||[]).slice().reverse();
@@ -3228,12 +3229,12 @@ function x2f(a,b){return a+b}
    A recipe item is [domain, measure, intensity, scope?, funding?] from the bill generator, or {code,id,to} for a rule of a code in force.
    The bill keeps its own name, stance, popularity and pledge link; its effects and cost come from the clauses. */
 const cC=(code,id,to)=>({code,id,to});
-const MREC={0:[['liv','reg',4]],2:[['liv','vat',4]],3:[['lab','inc',3],['econ','inc',2]],4:[['liv','inc',2]],
+const MREC={0:[['liv','reg',4]],2:[['liv','vat',4]],3:[['econ','inc',3]],4:[['liv','inc',2]],
  5:[['immig','exp',4],['safe','pol',1]],7:[['immig','reg',3]],8:[['immig','mkt',3]],9:[['immig','inv',3]],
  10:[['safe','reg',4],['safe','pri',4]],11:[['safe','pol',4]],12:[['safe','mkt',2],['safe','inv',2]],13:[['safe','inv',2,'youth']],
  14:[['health','inv',4]],17:[['health','inc',3,'rural'],['edu','reg',2,'rural']],22:[['clim','inv',4],['hous','inv',2],['energy','inc',2]],
  23:[['clim','inc',2],['clim','inv',1]],24:[['energy','nuc',4]],25:[['energy','wind',3]],
- 28:[['econ','cut',3],['health','cut',2],['soc','cut',2],cC('fis','p10',1),cC('fis','hh',1),['tax','reg',2]],29:[['tax','inc',3,'fam']],
+ 28:[['econ','cut',3],['health','cut',2],cC('pen','idx',2),cC('fis','p10',1),cC('fis','hh',1),['tax','reg',2]],29:[['tax','inc',3,'fam']],
  30:[['eur','reg',5]],31:[['eur','cut',3]],32:[['def','mkt',3],['eur','inv',2]],33:[['def','inv',4]],
  34:[['edu','inv',3,'fam'],['liv','inv',1,'fam']],35:[['edu','inv',3]],36:[['edu','dis',3]],37:[['edu','grp',3]],
  38:[['def','nato',3]],39:[['def','svc',3,'youth']],40:[['def','inv',5],['def','inc',3]],41:[['def','reg',4]],42:[['eur','inv',4,'all','real']],
@@ -3282,7 +3283,7 @@ const LEG={
   const dw=k=>{let w=1+Math.max(0,50-G.ind[k])/8+(heat[k]||0)*1.2;if(mine&&LTH[k]!=null&&myProm(G).some(p=>p.t===LTH[k]&&p.s!=='kept'))w+=1.2;
    w*=Math.pow(.65,(G.laws||[]).filter(l=>l.act&&l.dom===k&&G.q-l.q<=2).length);return w*cnW(G,DCAT[k])};
   /* besides the six core files, each party also legislates on the issues it owns: immigration for the RN, Europe for the centre, the cost of living for LFI (Logan 2026-10-23) */
-  const XD=['liv','immig','eur','tax','def','lab','soc','energy'],xw=d=>party>=0&&party!==7&&OWN[party]?Math.max(0,OWN[party][DCAT[d]]-.05)*2.4*cnW(G,DCAT[d]):0;
+  /* labour law and pensions are legislated only through the Labour and Pensions Codes (Logan 2026-10-24) */const XD=['liv','immig','eur','tax','def','energy'],xw=d=>party>=0&&party!==7&&OWN[party]?Math.max(0,OWN[party][DCAT[d]]-.05)*2.4*cnW(G,DCAT[d]):0;
   const dom=o.dom||lPick(doms.concat(XD),k=>XD.includes(k)?xw(k):dw(k)),gap=50-(G.ind[dom]??50)+(heat[dom]||0)*3;
   const aw=a=>{if(pNo(party,dom,a))return 0;const A=LARC[a],ef=A.i*((LDOM[dom].flip&&LDOM[dom].flip[bA(a)])?-1:1);let w=.6+Math.max(0,ldot(A.ax,LPAR[party]))*1.4;
    if(gap>12&&ef>0)w+=1.5;if(gap<-8&&ef<0)w+=.8;if(stress>.5&&A.c<0)w+=1.2*stress;if(stress>.5&&A.c>0)w*=1-.4*stress;if(o.relief&&ef<0)w=0;
@@ -3317,7 +3318,7 @@ const LEG={
   doms.filter(k=>G.ind[k]<38).sort((a,b)=>G.ind[a]-G.ind[b]).slice(0,2).forEach(k=>{for(let t=0;t<5;t++){const b=LEG.gen(G,party(),{dom:k,tag:'crisis',relief:1});if(okp(b)&&LARC[b.p.arc].i*((LDOM[k].flip&&LDOM[k].flip[b.p.arc])?-1:1)>0){take(b);return}}});
   const nStatic=rnd()<.7?1:0;let guard=0;
   while(cands.length<n0-nStatic&&guard++<60){let b=null;for(let t=0;t<3;t++){b=LEG.gen(G,party());if(okp(b))break}if(okp(b))take(b)}
-  if(rnd()<.25){for(let t=0;t<3;t++){const b=LEG.gen(G,party(),{dom:pick(['lab','energy','immig','liv','eur','tax','def'])});if(okp(b)&&take(b))break}}
+  if(rnd()<.25){for(let t=0;t<3;t++){const b=LEG.gen(G,party(),{dom:pick(['energy','immig','liv','eur','tax','def'])});if(okp(b)&&take(b))break}}
   /* reforms of the pension and labour codes */
   if(rnd()<.3){for(let t=0;t<3;t++){const b=codeGen(G,party());if(b&&okp(b)&&take(b))break}}
   let list=cands.map(b=>pushBill(b));
@@ -3898,7 +3899,7 @@ function codeClause(G,d,id,to){const c=codeOf(G),me=SIM.me,L=CODE[d].p;let p=id&
  if(!p){const W=L.filter(q=>q.pf[me]!==c.v[q.id]).sort((a,b)=>b.w*Math.abs(b.pf[me]-c.v[b.id])-a.w*Math.abs(a.pf[me]-c.v[a.id]));p=W[0]||L[0]}
  const cur=c.v[p.id];let t=to!=null&&to!==''?+to:cur+(Math.sign(p.pf[me]-cur)||1);if(t<0||t>=p.o.length)t=cur>0?cur-1:cur+1;return{code:p.d,id:p.id,to:t}}
 function codePart(G,c){const b=codeBill(G,c.code,{[c.id]:c.to},SIM.me);if(!b)return{ind:{},c:0,rev:0,ap:0,coh:0,k:1,ax:[0,0,0,0,0],cu:P.map(()=>0),dir:1,desc:['',''],noop:1};b.ax=[0,0,0,0,0];return b}
-const deskDoms=(i,c)=>Object.keys(LDOM).filter(z=>z!=='soc').map(z=>[x(domInfo(z)[1],domInfo(z)[2]),`set|${i}|dom|${z}`,!c.code&&c.dom===z]).concat(Object.keys(CODE).map(d=>[x(CODE[d].f+' : règles en vigueur',CODE[d].e+': rules in force'),`set|${i}|dom|code:${d}`,c.code===d]));
+const deskDoms=(i,c)=>Object.keys(LDOM).filter(z=>z!=='soc'&&z!=='lab').map(z=>[x(domInfo(z)[1],domInfo(z)[2]),`set|${i}|dom|${z}`,!c.code&&c.dom===z]).concat(Object.keys(CODE).map(d=>[x(CODE[d].f+' : règles en vigueur',CODE[d].e+': rules in force'),`set|${i}|dom|code:${d}`,c.code===d]));
 function codeClauseHTML(G,c,i,pt,tok,money){const p=CXP[c.id],D=CODE[c.code],cur=codeOf(G).v[c.id],same=c.to===cur;
  const domTok=tok(x(D.f+' : règles en vigueur',D.e+': rules in force'),deskDoms(i,c)),ruleTok=tok(x(p.f,p.e),D.p.map(q=>[x(q.f,q.e),`set|${i}|id|${q.id}`,q.id===c.id])),
   toTok=tok(cxL(p,c.to),p.o.map((o,j)=>[x(o[0],o[1])+(j===cur?x(' (en vigueur)',' (in force)'):''),`set|${i}|to|${j}`,j===c.to]));
@@ -4127,7 +4128,7 @@ const CR=[
  df:'L’activité se contracte, les plans sociaux se multiplient et le chômage grimpe.',de:'Output is shrinking, layoffs are spreading and unemployment is climbing.',hit:{ind:{econ:-.6},unemp:.05},w:()=>0}];
 const crDef=id=>CR.find(C=>C.id===id),crGet=(G,id)=>(G.cr||[]).find(c=>c.id===id);
 /* which domains count toward each crisis (bill generator domains) */
-const CRD={aust:['health','edu','lab','hous'],farm:['econ','eur','liv'],strike:['lab','liv'],riot:['safe','hous'],urg:['health'],hous:['hous','liv'],nrj:['energy','liv'],fire:['clim','energy'],flood:['clim','hous'],terr:['safe','immig'],dom:['liv','safe','econ'],prof:['edu'],drought:['clim','econ'],migr:['immig','eur','safe'],debt:['tax','soc'],epid:['health'],heat:['hous','liv','econ','tax'],slow:['econ','lab'],rec:['econ','lab','soc']};
+const CRD={aust:['health','edu','hous'],farm:['econ','eur','liv'],strike:['liv'],riot:['safe','hous'],urg:['health'],hous:['hous','liv'],nrj:['energy','liv'],fire:['clim','energy'],flood:['clim','hous'],terr:['safe','immig'],dom:['liv','safe','econ'],prof:['edu'],drought:['clim','econ'],migr:['immig','eur','safe'],debt:['tax'],epid:['health'],heat:['hous','liv','econ','tax'],slow:['econ'],rec:['econ']};
 /* aggravating causes, by issue */
 const CRC={
  econ:[['Les PME, déjà fragilisées, encaissent le choc en premier.','Small firms, already fragile, take the first hit.'],['Les collectivités exigent que l’État paie la facture.','Local councils insist the state should pick up the bill.'],['Les marchés doutent de la capacité du gouvernement à réagir.','Markets doubt the government can respond.'],['Les syndicats menacent d’étendre le mouvement.','Unions threaten to widen the action.']],
@@ -4170,7 +4171,7 @@ function crLawFx(id,s){return id==='heat'?{imb:-.08*s}:id==='slow'?{cush:Math.ma
 function crFx(G,fx){const B=G.bc;if(!fx||!B)return;if(fx.imb)B.imb=Math.max(0,B.imb+fx.imb);if(fx.v)B.v+=fx.v;if(fx.cush)B.cush=Math.min(1,(B.cush||0)+fx.cush);if(fx.rec&&B.rec>0)B.rec=Math.max(1,B.rec-fx.rec)}
 const crRel=(id,b)=>{const C=crDef(id),d=b&&(b.p?b.p.dom:LEG.dom(b));return !!C&&(d===C.dom||(CRD[id]||[]).includes(d))};
 /* the clauses of each catalogue bill (Logan 2026-10-24: every bill is made of real clauses) */
-const CRCL={'Farm Emergency Bill':[['econ','inv',3,'rural']],'Fair Farm Prices Bill (Égalim 4)':[['econ','reg',2,'rural']],'Wages and Social Conference Bill':[['lab','reg',2],['liv','inv',2]],
+const CRCL={'Farm Emergency Bill':[['econ','inv',3,'rural']],'Fair Farm Prices Bill (Égalim 4)':[['econ','reg',2,'rural']],'Wages and Social Conference Bill':[cC('lab','smic',1),['liv','inv',2]],
  'Minimum Service in Transport Bill':[cC('lab','grv',2)],'Neighbourhood Renewal Bill':[['hous','inv',3],['safe','inv',2]],'Public Order and Parental Responsibility Bill':[['safe','reg',3],['edu','dis',2]],
  'Hospital Emergency Bill':[['health','inv',4]],'Social Housing Emergency Bill':[['hous','inv',4]],'Housing Supply Shock Bill':[['hous','mkt',4]],
  'Energy Price Shield Bill':[['liv','inv',3],['energy','reg',2]],'Energy Windfall Tax Bill':[cC('fis','sur',1),['tax','inv',2]],'Firefighting Fleet Bill':[['clim','inv',2],['safe','inv',1]],
@@ -6460,6 +6461,18 @@ function mkAsks(G,k){const L=[],has=a=>L.some(b=>b.k===a.k&&(b.i??b.id)===(a.i??
  if(!L.length)PB[k].ask.slice(0,1).forEach(a=>L.push({...a}));return L}
 function asksOf(G,k){if(!PB[k])return [];if(!G||!G.bu||!G.tx)return PB[k].ask;const key=Math.floor((G.m-9)/12)+':'+(G.govQ??'f')+':'+(G.pm??'-');
  G.askC=G.askC||{};const c=G.askC[k];if(c&&c.key===key)return c.a;let a;try{a=mkAsks(G,k)}catch(e){console.error(e);a=PB[k].ask}G.askC[k]={key,a};return a}
+/* ===== A bill that would change nothing is never proposed (Logan 2026-10-24) =====
+   A code bill whose every rule is already in force (another law got there first) leaves the agenda, the AI's lists, the vote queue and the crisis
+   cards; the AI redrafts instead of tabling it. Bills with ordinary clauses always change something. */
+const billLive=(G,bi)=>{const b=typeof bi==='number'?B(bi):bi;if(!b)return false;if(!b.cx)return true;if(b.cl&&b.cl.some(c=>!c.code))return true;try{return codeChanges(G,b.cx).length>0}catch(e){return true}};
+function pruneDead(G){if(!G||!G.code)return;const ok=bi=>billLive(G,bi),done=bi=>(G.done||[]).includes(bi)||(G.passed||[]).includes(bi);
+ ['offer','dft','aib','vq','crq'].forEach(f=>{if(Array.isArray(G[f]))G[f]=G[f].filter(bi=>(G.vote&&!G.vote.done&&G.vote.bi===bi)||ok(bi))});
+ if(Array.isArray(G.oppL))G.oppL=G.oppL.filter(o=>!o||ok(o.bi));
+ (G.cr||[]).forEach(c=>{if(Array.isArray(c.bi))c.bi=c.bi.filter(bi=>done(bi)||(c.pass||[]).includes(bi)||ok(bi))})}
+{const _p=LEG.aiPick;LEG.aiPick=function(G,party){let bi=null;for(let t=0;t<5;t++){bi=_p.apply(this,arguments);if(bi==null||billLive(G,bi))return bi}return null}}
+{const _n=newOffer;newOffer=function(G){const r=_n.apply(this,arguments);try{pruneDead(G)}catch(e){console.error(e)}return r}}
+{const _v=vqNext;vqNext=function(G){try{pruneDead(G)}catch(e){}return _v.apply(this,arguments)}}
+{const _r=render;render=function(){try{if(SIM.G&&SIM.phase==='gov')pruneDead(SIM.G)}catch(e){}return _r.apply(this,arguments)}}
 
 /* ===== What voters worry about, and why (Logan 2026-10-24: "Voters concerns should be linked to metrics, randomness via public mood/media,
    and other sensical things. and thus, voters concerns should affect polling too") =====
