@@ -1061,6 +1061,13 @@ body.spec{padding-bottom:70px}
 .sb-log:last-child{border-bottom:0}
 body.spec #main [data-endq],body.spec #main .eq-bar,body.spec #turn .vbtn{display:none}
 body.spec #main .tour,body.spec #main .card:has([data-gevopp]),body.spec #main .card:has([data-xpopp]),body.spec #main .card:has([data-qag]){display:none}
+/* metric history tooltip (fhist.js) */
+#mhpop{position:fixed;z-index:9000;display:none;pointer-events:none;width:320px;background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:10px;box-shadow:0 10px 30px rgba(10,20,40,.25);padding:10px 10px 8px;font-size:13px}
+#mhpop .mh-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:4px}#mhpop .mh-h span{font-weight:800}
+#mhpop .mh-f{display:flex;justify-content:space-between;gap:8px;color:var(--mute);font-size:12px;margin-top:2px}
+#mhpop .mh-n{margin:6px 0 0;color:var(--mute);font-size:12px}
+#mhpop .mh-ax{font-size:10px;fill:var(--mute)}
+[data-mh]{cursor:help}
 </style>
 </head><body>
 <header>
@@ -1846,7 +1853,7 @@ function finalSeats(){const s=Array(NP).fill(0);C.forEach(d=>{if(d.res)s[d.res.w
 function natR1(){const a=Array(NP).fill(0);C.forEach(d=>{if(d.r1)d.r1.sh.forEach((v,k)=>a[k]+=v*d.wt/WT)});return a}
 function lastRes(t){const L=SIM.K&&SIM.K.last;if(!L||!L[t])return null;if(t==='p2'){const f=L.p2f||[];if(!SIM.fin||!SIM.fin.every(k=>f.includes(k)))return null}return L[t]}
 function keepLast(K){if(K&&SIM.lastNew){K.last={...(K.last||{}),...SIM.lastNew};SIM.lastNew=null}return K}
-function finishNight(){const LN=SIM.lastNew=SIM.lastNew||{};if(PRES()){if(SIM.phase==='n1')LN.p1=SIM.r1nat.slice();else if(SIM.phase==='n2'){LN.p2=SIM.r2nat.slice();LN.p2f=SIM.fin.slice()}}else if(SIM.phase==='n1')LN.r1=natR1();else if(SIM.phase==='n2')LN.seats=finalSeats().slice();if(PRES()&&SIM.phase==='n1'){SIM.night=null;prepRallies();SIM.phase='ral';st.tab='ral';save();render()}else if(SIM.phase==='n1'){SIM.night=null;prepWithdrawals();SIM.phase='r2w';st.tab='wd';save();render()}else if(SIM.phase==='n2'){SIM.night=null;SIM.phase='end';SIM.final=finalSeats();st.tab='res';st.layer='res';save();render()}}
+function finishNight(){const LN=SIM.lastNew=SIM.lastNew||{};if(PRES()){if(SIM.phase==='n1')LN.p1=SIM.r1nat.slice();else if(SIM.phase==='n2'){LN.p2=SIM.r2nat.slice();LN.p2f=SIM.fin.slice()}}else if(SIM.phase==='n1')LN.r1=natR1();else if(SIM.phase==='n2')LN.seats=finalSeats().slice();if(PRES()&&SIM.phase==='n1'&&p1Win()!=null){SIM.night=null;presOutright();save();render()}else if(PRES()&&SIM.phase==='n1'){SIM.night=null;prepRallies();SIM.phase='ral';st.tab='ral';save();render()}else if(SIM.phase==='n1'){SIM.night=null;prepWithdrawals();SIM.phase='r2w';st.tab='wd';save();render()}else if(SIM.phase==='n2'){SIM.night=null;SIM.phase='end';SIM.final=finalSeats();st.tab='res';st.layer='res';save();render()}}
 
 /* ===== Presidential election: rallies, vote utile, finalists, endorsements, run-off duel ===== */
 /* A rally is a 'union' pact whose every constituency goes to the head candidate. */
@@ -1875,7 +1882,10 @@ function presVoteUtile(){const left=D1-SIM.day;if(left>12)return;const sh=natSha
 function presAITarget(k,o,r2){if(r2){const L=C.filter(d=>d.pj2).sort((a,b)=>Math.abs(a.pj2.s2[k]-.5)-Math.abs(b.pj2.s2[k]-.5));return L[(rnd()*Math.min(40,L.length))|0]}
  const L=C.map(d=>[latent(d)[k]*d.wt*(.5+rnd()),d]).sort((a,b)=>b[0]-a[0]);return L[(rnd()*30)|0][1]}
 /* ===== first-round night (presidential) ===== */
-function startNightP1(){SIM.base={v:natShares()};realNoise();C.forEach(d=>{const L=latent(d,P.map((_,k)=>SIM.err[k]+gauss()*.05)),sh=r1Shares(d,L);d.r1={sh,cl:{el:-1,q:[],o:sh.map((v,k)=>[v,k]).sort((a,b)=>b[0]-a[0])},L}});
+/* Logan 2026-10-24: a candidate with more than half the first-round vote is elected outright; there is no run-off */
+const p1Win=()=>{const n=SIM.r1nat,a=SIM.fin&&SIM.fin[0];return n&&a!=null&&n[a]>.5?a:null};
+function presOutright(){const w=p1Win();SIM.p1win=w;SIM.r2nat=SIM.r1nat.slice();C.forEach(d=>{d.res={w:d.r1.cl.o[0][1],s2:d.r1.sh.slice(),r1:1}});SIM.phase='end';st.tab='res';st.layer='r1'}
+function startNightP1(){SIM.base={v:natShares()};SIM.p1win=null;realNoise();C.forEach(d=>{const L=latent(d,P.map((_,k)=>SIM.err[k]+gauss()*.05)),sh=r1Shares(d,L);d.r1={sh,cl:{el:-1,q:[],o:sh.map((v,k)=>[v,k]).sort((a,b)=>b[0]-a[0])},L}});
  const nat=Array(NP).fill(0);C.forEach(d=>d.r1.sh.forEach((v,k)=>nat[k]+=v*d.wt/WT));SIM.r1nat=nat;SIM.barrage=1.8;{const L=lpRul();if(L&&!(SIM.K&&SIM.K.presN))SIM.barrage*=L.o==='jb'?.96:1.03}/* a presidential run-off is a personal choice: the anti-RN front is weaker than in 577 local duels (Logan 2026-10-23: RN must be competitive) */const o=nat.map((v,k)=>[v,k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0]);SIM.fin=[o[0][1],o[1][1]];
  C.forEach(d=>{d.r1.cl.q=SIM.fin.slice();d.res2run=SIM.fin.slice()});
  SIM.phase='n1';SIM.night={t:0,ord:revealOrder(),n:0};st.tab='night';st.zoom=null;st.city=null;st.layer='r1';save();render();runNight()}
@@ -1915,18 +1925,18 @@ function vRal(){const me=SIM.me,[a,b]=SIM.fin,inR2=SIM.fin.includes(me),nat=SIM.
  <div><div class="card"><h3>${x('Projection du duel','Duel projection')}</h3>${(()=>{const v=duelShare(a,b,true);return `<div class="duel" style="height:22px"><i style="width:${v*100}%;background:${pc(a)}"></i><i style="width:${(1-v)*100}%;background:${pc(b)}"></i></div><p>${chipP(a)} ${pct(v)} · ${chipP(b)} ${pct(1-v)}</p>`})()}</div>
  <div class="card"><button class="act vbtn" data-presr2 style="width:100%"><b>${inR2?x('Lancer la campagne du second tour','Start the run-off campaign'):x('Faire campagne pour le second tour','Campaign in the run-off')}</b><small>${x('Second tour le ','Run-off on ')+R2DATE()}${inR2?'':' · '+x('vos actions servent le finaliste que vous soutenez','your actions help the finalist you endorse')}</small></button></div></div></div>`}
 function drawNightP(el){const N=SIM.night,r1=SIM.phase==='n1',done=N.n>=C.length,rev=revealedSet(),me=SIM.me;let banner,tiles,side;
- if(r1){const shownP=C.filter(d=>rev.has(d.i)),nat=nightEst(N,'p1',SIM.r1nat,shownP,d=>d.r1&&d.r1.sh),[a,b]=done?SIM.fin:nat.map((v,k)=>[v,k]).filter(z=>z[1]!==7).sort((p,q)=>q[0]-p[0]).map(z=>z[1]);banner=N.t<1?x('20 h 00…','8:00 pm…'):done?x(`${P[a].n} et ${P[b].n} qualifiés pour le second tour`,`${P[a].n} and ${P[b].n} go through to the run-off`):x(`Estimation : ${P[a].n} et ${P[b].n} en tête`,`Estimate: ${P[a].n} and ${P[b].n} ahead`);
+ if(r1){const shownP=C.filter(d=>rev.has(d.i)),nat=nightEst(N,'p1',SIM.r1nat,shownP,d=>d.r1&&d.r1.sh),[a,b]=done?SIM.fin:nat.map((v,k)=>[v,k]).filter(z=>z[1]!==7).sort((p,q)=>q[0]-p[0]).map(z=>z[1]);const ow=done?p1Win():null;banner=N.t<1?x('20 h 00…','8:00 pm…'):ow!=null?x(`${P[ow].n} élu dès le premier tour`,`${P[ow].n} wins outright in the first round`):done?x(`${P[a].n} et ${P[b].n} qualifiés pour le second tour`,`${P[a].n} and ${P[b].n} go through to the run-off`):x(`Estimation : ${P[a].n} et ${P[b].n} en tête`,`Estimate: ${P[a].n} and ${P[b].n} ahead`);
   tiles=tvBars(nat.map(z=>N.t<1?0:z*100),null,{lab:x('VOIX ESTIMÉES','ESTIMATED VOTE'),fmt:z=>N.t<1?'…':fn(z)+'<span class="u">%</span>'});
-  const L=C.filter(d=>rev.has(d.i)),cnt=Array(NP).fill(0);L.forEach(d=>cnt[d.r1.cl.o[0][1]]++);side=cmpCard(N.t<1?null:nat,lastRes('p1')||(SIM.base&&SIM.base.v),done,1,!!lastRes('p1'))+`<!--S--><h4>${x('En tête par circonscription','Leading by constituency')}</h4>${P.map((p,k)=>cnt[k]?`<div class="bc-row"><i style="background:${pc(k)}"></i>${p.n} · <b>${cnt[k]}</b></div>`:'').join('')}<!--S--><h4>${x('Votre soirée','Your night')}</h4><div class="bc-row">${!done?x('Dépouillement en cours…','Counting under way…'):SIM.fin.includes(me)?x('Vous êtes qualifié pour le second tour.','You are through to the run-off.'):x('Vous êtes éliminé.','You are out.')} (${pct(nat[me])})</div>`}
+  const L=C.filter(d=>rev.has(d.i)),cnt=Array(NP).fill(0);L.forEach(d=>cnt[d.r1.cl.o[0][1]]++);side=cmpCard(N.t<1?null:nat,lastRes('p1')||(SIM.base&&SIM.base.v),done,1,!!lastRes('p1'))+`<!--S--><h4>${x('En tête par circonscription','Leading by constituency')}</h4>${P.map((p,k)=>cnt[k]?`<div class="bc-row"><i style="background:${pc(k)}"></i>${p.n} · <b>${cnt[k]}</b></div>`:'').join('')}<!--S--><h4>${x('Votre soirée','Your night')}</h4><div class="bc-row">${!done?x('Dépouillement en cours…','Counting under way…'):p1Win()!=null?(p1Win()===me?x('Vous êtes élu dès le premier tour.','You are elected in the first round.'):x('Pas de second tour.','There is no run-off.')):SIM.fin.includes(me)?x('Vous êtes qualifié pour le second tour.','You are through to the run-off.'):x('Vous êtes éliminé.','You are out.')} (${pct(nat[me])})</div>`}
  else{const [a,b]=SIM.fin,s=nightEst(N,'p2',SIM.r2nat,C.filter(d=>rev.has(d.i)),d=>d.res&&d.res.s2&&P.map((_,k)=>k===a||k===b?d.res.s2[k]:0)),w=s[a]>s[b]?a:b;banner=N.t<1?x('20 h 00…','8:00 pm…'):done?x(`${P[w].n} remporte l’élection présidentielle`,`${P[w].n} wins the presidency`):x(`Estimation : ${P[w].n} en tête`,`Estimate: ${P[w].n} ahead`);
   const card=k=>`<div class="tvP-c ${done&&k===w?'win':''}" style="--pc:${pc(k)}">${plogo(k,64)}<div class="tvP-n">${pfull(k)}</div><div class="tvP-v">${N.t<1?'…':f1(s[k])}<small>%</small></div>${done&&k===w?`<div class="tvP-e">${x('ÉLU','ELECTED')}</div>`:''}</div>`;tiles=[card(a),card(b)];
   const L=C.filter(d=>rev.has(d.i)),cnt=Array(NP).fill(0);L.forEach(d=>cnt[d.res.w]++);side=cmpCard(N.t<1?null:s,lastRes('p2')||SIM.base2,done,1,!!lastRes('p2'))+`<h4>${x('Circonscriptions gagnées','Constituencies carried')}</h4>${[a,b].map(k=>`<div class="bc-row"><i style="background:${pc(k)}"></i>${P[k].n} · <b>${cnt[k]}</b></div>`).join('')}`}
- const ttl=r1?x('Présidentielle · 1er tour','Presidential · first round'):x('Présidentielle · second tour','Presidential · run-off'),top=tvTop(ttl,N,done,r1,r1?x('Entre-deux-tours →','On to the run-off →'):x('Voir les résultats →','See the results →')),map=`<div class="bc-main" id="mapbox">${mapSVG(r1?'r1':'res',{hide:d=>!rev.has(d.i),vb:st.zoom||VB0})}${st.zoom?`<button class="chip" data-city="-1" style="margin-top:6px">← ${x('France entière','All of France')}</button>`:''}</div>`,l3=tvL3(N.t<1?x('20 H 00','8:00 PM'):done?x('RÉSULTAT','RESULT'):x('ESTIMATION','PROJECTION'),banner,x('Dépouillées : ','Counted: ')+N.n+' / 577');
+ const ttl=r1?x('Présidentielle · 1er tour','Presidential · first round'):x('Présidentielle · second tour','Presidential · run-off'),top=tvTop(ttl,N,done,r1,r1&&!(done&&p1Win()!=null)?x('Entre-deux-tours →','On to the run-off →'):x('Voir les résultats →','See the results →')),map=`<div class="bc-main" id="mapbox">${mapSVG(r1?'r1':'res',{hide:d=>!rev.has(d.i),vb:st.zoom||VB0})}${st.zoom?`<button class="chip" data-city="-1" style="margin-top:6px">← ${x('France entière','All of France')}</button>`:''}</div>`,l3=tvL3(N.t<1?x('20 H 00','8:00 PM'):done?x('RÉSULTAT','RESULT'):x('ESTIMATION','PROJECTION'),banner,x('Dépouillées : ','Counted: ')+N.n+' / 577');
  el.innerHTML=r1?`${top}<div class="tv-grid"><div class="tv-bars">${tiles}</div>${map}${tvRows(side)}${l3}`:`${top}<div class="tvP">${tiles[0]}${map}${tiles[1]}</div>${l3}<div class="tvP-side bc-side">${side}</div>`}
-function vResP(){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,me=SIM.me,nat=SIM.r1nat,won=w===me;
+function vResP(){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,me=SIM.me,nat=SIM.r1nat,won=w===me,o1=SIM.p1win!=null;
  const cnt=Array(NP).fill(0);C.forEach(d=>cnt[d.res.w]++);
- return `<div class="grid"><div><div class="card"><h2>${won?x('Vous êtes élu président de la République','You are elected President of the Republic'):x(`${pfull(w)} remporte l’Élysée`,`${pfull(w)} wins the Élysée`)}</h2><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">${pie([[s[a],pc(a),P[a].n],[s[b],pc(b),P[b].n]],200,.55)}<div>${[a,b].map(k=>`<div class="big" style="color:${pt(k)};display:flex;align-items:center;gap:12px">${plogo(k,40)}${P[k].n} ${f1(s[k])} %</div><p class="note">${cnt[k]} ${x('circonscriptions en tête','constituencies carried')}</p>`).join('')}</div></div></div>
- ${mapCard([['res',x('Second tour','Run-off')],['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par candidat','Candidate vote share')]],x('La carte du vote','The map of the vote'))}</div>
+ return `<div class="grid"><div><div class="card"><h2>${won?x('Vous êtes élu président de la République','You are elected President of the Republic'):x(`${pfull(w)} remporte l’Élysée`,`${pfull(w)} wins the Élysée`)}</h2><div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">${o1?pie(P.map((p,k)=>[nat[k],pc(k),p.n]).filter(r=>r[0]>.001),200,.55):pie([[s[a],pc(a),P[a].n],[s[b],pc(b),P[b].n]],200,.55)}<div>${[a,b].map(k=>`<div class="big" style="color:${pt(k)};display:flex;align-items:center;gap:12px">${plogo(k,40)}${P[k].n} ${f1(s[k])} %</div><p class="note">${cnt[k]} ${x('circonscriptions en tête','constituencies carried')}</p>`).join('')}</div></div>${o1?`<p class="note">${x(`Pas de second tour : ${P[w].n} a obtenu plus de la moitié des voix dès le premier tour.`,`No run-off: ${P[w].n} won more than half the vote in the first round.`)}</p>`:''}</div>
+ ${mapCard([...(o1?[]:[['res',x('Second tour','Run-off')]]),['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par candidat','Candidate vote share')]],x('La carte du vote','The map of the vote'))}</div>
  <div><div class="card"><h3>${x('Premier tour','First round')}</h3>${pie(P.map((p,k)=>[nat[k],pc(k),p.n]).filter(r=>r[0]>.001),170,.5)}<div class="pie-legend">${P.map((p,k)=>nat[k]<.001?'':`<span><i style="background:${pc(k)}"></i>${p.n} ${pct(nat[k])}</span>`).join('')}</div></div>
  <div class="card"><h3>${x('Votre bilan','Your result')}</h3><div class="kpis"><div class="kpi" style="border-top-color:${pc(me)}"><small>${x('1er tour','First round')}</small><b>${pct(nat[me])}</b></div><div class="kpi"><small>${x('Départ','Start')}</small><b>${pct(SIM.t0[me])}</b></div><div class="kpi"><small>${x('Note','Grade')}</small><b>${won?'A+':SIM.fin.includes(me)?'A':nat[me]>SIM.t0[me]+.02?'B':nat[me]>SIM.t0[me]-.02?'C':'D'}</b></div></div></div>
  <div class="card">${won?`<p>${x('Nouveau président, vous pouvez garder l’Assemblée actuelle ou la dissoudre pour chercher une majorité.','As the new President, you can keep the current Assembly or dissolve it to seek a majority.')}</p><p class="note">${x('Votre camp y a ','Your camp holds ')+sum((careerK().seats||SEATS24).filter((v,k)=>campOf(k)===campOf(me)))+x(' sièges sur 577.',' of 577 seats.')}</p><button class="act vbtn" data-afterpres="diss" style="width:100%;margin-bottom:8px"><b>${x('Dissoudre l’Assemblée →','Dissolve the Assembly →')}</b><small>${x('Législatives anticipées, avec l’élan de la victoire','Snap election, riding the win')}</small></button><button class="act" data-afterpres="keep" style="width:100%;margin-bottom:8px"><b>${x('Garder l’Assemblée et nommer un Premier ministre →','Keep the Assembly and appoint a Prime Minister →')}</b></button>`:`<button class="act vbtn" data-afterpres="" style="width:100%;margin-bottom:8px"><b>${x('Continuer →','Continue →')}</b><small>${x('Le nouveau président garde ou dissout l’Assemblée','The new President keeps or dissolves the Assembly')}</small></button>`}<button class="act" data-newgame style="width:100%"><b>${x('Nouvelle partie','New game')}</b></button></div></div></div>`}
@@ -1980,7 +1990,7 @@ function startGov(fromPres){const K=careerK(),seats=(SIM.final||K.seats||SEATS24
  if(!K.lpRul&&SIM.lpRul)K.lpRul=SIM.lpRul;SIM.K=K;
  SIM.G={m,q:0,seats,pres:K.presK,presM:K.presM,lastDiss:fromPres&&prev?prev.lastDiss:m-1,pm:null,gov:[],sup:[],nc:[],
   appr:{pm:44,pres:K.presAppr??30},
-  v,vh:prev?prev.vh:[],ah:prev?prev.ah:[],log:prev?prev.log:[],ang:Array(NP).fill(0),passed:prev?prev.passed:[],bills:[],qb:0,u493:0,falls:0,pend:[],dem:[],prop:{},un:wasP||fromPres?(prev&&prev.un)||null:(SIM.pacts||[]).filter(p=>p.type==='union'&&p.m.length>1).map(p=>p.m.slice()),budY:prev?prev.budY:null,mv:{},hist:prev?prev.hist:[],noRes:wasP,elx:(prev&&prev.elx||[]).concat(prev&&prev.vh&&prev.vh.length?((wasP||prev.presM!==K.presM)?(fromPres?['pres']:['pres','leg']):['leg']).map(k=>({t:prev.vh.length-1,k,m})):[])};
+  v,vh:prev?prev.vh:[],ah:prev?prev.ah:[],log:prev?prev.log:[],ang:Array(NP).fill(0),passed:prev?prev.passed:[],bills:[],qb:0,u493:0,falls:0,pend:[],dem:[],prop:{},un:wasP||fromPres?(prev&&prev.un)||null:(SIM.pacts||[]).filter(p=>p.type==='union'&&p.m.length>1).map(p=>p.m.slice()),budY:prev?prev.budY:null,mv:{},hist:prev?prev.hist:[],mh:prev?prev.mh:[],noRes:wasP,elx:(prev&&prev.elx||[]).concat(prev&&prev.vh&&prev.vh.length?((wasP||prev.presM!==K.presM)?(fromPres?['pres']:['pres','leg']):['leg']).map(k=>({t:prev.vh.length-1,k,m})):[])};
  const G=SIM.G;G.code=(prev&&prev.code)||K.code||codeInit();K.code=G.code;if(fromPres&&prev){G.bno=prev.bno;G.bnoM=prev.bnoM;G.bnoN=prev.bnoN}econInit(G,prev);G.prom=prev&&prev.prom?prev.prom:mkProm();G.log.push({m,t:x('Nouvelle Assemblée : ','New Assembly: ')+ORD.filter(k=>seats[k]).map(k=>P[k].n+' '+seats[k]).join(' · ')});
  govProjection();SIM.phase='form';st.tab='form';st.gtab='asm';st.layer='proj';save();render()}
 /* will group j bring down a government made of gov (with outside support sup, non-censure pact nc)? */
@@ -2389,7 +2399,7 @@ function presElection(){const G=SIM.G,K=careerK();K.presAppr=G.appr.pres;K.seats
  const pm=Math.max(G.m,G.presM-1),start=new Date(Math.floor(pm/12),pm%12,1).toISOString();
  newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.G=keep;save();render()}
 /* after a presidential election: the winner keeps or dissolves the Assembly */
-function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=careerK(),me=SIM.me;const d=new Date(START);d.setDate(d.getDate()+D1+14);const m=d.getFullYear()*12+d.getMonth()+1;
+function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=careerK(),me=SIM.me;const d=new Date(START);d.setDate(d.getDate()+D1+(SIM.p1win!=null?0:14));const m=d.getFullYear()*12+d.getMonth()+1;
  K.presK=w;K.presM=m+59;K.presN=(K.presN||0)+1;K.presAppr=55;K.presStart=m;SIM.K=K;const G=SIM.G;if(G){G.pres=w;G.presM=K.presM;G.appr.pres=55;G.m=m;G.log.push({m,t:P[w].n+x(' entre à l’Élysée.',' enters the Élysée.')})}
  const seats=K.seats||SEATS24,camp=sum(seats.filter((v,k)=>campOf(k)===campOf(w)));
  const diss=choice==='diss'||(choice==null&&w!==me&&camp<MAJ&&rnd()<.75);
@@ -2424,8 +2434,8 @@ const MET=[
 const mU=m=>x(m.u[0],m.u[1]);
 const titleMetric=s=>String(s).replace(/\b([a-zA-Z][a-zA-Z’'-]*)/g,w=>w.charAt(0).toUpperCase()+w.slice(1)).replace(/\bGdp\b/g,'GDP').replace(/\bGhg\b/g,'GHG').replace(/\bGp\b/g,'GP').replace(/\bA&e\b/g,'A&E');
 const metNum=(v,d,fr,sg)=>{const t=Math.abs(v).toFixed(d).replace('.',fr?',':'.');return (v<0?'−':(sg?'+':''))+t};
-function indRowsHTML(G){const fr=lang==='fr';return MET.map(m=>{const v=m.f(G.ind[m.k]),pv=m.f(G.prev[m.k]??G.ind[m.k]),dv=v-pv,th=Math.pow(10,-m.d)*.5,up=dv>th,dn=dv<-th,good=(up&&m.g>0)||(dn&&m.g<0);
- return `<div class="bar"><span class="n" style="width:230px">${x(m.fr,m.en)}</span><span class="v" style="width:auto;flex:1;text-align:right">${metNum(v,m.d,fr,m.sg)} ${mU(m)} <span style="color:${up||dn?(good?'var(--ok)':'var(--bad)'):'inherit'}">${up?'▲':dn?'▼':'–'}</span></span></div>`}).join('')}
+function indRowsHTML(G){const fr=lang==='fr';return MET.map((m,mi)=>{const v=m.f(G.ind[m.k]),pv=m.f(G.prev[m.k]??G.ind[m.k]),dv=v-pv,th=Math.pow(10,-m.d)*.5,up=dv>th,dn=dv<-th,good=(up&&m.g>0)||(dn&&m.g<0);
+ return `<div class="bar" data-mh="i:${mi}" tabindex="0"><span class="n" style="width:230px">${x(m.fr,m.en)}</span><span class="v" style="width:auto;flex:1;text-align:right">${metNum(v,m.d,fr,m.sg)} ${mU(m)} <span style="color:${up||dn?(good?'var(--ok)':'var(--bad)'):'inherit'}">${up?'▲':dn?'▼':'–'}</span></span></div>`}).join('')}
 function metSummary(G,k){const m=MET.find(z=>z.k===k),fr=lang==='fr';if(m)return x(m.fr,m.en)+' '+metNum(m.f(G.ind[k]),m.d,fr,m.sg)+' '+mU(m);if(k==='econ')return x('Inflation','Inflation')+' '+fn(G.infl)+' %, '+x('chômage','unemployment')+' '+fn(G.unemp)+' % ('+x('jeunes','youth')+' '+fn(unYouth(G))+' %)';if(k==='safe')return x('Violences','Assaults')+' '+Math.round(G.crime)+x(' / 100 000',' per 100k');return''}
 /* 2025 French baselines */
 const ARR0=337; /* first residence permits issued, thousands a year (2024) */
@@ -2574,11 +2584,16 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  G.nairu=Math.max(6,Math.min(10,G.nairu+(G.unemp>G.nairu+1?.04*(G.unemp-G.nairu-1):0)-(G.unemp<G.nairu?.02:0)+(7.4-G.nairu)*.01));
  G.unA+=(G.unemp-G.unA)*.25;G.unLT=Math.max(.15,Math.min(.55,G.unLT+(.26+.035*(G.unA-7.4)-G.unLT)*.15));G.unH.push(+G.unemp.toFixed(2));if(G.unH.length>5)G.unH.shift();
  /* wages follow last year's prices, less so when jobs are scarce; the SMIC is raised automatically once prices are up 2 % since its last rise */
- G.wg+=((1.0+.7*if0-.35*(G.unemp-G.nairu)+(G.wOne||0))-G.wg)*.4;G.wOne=(G.wOne||0)*.5;
+ G.wg+=((.6+.5*if0+.3*2.0-.35*(G.unemp-G.nairu)+(G.wOne||0))-G.wg)*.4;G.wOne=(G.wOne||0)*.5;
  if(G.cpi/G.smicC-1>.02){const r=(G.cpi/G.smicC-1)*100;G.smicC=G.cpi;G.wg+=.3;G.unemp=Math.min(14,G.unemp+.02);G.log.push({m:G.m,t:x('💶 Le SMIC est revalorisé automatiquement de '+fn(r)+' % : les prix ont augmenté de plus de 2 % depuis la dernière hausse.','💶 The minimum wage (SMIC) rises automatically by '+fn(r)+'%: prices are up more than 2% since its last rise.')})}
- const rd=-F.bal/gd0*100,ifT=1.4+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(G.nairu-G.unemp)*.12+(G.wg-2.2)*.2+G.tx[2]*.04+G.tx[5]*.06+(G.off.infl||0)+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1.5,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
+ /* Logan 2026-10-24 ("inflation stays under 1%"): price setting expects the ECB to bring inflation back to its 2 % target, so a weak patch
+    no longer drifts lower for ever; cheaper ECB money lifts prices, dearer money cools them */
+ G.ieH=(G.ieH||[]).concat([if0]).slice(-4);const iE=.45*2.0+.55*sum(G.ieH)/G.ieH.length;
+ const rd=-F.bal/gd0*100,ifT=iE-(G.bc?(G.bc.rate-2)*.12:0)+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(G.nairu-G.unemp)*.12+(G.wg-2.2)*.2+G.tx[2]*.04+G.tx[5]*.06+(G.off.infl||0)+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1.5,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
  /* deflation: households wait for lower prices and debts weigh more as incomes fall in euros (growth term above; debt/GDP rises through nominal GDP) */
  if(G.infl<0&&!G.dfl){G.dfl=1;G.log.push({m:G.m,t:x('📉 Les prix baissent ('+fn(G.infl)+' %) : les ménages repoussent leurs achats et la dette pèse plus lourd à mesure que les revenus reculent.','📉 Prices are falling ('+fn(G.infl)+'%): households put off purchases, and debt weighs more as incomes shrink.')})}else if(G.infl>.5)G.dfl=0;
+ /* very low inflation: pay rises outpace prices, but tax receipts grow slowly and the ECB eases; reported once per spell */
+ if(G.infl>=0&&G.infl<1&&if0<1&&!G.lowI&&!G.dfl){G.lowI=1;G.log.push({m:G.m,t:x('🧊 L’inflation reste sous 1 % ('+fn(G.infl)+' %) : le pouvoir d’achat progresse, mais les recettes fiscales croissent moins vite et la BCE s’inquiète d’une économie trop atone.','🧊 Inflation stays below 1% ('+fn(G.infl)+'%): real pay rises, but tax receipts grow more slowly and the ECB worries the economy is too sluggish.')})}else if(G.infl>1.5)G.lowI=0;
  /* high inflation eating into pay: unions strike for wages that keep up (Logan 2026-10-23) */
  {const rw=G.wg-G.infl,sk=typeof crGet==='function'?crGet(G,'strike'):null;if(sk)G.wOne+=.25*sk.sev;
   if(!sk&&G.pm!=null&&G.infl>3.5&&rw<-.8&&typeof crOpen==='function'&&rnd()<.3+.1*(G.infl-3.5)-.2*rw)try{G.log.push({m:G.m,t:x('🪧 Les syndicats exigent que les salaires suivent les prix : '+fn(G.infl)+' % d’inflation, salaires réels en baisse.','🪧 Unions demand wages that keep up with prices: '+fn(G.infl)+'% inflation and falling real pay.')});crOpen(G,'strike',G.infl>5?3:2)}catch(e){console.error(e)}}
@@ -2608,24 +2623,24 @@ function termD(G,k){const s=G.start;if(!s)return'';const v={debt:G.debt,gdp:G.gd
 /* stats ribbon: politics, economy, society */
 /* Logan 2026-10-21 (paint.net mock-up): Politics as three donuts (government and president approval in their party's colour,
    political capital out of 6), then Economy and Society. kh remembers last quarter's approvals for the change chips. */
-function kDonut(v,max,col,lab,cap){const r=26,c=2*Math.PI*r,f=Math.max(0,Math.min(1,v/max));return `<div class="kdon"><svg width="64" height="64" viewBox="0 0 70 70" aria-hidden="true"><circle cx="35" cy="35" r="${r}" fill="none" stroke="var(--ice)" stroke-width="10"/><circle cx="35" cy="35" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-dasharray="${(f*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 35 35)"/><text x="35" y="40" text-anchor="middle" style="font:800 15px 'Bricolage Grotesque',sans-serif;fill:var(--ink)">${lab}</text></svg><small>${cap}</small></div>`}
-function kribbon(G){const F=gfin(G),pm=G.pm!=null?Math.round(G.appr.pm):null,pr=Math.round(G.appr.pres),gr=G.gdpGr;
+function kDonut(v,max,col,lab,cap,mh){const r=26,c=2*Math.PI*r,f=Math.max(0,Math.min(1,v/max));return `<div class="kdon"${mh?` data-mh="${mh}" tabindex="0"`:''}><svg width="64" height="64" viewBox="0 0 70 70" aria-hidden="true"><circle cx="35" cy="35" r="${r}" fill="none" stroke="var(--ice)" stroke-width="10"/><circle cx="35" cy="35" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-dasharray="${(f*c).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 35 35)"/><text x="35" y="40" text-anchor="middle" style="font:800 15px 'Bricolage Grotesque',sans-serif;fill:var(--ink)">${lab}</text></svg><small>${cap}</small></div>`}
+function kribbon(G){mhRec(G);const F=gfin(G),pm=G.pm!=null?Math.round(G.appr.pm):null,pr=Math.round(G.appr.pres),gr=G.gdpGr;
  if(!G.kh||G.kh.q!==G.q)G.kh={q:G.q,prev:G.kh?G.kh.cur:{pm,pr},cur:{pm,pr}};else G.kh.cur={pm,pr};
  const chg=(v,p)=>{if(v==null||p==null)return'';const d=v-p;return `<em class="kch" style="color:${d>0?'var(--ok)':d<0?'var(--bad)':'var(--mute)'}">${d>0?'▲ '+d:d<0?'▼ '+(-d):'–'}</em>`};
- const cell=(l,v,u,sub,c,bad,tt)=>{const sc=sub&&/^\+/.test(sub)?'var(--ok)':sub&&/^[-−]/.test(sub)?'var(--bad)':'var(--mute)';return `<div class="kc"${tt?` title="${tt}"`:''}><small><i style="background:${c}"></i>${l}</small><b${bad?' style="color:var(--bad)"':''}>${v}${u?`<u>${u}</u>`:''}${sub?`<em style="color:${sc}">${sub}</em>`:''}</b></div>`},
+ const cell=(l,v,u,sub,c,bad,tt,mh)=>{const sc=sub&&/^\+/.test(sub)?'var(--ok)':sub&&/^[-−]/.test(sub)?'var(--bad)':'var(--mute)';return `<div class="kc"${mh?` data-mh="${mh}" tabindex="0"`:''}${tt?(mh?` data-mht="${tt}"`:` title="${tt}"`):''}><small><i style="background:${c}"></i>${l}</small><b${bad?' style="color:var(--bad)"':''}>${v}${u?`<u>${u}</u>`:''}${sub?`<em style="color:${sc}">${sub}</em>`:''}</b></div>`},
  grp=(t,cells)=>`<div class="krow"><h5>${t}</h5>${cells.join('')}</div>`,inv=s=>s?(s[0]==='+'?'−'+s.slice(1):s[0]==='−'?'+'+s.slice(1):s):'';
- return `<div class="kribbon kr2"><section class="kgrp kpol"><h5>${x('Politique','Politics')}</h5><div class="kdons">${kDonut(pm||0,100,G.pm!=null?pc(G.pm):'var(--line)',pm!=null?pm+'%':'—',x('Gouvernement','Government')+' '+chg(pm,G.kh.prev.pm))}${kDonut(pr,100,pc(G.pres),pr+'%',x('Président','President')+' '+chg(pr,G.kh.prev.pr))}</div></section><section class="kright">
+ return `<div class="kribbon kr2"><section class="kgrp kpol"><h5>${x('Politique','Politics')}</h5><div class="kdons">${kDonut(pm||0,100,G.pm!=null?pc(G.pm):'var(--line)',pm!=null?pm+'%':'—',x('Gouvernement','Government')+' '+chg(pm,G.kh.prev.pm),'pm')}${kDonut(pr,100,pc(G.pres),pr+'%',x('Président','President')+' '+chg(pr,G.kh.prev.pr),'pres')}</div></section><section class="kright">
  ${grp(x('Économie','Economy'),[
-  cell(x('PIB','GDP'),lang==='fr'?Math.round(G.gdp).toLocaleString('fr-FR'):'€'+fn(G.gdp/1000,2),x('Md€','tn'),(gr>=0?'+':'−')+fn(Math.abs(gr))+' %','var(--fleur)'),
-  cell(x('PIB / habitant','GDP per capita'),fn(G.gdp/G.pop),'k€',termD(G,'gdppc'),'var(--fleur)'),
-  cell(x('Chômage','Unemployment'),fn(G.unemp),'%',inv(termD(G,'unemp')),G.unemp>7.5?'var(--bad)':'var(--ok)',0,unTip(G)),
-  cell(x('Taux de la BCE','ECB rate'),fn(G.bc?G.bc.rate:2,2),'%','','var(--fleur)'),
-  cell(x('Inflation','Inflation'),fn(G.infl),'%','',G.infl>3||G.infl<0?'var(--bad)':'var(--ok)',0,x('Salaires : ','Wages: ')+fn(G.wg??2.2)+x(' % sur un an · pouvoir d’achat ','% a year · real pay ')+((G.wg??2.2)-G.infl>=0?'+':'−')+fn(Math.abs((G.wg??2.2)-G.infl))+' %'+(G.bc&&G.bc.zlb>.3?x(' · BCE au plancher',' · ECB at the floor'):'')),
-  cell(x('Déficit','Deficit'),fn(-F.bal/gdpOf(G)*100),x('% du PIB','% of GDP'),'',-F.bal/gdpOf(G)>.03?'var(--bad)':'var(--ok)'),
-  cell(x('Dette / PIB','Debt / GDP'),fn(G.debt),'%','',G.debt>118?'var(--bad)':'var(--ok)',G.debt>125)])}
+  cell(x('PIB','GDP'),lang==='fr'?Math.round(G.gdp).toLocaleString('fr-FR'):'€'+fn(G.gdp/1000,2),x('Md€','tn'),(gr>=0?'+':'−')+fn(Math.abs(gr))+' %','var(--fleur)',0,0,'gdp'),
+  cell(x('PIB / habitant','GDP per capita'),fn(G.gdp/G.pop),'k€',termD(G,'gdppc'),'var(--fleur)',0,0,'gdppc'),
+  cell(x('Chômage','Unemployment'),fn(G.unemp),'%',inv(termD(G,'unemp')),G.unemp>7.5?'var(--bad)':'var(--ok)',0,unTip(G),'unemp'),
+  cell(x('Taux de la BCE','ECB rate'),fn(G.bc?G.bc.rate:2,2),'%','','var(--fleur)',0,0,'ecb'),
+  cell(x('Inflation','Inflation'),fn(G.infl),'%','',G.infl>3||G.infl<0?'var(--bad)':'var(--ok)',0,x('Salaires : ','Wages: ')+fn(G.wg??2.2)+x(' % sur un an · pouvoir d’achat ','% a year · real pay ')+((G.wg??2.2)-G.infl>=0?'+':'−')+fn(Math.abs((G.wg??2.2)-G.infl))+' %'+(G.bc&&G.bc.zlb>.3?x(' · BCE au plancher',' · ECB at the floor'):''),'infl'),
+  cell(x('Déficit','Deficit'),fn(-F.bal/gdpOf(G)*100),x('% du PIB','% of GDP'),'',-F.bal/gdpOf(G)>.03?'var(--bad)':'var(--ok)',0,0,'def'),
+  cell(x('Dette / PIB','Debt / GDP'),fn(G.debt),'%','',G.debt>118?'var(--bad)':'var(--ok)',G.debt>125,0,'debt')])}
  ${grp(x('Société','Society'),[
-  cell(x('Violences physiques','Physical assaults'),Math.round(G.crime),x('/ 100 000','per 100k'),inv(termD(G,'crime')),G.crime>CR0*1.05?'var(--bad)':'var(--ok)'),
-  cell(x('Premiers titres de séjour','First residence permits'),Math.round(G.arr),x('k / an','k / yr'),'','var(--fleur)')])}</section></div>`}
+  cell(x('Violences physiques','Physical assaults'),Math.round(G.crime),x('/ 100 000','per 100k'),inv(termD(G,'crime')),G.crime>CR0*1.05?'var(--bad)':'var(--ok)',0,0,'crime'),
+  cell(x('Premiers titres de séjour','First residence permits'),Math.round(G.arr),x('k / an','k / yr'),'','var(--fleur)',0,0,'arr')])}</section></div>`}
 /* ===== the budget ===== */
 const BMW=[1.4,1.1,1,.5,.9,1,.6,.7,1.7,.3,.2,.5,1],BTW=[1,.3,1,.8,.4,.8,.15,.3];
 function bmRef(G){return{bu:G.bref||BU.map((_,i)=>BL(i)),tx:G.tref||Array(8).fill(0)}}
@@ -3349,7 +3364,7 @@ Object.assign(LEG,{
    desc:[d.cl.map((z,i)=>line(z,i,0)).join(' ; ')+' · '+LDUR[d.du].f+(rs.length?' · '+rs.map(r=>r.f).join(', '):'')+'.',d.cl.map((z,i)=>line(z,i,1)).join('; ')+' · '+LDUR[d.du].e+(rs.length?' · '+rs.map(r=>r.e).join(', '):'')+'.']};
   {const cx={};d.cl.forEach(c=>{if(c.code)cx[c.id]=c.to});if(Object.keys(cx).length){b.cx=cx;b.cxc=cxc;const cd=[...new Set(d.cl.map(c=>c.code?c.code:'x'))];if(cd.length===1)b.cdom=cd[0]==='pen'?'soc':cd[0]==='san'?'health':'lab'}}
   if(rev)b.rev=rev;{const ths=parts.map(z=>z.th).filter(Boolean);if(lead.th||ths[0])b.th=lead.th||ths[0];if(ths.length)b.ths=ths}return b},
- deskTable(G){const D=G.desk;if(!D||!D.cl.length||(G.vote&&!G.vote.done))return;const b=LEG.multi(D,G);if(D.t&&D.t.trim()){b.f=D.t.trim();b.e=D.t.trim()}b.billNo=D.no;b.dt=(D.t||'').trim();delete b.parts;const bi=pushBill(b);st.bst='ag';billNoOf(G,bi,+D.no);G.bnoN=Math.max(G.bnoN||0,+D.no);G.offer.push(bi);G.log.push({m:G.m,t:x('Texte rédigé et ajouté au programme : ','Bill drafted and added to the agenda: ')+x(b.f,b.e)});G.desk=LEG.newDesk();st.det=st.det||{};st.det.draft=false},
+ deskTable(G){const D=G.desk;if(!D||!D.cl.length||(G.vote&&!G.vote.done))return;const b=LEG.multi(D,G);if(D.t&&D.t.trim()){b.f=D.t.trim();b.e=D.t.trim()}b.billNo=D.no;b.dt=(D.t||'').trim();delete b.parts;const bi=pushBill(b);(G.dft=G.dft||[]).push(bi);st.bst='ag';billNoOf(G,bi,+D.no);G.bnoN=Math.max(G.bnoN||0,+D.no);G.offer.push(bi);G.log.push({m:G.m,t:x('Texte rédigé et ajouté au programme : ','Bill drafted and added to the agenda: ')+x(b.f,b.e)});G.desk=LEG.newDesk();st.det=st.det||{};st.det.draft=false},
  deskMerge(G,bi){const b=B(bi);if(!b||!G.offer.includes(bi)||(G.vote&&!G.vote.done))return;const D=G.desk=G.desk||LEG.newDesk();
   const cls=b.cl?b.cl.map(z=>({...z})):b.p?[{dom:b.p.dom,arc:b.p.arc,mag:b.p.mag,sc:b.p.sc,fu:b.p.fu,from:b.p.from}]:b.cx&&!b.stat?Object.entries(b.cx).map(([id,to])=>({code:CXP[id].d,id,to})):null;if(!cls)return;
   const ri=b.cl?b.ri:b.p?b.p.ri:[],du=b.cl?b.du:b.p?b.p.du:'perm';if(!D.cl.length)D.du=du;
@@ -3367,7 +3382,7 @@ Object.assign(LEG,{
   else if(v==='merge')LEG.deskMerge(G,+a)
   /* any programme measure can be drafted, including every pledge (Logan 2026-10-23) */
   else if(v==='mcat')st.dkCat=+a;
-  else if(v==='meas'){const i=+a;if(BLS[i]&&!G.passed.includes(i)&&!G.offer.includes(i)&&!(G.vote&&!G.vote.done)){G.offer.push(i);st.bst='ag';G.log.push({m:G.m,t:x('Texte rédigé et ajouté au programme : ','Bill drafted and added to the agenda: ')+mName(i)})}}},
+  else if(v==='meas'){const i=+a;if(BLS[i]&&!G.passed.includes(i)&&!G.offer.includes(i)&&!(G.vote&&!G.vote.done)){G.offer.push(i);(G.dft=G.dft||[]).push(i);st.bst='ag';G.log.push({m:G.m,t:x('Texte rédigé et ajouté au programme : ','Bill drafted and added to the agenda: ')+mName(i)})}}},
  deskHTML(G){if(budgetDue(G)&&ctrl())return'';
   const D=G.desk=G.desk||LEG.newDesk(),dis=!!(G.vote&&!G.vote.done),n=D.cl.length;if(!D.no||+D.no<=(G.bnoN||0))D.no=String(billNoPeek(G));
   const b=n?LEG.multi(D,G):null;
@@ -3577,11 +3592,11 @@ function aiGovPick(G,taken){const pm=G.pm,L=[];for(let t=0;t<7;t++){const bi=LEG
 /* 49.3 on a defeated government bill: routine when the censure that follows would fail; when it would pass, only as a way out of deadlock for a bill that matters (a pledge, the coalition contract, a crisis) (Logan 2026-10-23) */
 function ai493(G,bi){const b=B(bi);if(!b)return false;if(threat(G,.08)<MAJ)return rnd()<.6;const dl=deadlock(G),key=(G.prom||[]).some(p=>p.i===bi&&!p.s&&G.gov.includes(p.k))||(G.dem||[]).some(d=>d.m===bi)||b.tag==='crisis';return dl>=2&&key&&rnd()<.25+.1*(dl-2)}
 /* new agenda each quarter */
-/* Logan 2026-10-23: bills left on the agenda (e.g. not enough capital to table them) stay there next quarter, as long as the player's role
-   hasn't changed; new bills are added after them, up to 8 in all */
+/* Logan 2026-10-24: bills the player drafted (Draft Bills desk) stay on the agenda until tabled or dismissed, e.g. when there wasn't the capital
+   to table them, as long as the player's role hasn't changed; the generated bills are renewed each quarter as before */
 function newOffer(G){try{codeOf(G);codeSync(G)}catch(e){}const c0=ctrl(),tt=bi=>{const b=B(bi);return b&&x(b.f,b.e)},
-  prev=(G.offerC===c0?(G.offer||[]):[]).filter(bi=>B(bi)&&!(G.done||[]).includes(bi)&&!(G.vq||[]).includes(bi)&&!(G.vote&&G.vote.bi===bi)).slice(0,6),pt=new Set(prev.map(tt));
- G.offer=prev.concat(LEG.offer(G).filter(bi=>!prev.includes(bi)&&!pt.has(tt(bi)))).slice(0,Math.max(8,prev.length));G.offerC=c0;crOffer(G);G.tabled=0;G.mv={};G.mb=null;G.askTried={};G.nres=null;G.counter=null;
+  prev=(G.offerC===c0?(G.offer||[]):[]).filter(bi=>(G.dft||[]).includes(bi)&&B(bi)&&!(G.done||[]).includes(bi)&&!(G.vq||[]).includes(bi)&&!(G.vote&&G.vote.bi===bi)),pt=new Set(prev.map(tt));
+ G.offer=prev.concat(LEG.offer(G).filter(bi=>!prev.includes(bi)&&!pt.has(tt(bi))));G.offerC=c0;G.dft=prev.slice();crOffer(G);G.tabled=0;G.mv={};G.mb=null;G.askTried={};G.nres=null;G.counter=null;
  G.oppL=oppBills(G);
  G.aib=[];if(!ctrl()&&G.pm!=null){const n=1+(rnd()<.5?1:0);for(let i=0;i<n;i++){const bi=aiGovPick(G,G.aib);if(bi!=null&&!G.aib.includes(bi)){const b=B(bi);if(b.by==null)b.by=G.pm;G.aib.push(bi)}}(G.crq||[]).forEach(bi=>{if(B(bi)&&!G.aib.includes(bi)&&!G.done.includes(bi))G.aib.push(bi)})}G.crq=[];
  /* forget generated bills nobody refers to any more */
@@ -3609,7 +3624,7 @@ function billStack(G){const p=billParts(G),desk=LEG.deskHTML(G);
  const clip=`<svg class="bst-clip" width="46" height="180" viewBox="0 0 46 180" aria-hidden="true"><defs><linearGradient id="bstchr" x1="0" x2="1"><stop offset="0" stop-color="#7d8792"/><stop offset=".35" stop-color="#f4f7fa"/><stop offset=".55" stop-color="#b6bec8"/><stop offset=".8" stop-color="#eef2f6"/><stop offset="1" stop-color="#6f7983"/></linearGradient></defs>${['#69737e" stroke-width="5.4','url(#bstchr)" stroke-width="4','#fff" stroke-opacity=".75" stroke-width="1" transform="translate(-.8,-.6)'].map(a=>`<path d="M16 120 V24 a11 11 0 0 1 22 0 V150 a17 17 0 0 1 -34 0 V38" fill="none" stroke-linecap="round" stroke="${a}"/>`).join('')}</svg>`;
  return `<div class="bst"><div class="bst-sh s2"></div><div class="bst-sh s3"></div><div class="bst-tabs" role="tablist">${BST.filter(b=>b[0]!=='dr'||desk).map(b=>`<button role="tab" aria-selected="${b[0]===t}" class="bst-tab${b[0]===t?' on':''}" style="--c:${b[3]}" data-bst="${b[0]}"><span class="bst-l">${x(b[1],b[2])}</span><span class="bst-s">${x(b[4],b[5])}</span>${n[b[0]]?`<b>${n[b[0]]}</b>`:''}</button>`).join('')}</div>${clip}<div class="bst-top"><h3 class="bst-title">${x(cur[1],cur[2])}</h3>${body[t]}</div></div>`}
 function issuesHTML(G){const pv=G.prevAO||{},ap=G.appr.pm,d=ap-(pv.appr??ap),dc=G.cap-(pv.cap??G.cap);
- return `<div class="card"><h3>${x('Opinion sur les enjeux','Approval on the Issues')}</h3><div class="bar"><span class="n" style="width:150px">${x('Popularité du gouv.','Government approval')}</span><span class="t"><i style="width:${G.pm!=null?ap:0}%;background:var(--fleur)"></i></span><span class="v" style="width:70px">${G.pm!=null?Math.round(ap):'—'} ${d>.5?'▲':d<-.5?'▼':'–'}</span></div><div class="bar"><span class="n" style="width:150px">${x('Capital politique','Political capital')}</span><span class="t"><i style="width:${G.cap*100/6}%;background:var(--fleur)"></i></span><span class="v" style="width:70px">${G.cap} / 6 ${dc>0?'▲':dc<0?'▼':'–'}</span></div>${indRowsHTML(G)}</div>`}
+ return `<div class="card"><h3>${x('Opinion sur les enjeux','Approval on the Issues')}</h3><div class="bar" data-mh="pm" tabindex="0"><span class="n" style="width:150px">${x('Popularité du gouv.','Government approval')}</span><span class="t"><i style="width:${G.pm!=null?ap:0}%;background:var(--fleur)"></i></span><span class="v" style="width:70px">${G.pm!=null?Math.round(ap):'—'} ${d>.5?'▲':d<-.5?'▼':'–'}</span></div><div class="bar" data-mh="cap" tabindex="0"><span class="n" style="width:150px">${x('Capital politique','Political capital')}</span><span class="t"><i style="width:${G.cap*100/6}%;background:var(--fleur)"></i></span><span class="v" style="width:70px">${G.cap} / 6 ${dc>0?'▲':dc<0?'▼':'–'}</span></div>${indRowsHTML(G)}</div>`}
 function promRow(G,p,j){const c=ctrl(),due=p.dl!=null&&!p.s?p.dl-G.q:null,col=p.s==='broken'?'var(--bad)':p.s==='kept'?'var(--ok)':'var(--fleur)';
  const stat=p.s==='kept'?'✅ '+x('tenue','kept'):p.s==='broken'?'❌ '+x('trahie','broken'):p.p+' %';
  const dl=p.dl!=null?(p.s?'':x('échéance ','due ')+MONTHS(G.m+3*(p.dl-G.q))+(due<=2?' · <b style="color:var(--bad)">'+x('bientôt','soon')+'</b>':'')):x('engagement de campagne','campaign pledge');
@@ -4408,7 +4423,7 @@ function xOpp(G,r){const p=G.xp0;if(!p||p.oppR!=null)return;p.oppR=r;const o=xDe
  G.log.push({m:G.m,t:x('Votre groupe : ','Your group: ')+x(GEVOPP[r][0],GEVOPP[r][1]).toLowerCase()})}
 /* each quarter: active shocks weigh on growth, jobs and prices, less if the response worked */
 function extTick(G){if(G.xp){const D=xDef(G.xp.id);xDecide(G,D.o.length-1)}
- (G.ext||[]).forEach(e=>{const D=xDef(e.id);if(!D||e.left<=0)return;const k=e.sev*(1-e.mit);if(D.q.gr&&G.bc)G.bc.v+=D.q.gr*k;if(D.q.un)G.unemp=Math.min(14,G.unemp+D.q.un*k);if(D.q.infl)G.iOne=(G.iOne||0)+D.q.infl*k;
+ (G.ext||[]).forEach(e=>{const D=xDef(e.id);if(!D||e.left<=0)return;const k=e.sev*(1-e.mit);if(D.q.gr&&G.bc)G.bc.v+=D.q.gr*k;if(D.q.un)G.unemp=Math.min(14,G.unemp+D.q.un*k);/* ×3: price shocks pass through to the shelf within a few quarters (Logan 2026-10-24: inflation barely moved) */if(D.q.infl)G.iOne=(G.iOne||0)+D.q.infl*k*3;
   if(--e.left<=0){if(e.cost)G.cost=Math.max(0,(G.cost||0)-e.cost);G.log.push({m:G.m,t:(D.em||'')+' '+x(D.f,D.e)+x(' : la pression retombe.',': the pressure eases.')})}});
  G.ext=(G.ext||[]).filter(e=>e.left>0)}
 /* the decision card (Assembly tab) */
@@ -5469,8 +5484,8 @@ function tabsFor(){const ph=SIM.phase;if(ph==='plat')return [['build',x('Program
  if(ph==='r2c')return [['map',x('Carte','Map')]];
  if(ph==='end')return [['res',x('Résultats','Results')],['map',x('Carte','Map')]];return []}
 function header(){const ph=SIM.phase;if(SIM.G&&(ph==='form'||ph==='gov'||ph==='pdue'))return govHeader();$('#brand').textContent=PRES()?x('France · Élection présidentielle','France · Presidential election'):x('L’Assemblée nationale','L’Assemblée nationale');
- const dl=ph==='pacts'?x('Avant la campagne','Before the campaign'):ph==='r1'?dateOf(SIM.day):ph==='r2c'?dateOf(D1+SIM.r2day):ph==='n1'?R1DATE():ph==='n2'||ph==='end'?R2DATE():R1DATE();
- const dd=ph==='plat'?x('Programme','Platform'):ph==='r1'?x('Jour ','Day ')+SIM.day+' / '+D1:ph==='r2c'?x('Entre-deux-tours ','Run-off week ')+SIM.r2day+' / '+D2:ph==='pacts'?x('Négociations','Negotiations'):ph==='n1'?x('1er tour','First round'):ph==='r2w'?x('Désistements','Withdrawals'):ph==='ral'?x('Entre-deux-tours','Between the rounds'):x('2nd tour','Second round');
+ const dl=ph==='pacts'?x('Avant la campagne','Before the campaign'):ph==='r1'?dateOf(SIM.day):ph==='r2c'?dateOf(D1+SIM.r2day):ph==='n1'||(ph==='end'&&PRES()&&SIM.p1win!=null)?R1DATE():ph==='n2'||ph==='end'?R2DATE():R1DATE();
+ const dd=ph==='plat'?x('Programme','Platform'):ph==='r1'?x('Jour ','Day ')+SIM.day+' / '+D1:ph==='r2c'?x('Entre-deux-tours ','Run-off week ')+SIM.r2day+' / '+D2:ph==='pacts'?x('Négociations','Negotiations'):ph==='n1'||(ph==='end'&&PRES()&&SIM.p1win!=null)?x('1er tour','First round'):ph==='r2w'?x('Désistements','Withdrawals'):ph==='ral'?x('Entre-deux-tours','Between the rounds'):x('2nd tour','Second round');
  $('#h-date').textContent=dl;$('#h-day').textContent=dd;document.querySelectorAll('header .stat').forEach(e=>e.style.display='');$('#h-fundsl').textContent=x('Fonds','Funds');$('#h-funds').textContent=SIM.funds+' k€';$('#h-appl').textContent=P[SIM.me].n;$('#h-share').textContent=pct(natShares(true)[SIM.me]);
  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));if(typeof sndBtn==='function')sndBtn();
  const T=tabsFor();if(!T.some(t=>t[0]===st.tab))st.tab=T[0][0];
@@ -6010,6 +6025,51 @@ document.addEventListener('keydown',ev=>{if((ev.key==='Enter'||ev.key===' ')&&ev
 document.addEventListener('dragstart',e=>{const m=e.target.closest&&e.target.closest('[data-mp]');if(m){st.mpick=+m.dataset.mp;try{e.dataTransfer.setData('text/plain',m.dataset.mp)}catch(_){}}});
 document.addEventListener('dragover',e=>{if(e.target.closest&&e.target.closest('[data-mslot]:not([disabled])'))e.preventDefault()});
 document.addEventListener('drop',e=>{const c=e.target.closest&&e.target.closest('[data-mslot]:not([disabled])');if(c&&st.mpick!=null){e.preventDefault();c.click()}});
+
+/* ===== Metric history on hover (Logan 2026-10-24: "as in Victoria 3") =====
+   Every quarter of government G.mh gets one snapshot of the headline figures; it is carried across terms (startGov), so the chart
+   runs from the start of the game. Any element with data-mh="key" shows a small line chart of that figure when hovered or focused. */
+function mhSnap(G){const F=gfin(G);return {m:G.m,pm:G.pm!=null?G.appr.pm:null,pmk:G.pm,pres:G.appr.pres,prk:G.pres,gdp:G.gdp,gdppc:G.gdp/G.pop,unemp:G.unemp,
+ ecb:G.bc?G.bc.rate:2,infl:G.infl,def:-F.bal/gdpOf(G)*100,debt:G.debt,crime:G.crime,arr:G.arr,cap:G.cap,i:MET.map(m=>m.f(G.ind[m.k]))}}
+function mhRec(G){if(!G||G.m==null)return;try{const s=mhSnap(G);G.mh=G.mh||[];const L=G.mh[G.mh.length-1];if(L&&L.m===s.m)G.mh[G.mh.length-1]=s;else G.mh.push(s)}catch(e){console.error(e)}}
+{const _e=endQuarter;endQuarter=function(){if(SIM.G&&SIM.phase==='gov')mhRec(SIM.G);return _e.apply(this,arguments)}}
+/* [fr, en, unit fr, unit en, decimals, good direction (+1 up is good, -1 down is good, 0 neither)] */
+const MHD={pm:['Popularité du gouvernement','Government approval','%','%',0,1],pres:['Popularité du président','President’s approval','%','%',0,1],
+ gdp:['PIB','GDP','Md€','€bn',0,1],gdppc:['PIB par habitant','GDP per capita','k€','k€',1,1],unemp:['Chômage','Unemployment','%','%',1,-1],
+ ecb:['Taux de la BCE','ECB rate','%','%',2,0],infl:['Inflation','Inflation','%','%',1,0],def:['Déficit public','Budget deficit','% du PIB','% of GDP',1,-1],
+ debt:['Dette publique','Public debt','% du PIB','% of GDP',1,-1],crime:['Violences physiques','Physical assaults','/ 100 000','per 100k',0,-1],
+ arr:['Premiers titres de séjour','First residence permits','k / an','k / yr',0,0],cap:['Capital politique','Political capital','/ 6','/ 6',0,1]};
+function mhDef(k){if(k.startsWith('i:')){const m=MET[+k.slice(2)];return m&&[m.fr,m.en,m.u[0],m.u[1],m.d,m.g]}return MHD[k]}
+function mhVal(s,k){return k.startsWith('i:')?(s.i||[])[+k.slice(2)]:s[k]}
+const mhQ=m=>x('T','Q')+(Math.floor((m%12)/3)+1)+' '+String(Math.floor(m/12)).slice(2);
+function mhChart(k){const G=SIM.G,D=mhDef(k);if(!G||!D)return'';const H=(G.mh||[]).slice(),cur=mhSnap(G);if(!H.length||H[H.length-1].m!==cur.m)H.push(cur);else H[H.length-1]=cur;
+ const pts=H.map(s=>({m:s.m,v:mhVal(s,k),pmk:s.pmk})).filter(p=>p.v!=null&&isFinite(p.v));if(!pts.length)return'';
+ const fr=lang==='fr',fmt=v=>metNum(v,D[4],fr,false),u=x(D[2],D[3]),v0=pts[0].v,v1=pts[pts.length-1].v,dv=v1-v0,th=Math.pow(10,-D[4])*.5;
+ const col=k==='pm'&&cur.pmk!=null?pc(cur.pmk):k==='pres'?pc(cur.prk):'var(--fleur)',dc=Math.abs(dv)<th||!D[5]?'var(--mute)':(dv>0)===(D[5]>0)?'var(--ok)':'var(--bad)';
+ const W=300,Hh=120,l=34,r=8,t=8,b=20;let lo=Math.min(...pts.map(p=>p.v)),hi=Math.max(...pts.map(p=>p.v));if(hi-lo<Math.pow(10,-D[4])*2){const c=(hi+lo)/2,h=Math.max(Math.abs(c)*.02,Math.pow(10,-D[4])*2);lo=c-h;hi=c+h}
+ const pad=(hi-lo)*.08;lo-=pad;hi+=pad;const n=pts.length,X=i=>n<2?(l+W-r)/2:l+(W-l-r)*i/(n-1),Y=v=>t+(Hh-t-b)*(1-(v-lo)/(hi-lo));
+ const line=pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+ /* a dashed line where a new Prime Minister's party took over */
+ const chg=pts.map((p,i)=>i&&p.pmk!==pts[i-1].pmk&&p.pmk!=null?`<line x1="${X(i)}" x2="${X(i)}" y1="${t}" y2="${Hh-b}" stroke="var(--line)" stroke-dasharray="3 3"/>`:'').join('');
+ const yr=pts.map((p,i)=>i&&p.m%12===0?`<text x="${X(i)}" y="${Hh-6}" text-anchor="middle" class="mh-ax">${Math.floor(p.m/12)}</text>`:'').join('');
+ const svg=`<svg width="${W}" height="${Hh}" viewBox="0 0 ${W} ${Hh}" aria-hidden="true">
+  <line x1="${l}" x2="${W-r}" y1="${Y(hi-pad)}" y2="${Y(hi-pad)}" stroke="var(--ice)"/><line x1="${l}" x2="${W-r}" y1="${Y(lo+pad)}" y2="${Y(lo+pad)}" stroke="var(--ice)"/>
+  <text x="${l-4}" y="${Y(hi-pad)+4}" text-anchor="end" class="mh-ax">${fmt(hi-pad)}</text><text x="${l-4}" y="${Y(lo+pad)+4}" text-anchor="end" class="mh-ax">${fmt(lo+pad)}</text>
+  ${chg}${n>1?`<polygon points="${X(0)},${Hh-b} ${line} ${X(n-1)},${Hh-b}" fill="${col}" opacity=".12"/><polyline points="${line}" fill="none" stroke="${col}" stroke-width="2.2" stroke-linejoin="round"/>`:''}
+  <circle cx="${X(n-1)}" cy="${Y(v1)}" r="3.5" fill="${col}"/>${yr}</svg>`;
+ return `<div class="mh-h"><b>${x(D[0],D[1])}</b><span>${fmt(v1)} ${u}</span></div>${svg}
+  <div class="mh-f"><span>${mhQ(pts[0].m)} → ${mhQ(pts[n-1].m)}</span><span style="color:${dc}">${n>1?x('Depuis le début : ','Since the start: ')+(dv>=0?'+':'−')+metNum(Math.abs(dv),D[4],fr,false)+' '+u:x('Premier trimestre','First quarter')}</span></div>`}
+let MHA=null;
+function mhShow(el){const k=el.dataset.mh,h=mhChart(k);if(!h)return mhHide();let p=document.getElementById('mhpop');if(!p){p=document.createElement('div');p.id='mhpop';p.setAttribute('role','tooltip');document.body.appendChild(p)}
+ const note=el.dataset.mht;p.innerHTML=h+(note?`<p class="mh-n">${note}</p>`:'');p.style.display='block';MHA=el;
+ const R=el.getBoundingClientRect(),w=p.offsetWidth,hh=p.offsetHeight,vw=document.documentElement.clientWidth,vh=window.innerHeight;
+ let L=Math.min(Math.max(8,R.left+R.width/2-w/2),vw-w-8),T=R.bottom+8;if(T+hh>vh-8&&R.top-hh-8>8)T=R.top-hh-8;p.style.left=L+'px';p.style.top=Math.max(8,T)+'px'}
+function mhHide(){const p=document.getElementById('mhpop');if(p)p.style.display='none';MHA=null}
+document.addEventListener('mouseover',e=>{const el=e.target.closest&&e.target.closest('[data-mh]');if(el&&el!==MHA)mhShow(el);else if(!el&&MHA)mhHide()});
+document.addEventListener('focusin',e=>{const el=e.target.closest&&e.target.closest('[data-mh]');if(el)mhShow(el)});
+document.addEventListener('focusout',e=>{if(MHA&&e.target===MHA)mhHide()});
+document.addEventListener('scroll',()=>{if(MHA)mhHide()},true);
+{const _r=render;render=function(){const r=_r.apply(this,arguments);if(MHA&&!MHA.isConnected)mhHide();return r}}
 
 /* ===== Spectator mode (Logan 2026-10-23: "Can you add a spectate mode") =====
    The AI plays every party. The game runs with SIM.me = 7 (DIV), which every AI loop, debate, poll list and coalition already leaves out,
