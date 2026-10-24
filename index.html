@@ -1435,18 +1435,19 @@ const gnk=(k,v)=>v>0&&k===SIM.me?v*SC()*(SIM.diff==='easy'?1.2:SIM.diff==='hard'
 const salience=()=>{const s=SIM.sal||Array(NT).fill(1);return s};
 const salTheme=()=>{const s=salience();return s.indexOf(Math.max(...s))};
 /* ===== new game ===== */
-function newGame(o){const pfPrev=SIM.pfPub||null;SIM.prevAvg=null;SIM.r2b=null;const sd=Number.isFinite(+o.seed)&&+o.seed>0?Math.floor(+o.seed):Math.floor(Math.random()*1e9);seed=sd;setMode(o.mode,o.start,o.tg);
+function newGame(o){const pfPrev=SIM.pfPub||null,G0=SIM.G||null;SIM.prevAvg=null;SIM.r2b=null;const sd=Number.isFinite(+o.seed)&&+o.seed>0?Math.floor(+o.seed):Math.floor(Math.random()*1e9);seed=sd;setMode(o.mode,o.start,o.tg);
  C.forEach(d=>{d.b=d.b0.slice();d.l=Array(NP).fill(0);d.res=null;d.r1=null;d.rc=0;d.cv=0;d.pj=null});
  for(const k in SIM)delete SIM[k];
- Object.assign(SIM,{seed:sd,me:o.party,theme:o.theme,diff:o.diff||'normal',mode:o.mode||'leg',phase:'pacts',day:0,ap:3,funds:600,nat:Array(NP).fill(0),trend:Array(NP).fill(0),reg:FR.REG.map(()=>Array(NP).fill(0)),mom:Array(NP).fill(0),sal:TH.map((_,t)=>t===0?1.5:t===1||t===3?1.2:t===2?1.1:1),
+ Object.assign(SIM,{seed:sd,me:o.party,theme:o.theme,diff:o.diff||'normal',mode:o.mode||'leg',phase:'pacts',day:0,d0:null,ap:3,funds:600,nat:Array(NP).fill(0),trend:Array(NP).fill(0),reg:FR.REG.map(()=>Array(NP).fill(0)),mom:Array(NP).fill(0),sal:TH.map((_,t)=>t===0?1.5:t===1||t===3?1.2:t===2?1.1:1),
   ai:P.map((p,k)=>({ap:3,funds:Math.round(600*clamp((o.tg||(SIM.mode==='pres'?TGP:TG0))[k]/.25,.3,1)),an:0,fr:0,prep:0,tc:Array(NREG).fill(0),plat:[]})),
   plat:[],an:0,fr:0,prep:0,prepRv:[],tc:Array(NREG).fill(0),atk:Array(NP).fill(0),log:[],news:[],hist:[],polls:[],pend:[],msg:'',barrage:2.6,barLFI:1,turn:null,front:{},cons:{},wd:null,pacts:[],offers:[],inc:{}});
- SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;
+ SIM.start=o.start||null;SIM.tg=o.tg||null;SIM.K=o.keep||null;SIM.rec=o.rec||null;try{cnSeedSal(o,G0)}catch(e){console.error(e)}
  /* prices and jobs at the end of the term set how much the cost of living matters in the campaign (Logan 2026-10-23) */
  if(SIM.rec&&SIM.rec.infl!=null)SIM.sal[0]=Math.min(2.2,SIM.sal[0]+Math.max(0,SIM.rec.infl-2.5)*.15+Math.max(0,-(SIM.rec.rw||0))*.1+Math.max(0,SIM.rec.un-8)*.08);if(SIM.mode==='pres')try{lpRoll(0,null)}catch(e){console.error(e)}
  if(SIM.mode!=='pres')C.forEach(d=>{SIM.inc[d.i]=SIM.K&&SIM.K.inc?SIM.K.inc[d.i]:d.w});
  /* AI starting platforms: two signature measures each */
- P.forEach((p,k)=>{if(k===SIM.me||k===7)return;const sg=sigOf(k),L=sg.slice(0,1),rest=sg.slice(1,6);while(L.length<3&&rest.length){const j=Math.min(rest.length-1,Math.floor(rnd()*rnd()*rest.length*1.6));L.push(rest.splice(j,1)[0])}SIM.ai[k].plat=L});
+ /* the player's war chest follows the same size rule as every other party's (Logan 2026-10-24) */if(SIM.ai[SIM.me])SIM.funds=SIM.ai[SIM.me].funds;
+ P.forEach((p,k)=>{if(k===SIM.me||k===7)return;const sg=sigOf(k),L=sg.slice(0,1),rest=sg.slice(1,7);/* the other two: signature measures, favouring those on the issues voters care about most (Logan 2026-10-24) */while(L.length<3&&rest.length){const i=lPick(rest,j=>Math.exp(-rest.indexOf(j)*.35)*Math.pow(SIM.sal[MEAS[j][0]]||1,1.5));L.push(i);rest.splice(rest.indexOf(i),1)}SIM.ai[k].plat=L});
  /* scenario mood: a few points of drift already under way */
  SIM.trend=P.map(()=>gauss()*.05);
  if(SIM.diff==='hard')SIM.trend[SIM.me]-=.04;if(SIM.diff==='easy')SIM.trend[SIM.me]+=.04;
@@ -1528,7 +1529,7 @@ function applyAct(k,i,c){const a=ACT[i],o=ps(k),d=c.d,g=c.g,gn=v=>gnk(k,v);let t
   /* rivals far from the measure make hay with it */
   t+=' · '+mName(m)}
  if(i===6){if(k!==SIM.me){o.prep=1;t=x('Préparation du débat','Debate prep')}else{if(c.tg!=null&&!SIM.prepRv.includes(c.tg))SIM.prepRv.push(c.tg);SIM.prep=1;t=x('Préparation du débat : étude de ','Debate prep: studying ')+P[c.tg??0].n}}
- if(i===7){const gg=Math.round(70/(1+.7*(o.fr||0))*(k===SIM.me?1:clamp((SIM.t0||TG0)[k]/.25,.3,1)));o.fr=(o.fr||0)+1;o.funds+=gg;t+=' +'+gg+' k€'}
+ if(i===7){const gg=Math.round(70/(1+.7*(o.fr||0))*clamp((SIM.t0||TG0)[k]/.25,.3,1));o.fr=(o.fr||0)+1;o.funds+=gg;t+=' +'+gg+' k€'}
  if(i===8){const out=OUTLETS[c.tg|0],v=out.tilt[k];o.pr=(o.pr||0)+1;/* the tenth interview says less than the first (Logan 2026-10-23: no free press spam, for the player or the AI) */bumpNat(k,gn((.016+.016*v)/(1+.3*(o.pr-1))));t+=' · '+x(out.f,out.e)+(v<-.2?x(' (accueil hostile)',' (hostile reception)'):'')}
  return t}
 /* presidential run-off with the player knocked out (Logan 2026-10-21): the days still play, and the player campaigns for the finalist they endorsed */
@@ -1553,7 +1554,7 @@ function actMeasure(a,c){try{const me=campK()??SIM.me,r2=r2mode();
 /* ===== rival AI ===== */
 function aiDay(){SIM.rv=[];const sh=natShares(true),r2=r2mode();
  for(let k=0;k<NP;k++){if(k===SIM.me||k===7)continue;const o=SIM.ai[k];if(r2&&!C.some(d=>(d.res2run||[]).includes(k)))continue;if(PRES()&&SIM.pacts.some(p=>p.m.includes(k)&&p.head!==k))continue;
-  o.ap=(sh[k]<.05?2:3);let guard=0;
+  o.ap=3;let guard=0;
   const pool=r2?C.filter(d=>(d.res2run||[]).includes(k)):C;
   const marg=d=>{if(r2){const p=d.pj2;return p?Math.abs(p.m)+(p.w===k?.02:0):1}const p=d.pj;if(!p)return 1;const inQ=p.cl&&p.cl.q.includes(k);return p.w===k?p.m:inQ?Math.abs(p.m)*.8:.3+rnd()*.3};
   while(o.ap>0&&guard++<6){const opts=[],cons=(i,sc,c)=>{const a=ACT[i];if(a.ap<=o.ap&&a.c<=o.funds)opts.push({i,sc:sc+rnd()*.35,c})};
@@ -1562,7 +1563,7 @@ function aiDay(){SIM.rv=[];const sh=natShares(true),r2=r2mode();
    const late=D1-SIM.day<=6;
    if(tg){cons(0,(r2?1.1:.55)/(1+cnt(tg,k,'rc')*.7),{d:tg});cons(2,(r2?1.4:late?.75:.45)/(1+cnt(tg,k,'cv')*.35),{d:tg});cons(1,(r2?.9:1.1)/(1+(o.tc[tg.g]||0)*.8),{g:tg.g});cons(3,(r2?.8:1)/(1+.6*((o.lf||{})[tg.g]||0)),{g:tg.g})}
    cons(4,(r2?.8:2.6)/(1+.5*(o.dg||0)),{tg:(u=>u<.2?topRival(k):u<.42?nearRival(k):null)(rnd())});
-   if(!r2){const sg=sigOf(k),cand=MEAS.map((m,j)=>[planAppeal(k,j)+(sg.includes(j)?1-sg.indexOf(j)*.06:-1),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,2.8/(1+o.an*.6),{m:cand[0][1]})}
+   if(!r2){const sg=sigOf(k),cand=MEAS.map((m,j)=>[planAppeal(k,j)+(sg.includes(j)?1-sg.indexOf(j)*.06:-.6),j]).filter(a=>!o.plat.includes(a[1])&&mFits(k,a[1])).sort((a,b)=>b[0]-a[0]);if(cand.length)cons(5,2.8/(1+o.an*.6),{m:cand[0][1]})}
    if(!o.prep&&SIM.day<SIM.debDay)cons(6,.3,{});
    cons(7,o.funds<120?1.4:.15,{});cons(8,(r2?.6:2.4)/(1+.4*(o.pr||0)),{tg:OUTLETS.map((u,j)=>[u.tilt[k],j]).sort((a,b)=>b[0]-a[0])[0][1]});
    if(!opts.length)break;opts.sort((a,b)=>b.sc-a.sc);const ch=opts[0];o.ap-=ACT[ch.i].ap;o.funds-=ACT[ch.i].c;const tx=applyAct(k,ch.i,ch.c);SIM.rv.push({k,t:tx})}}}
@@ -1597,7 +1598,7 @@ function campDynamics(){const sh=natShares(true),me=SIM.me,o=sh.map((v,k)=>[v,k]
  issueRace()}
 /* ===== the issue race (Logan 2026-10-20): voters' priorities swing between three top issues, driven by how well each party
    campaigns on its signature area; owners of the hot issues gain, the others pay ===== */
-function mainTh(k){if(k===SIM.me&&SIM.annT){let b=-1,bt=null;SIM.annT.forEach((n,t)=>{if(n>b){b=n;bt=t}});if(b>=2)return bt}let b=-1e9,bt=0;OWN[k].forEach((v,t)=>{if(v>b){b=v;bt=t}});return bt}
+function mainTh(k){if(k===SIM.me&&SIM.annT){let b=-1,bt=null;SIM.annT.forEach((n,t)=>{if(n>b){b=n;bt=t}});if(b>=2)return bt}/* an AI party campaigns on the issue it owns that voters care most about now, never on one it isn't trusted on (Logan 2026-10-24) */let b=-1e9,bt=0;const sl=SIM.sal||[];OWN[k].forEach((v,t)=>{const s=v>.05?v+.3*((sl[t]||1)-1):v-1;if(s>b){b=s;bt=t}});return bt}
 function issuePush(k,t,v){SIM.push=SIM.push||TH.map(()=>P.map(()=>0));SIM.push[t][k]+=v}
 /* the issue race uses its own random stream so it never reshuffles the rest of the campaign */
 function igauss(){const u=()=>{SIM.irs=(SIM.irs||98765)*16807%2147483647;return SIM.irs/2147483647};return Math.sqrt(-2*Math.log(u()+1e-12))*Math.cos(2*Math.PI*u())}
@@ -1621,14 +1622,18 @@ function careHTML(w){const ord=TH.map((t,j)=>[SIM.sal[j],j]).sort((a,b)=>b[0]-a[
  +`<div style="opacity:.45;margin-top:4px">${rest.map(j=>`<div class="bar"><span class="n" style="width:${w}px">${x(TH[j][0],TH[j][1])}</span><span class="t"><i style="width:${Math.min(100,SIM.sal[j]/2.2*100)}%;background:var(--mute)"></i></span></div>`).join('')}</div>`}
 function tick(){/* decay */const dec=v=>v*.97;SIM.nat=SIM.nat.map(dec);SIM.reg=SIM.reg.map(r=>r.map(dec));C.forEach(d=>{d.l=d.l.map(dec)});SIM.mom=SIM.mom.map(v=>v*.75);
  SIM.ap=3;SIM.funds+=40;SIM.an*=.9;SIM.fr=(SIM.fr||0)*.85;SIM.dg=(SIM.dg||0)*.6;SIM.atkN=(SIM.atkN||0)*.8;SIM.tc=SIM.tc.map(v=>v*.92);if(SIM.lf)for(const g in SIM.lf)SIM.lf[g]*=.85;
- SIM.ai.forEach(o=>{o.funds+=30;o.an*=.9;o.fr*=.85;o.dg=(o.dg||0)*.6;o.atkN=(o.atkN||0)*.8;o.tc=o.tc.map(v=>v*.92);if(o.lf)for(const g in o.lf)o.lf[g]*=.85})}
+ SIM.ai.forEach(o=>{o.funds+=40;o.an*=.9;o.fr*=.85;o.dg=(o.dg||0)*.6;o.atkN=(o.atkN||0)*.8;o.tc=o.tc.map(v=>v*.92);if(o.lf)for(const g in o.lf)o.lf[g]*=.85})}
+/* Logan 2026-10-24: "every day of campaigning is watered down the next ... it feels defeating". The day's summary splits what your own actions won
+   from what the rivals' campaigning and the news did overnight, so a gain shows even on a day the total slips. */
+const shareNow=()=>{const me=SIM.me;if(me==null||me<0||me===7)return 0;return PRES()&&SIM.phase==='r2c'&&SIM.fin&&SIM.fin.includes(me)?presR2Nat()[me]:natShares(true)[me]};
+function dayStart(){const k=SIM.phase+':'+(SIM.phase==='r2c'?SIM.r2day:SIM.day);if(!SIM.d0||SIM.d0.k!==k)SIM.d0={k,v:shareNow()};return SIM.d0.v}
 function nextDay(){if(!ACTIVE())return;if(SIM.dbPend){SIM.msg=x('Le débat télévisé vous attend.','The TV debate is waiting for you.');return render()}if(SIM.dbt&&!SIM.dbt.done){SIM.msg=x('Terminez d’abord le débat.','Finish the debate first.');return render()}
- const before=natShares(true)[SIM.me];SIM.msg='';SIM.prevAvg=natShares().slice();
- aiDay();campDynamics();tick();
+ const before=shareNow(),own=before-dayStart();SIM.msg='';SIM.prevAvg=natShares().slice();
+ aiDay();const sR=shareNow();campDynamics();tick();
  /* unresolved events lapse */
  SIM.pend=SIM.pend.filter(p=>{if(SIM.day-p.d>=2){SIM.log.push(x(p.f,p.e)+x(' (ignoré)',' (ignored)'));if(p.ign)bumpNat(SIM.me,p.ign);return false}return true});
- SIM.last={rv:SIM.rv.slice(),acts:SIM.log,d:natShares(true)[SIM.me]-before};SIM.log=[];
- SIM.day++;
+ {const now=shareNow();SIM.last={rv:SIM.rv.slice(),acts:SIM.log,d:now-before,own,riv:sR-before,nw:now-sR}}SIM.log=[];
+ SIM.day++;SIM.d0=null;
  if(SIM.phase==='r1'){SIM.hist.push({day:SIM.day,s:natShares()});addPolls();spawnEvents();if(SIM.day===SIM.debDay)SIM.dbPend=1;
   if(SIM.day>D1){PRES()?startNightP1():startNight1();return}}
  else if(SIM.phase==='r2c'){SIM.r2day++;r2Projection();if(SIM.r2day>D2){PRES()?startNightP2():startNight2();return}if(PRES()){addPollsR2();if(SIM.r2day===SIM.debDay2){if(presOut())aiPresDebate();else SIM.dbPend=1}}spawnEvents()}
@@ -1841,7 +1846,7 @@ function finishWithdrawals(){const me=SIM.me;let kept=0,gave=0;
  let tri=0;C.forEach(d=>{if(d.res2run&&d.res2run.length>2)tri++});SIM.barrage=2.6*(1-Math.min(.35,tri/600));
  /* the closer the RN looks to a majority, the harder the rest of the country closes ranks (Logan 2026-10-22) */
  let rnL=0;C.forEach(d=>{if(d.r1&&(d.r1.cl.o[0][1]===5||d.r1.cl.o[0][1]===6))rnL++});SIM.barrage*=1+.6*clamp((rnL-200)/200,0,1);
- SIM.cons[me]=SIM.cons[me]||'none';SIM.phase='r2c';SIM.r2day=1;SIM.ap=3;SIM.funds+=150;st.tab='map';st.layer='proj';st.sel=null;r2Projection();save();render()}
+ SIM.cons[me]=SIM.cons[me]||'none';SIM.phase='r2c';SIM.r2day=1;SIM.ap=3;SIM.funds+=150;SIM.ai.forEach(o=>{o.funds+=150});st.tab='map';st.layer='proj';st.sel=null;r2Projection();save();render()}
 function countRuns(){const c={duel:0,tri:0,quad:0,el:0};C.forEach(d=>{if(!d.r1)return;if(d.r1.cl.el>=0)c.el++;else{const n=(d.res2run||d.r1.cl.q).length;n===2?c.duel++:n===3?c.tri++:c.quad++}});return c}
 /* ===== run-off week ===== */
 function r2Of(d,noise){if(d.r1.cl.el>=0)return {w:d.r1.cl.el,m:d.r1.cl.o[0][0]-d.r1.cl.o[1][0],r1:1};const run=d.res2run;const L=latent(d);const s2=r2Shares(d,d.r1.sh,run,L);let o=run.map(k=>[s2[k]*(noise?Math.exp(noise[k]):1),k]);const T=sum(o.map(a=>a[0]));o=o.map(a=>[a[0]/T,a[1]]).sort((a,b)=>b[0]-a[0]);const s=Array(NP).fill(0);o.forEach(a=>s[a[1]]=a[0]);return {w:o[0][1],m:o[0][0]-o[1][0],s2:s,run}}
@@ -1939,7 +1944,7 @@ function vResP(){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,me=SIM.me,nat=S
  ${mapCard([...(o1?[]:[['res',x('Second tour','Run-off')]]),['r1',x('1er tour : en tête','First round: leader')],['share',x('Score par candidat','Candidate vote share')]],x('La carte du vote','The map of the vote'))}</div>
  <div><div class="card"><h3>${x('Premier tour','First round')}</h3>${pie(P.map((p,k)=>[nat[k],pc(k),p.n]).filter(r=>r[0]>.001),170,.5)}<div class="pie-legend">${P.map((p,k)=>nat[k]<.001?'':`<span><i style="background:${pc(k)}"></i>${p.n} ${pct(nat[k])}</span>`).join('')}</div></div>
  <div class="card"><h3>${x('Votre bilan','Your result')}</h3><div class="kpis"><div class="kpi" style="border-top-color:${pc(me)}"><small>${x('1er tour','First round')}</small><b>${pct(nat[me])}</b></div><div class="kpi"><small>${x('Départ','Start')}</small><b>${pct(SIM.t0[me])}</b></div><div class="kpi"><small>${x('Note','Grade')}</small><b>${won?'A+':SIM.fin.includes(me)?'A':nat[me]>SIM.t0[me]+.02?'B':nat[me]>SIM.t0[me]-.02?'C':'D'}</b></div></div></div>
- <div class="card">${won?`<p>${x('Nouveau président, vous pouvez garder l’Assemblée actuelle ou la dissoudre pour chercher une majorité.','As the new President, you can keep the current Assembly or dissolve it to seek a majority.')}</p><p class="note">${x('Votre camp y a ','Your camp holds ')+sum((careerK().seats||SEATS24).filter((v,k)=>campOf(k)===campOf(me)))+x(' sièges sur 577.',' of 577 seats.')}</p><button class="act vbtn" data-afterpres="diss" style="width:100%;margin-bottom:8px"><b>${x('Dissoudre l’Assemblée →','Dissolve the Assembly →')}</b><small>${x('Législatives anticipées, avec l’élan de la victoire','Snap election, riding the win')}</small></button><button class="act" data-afterpres="keep" style="width:100%;margin-bottom:8px"><b>${x('Garder l’Assemblée et nommer un Premier ministre →','Keep the Assembly and appoint a Prime Minister →')}</b></button>`:`<button class="act vbtn" data-afterpres="" style="width:100%;margin-bottom:8px"><b>${x('Continuer →','Continue →')}</b><small>${x('Le nouveau président garde ou dissout l’Assemblée','The new President keeps or dissolves the Assembly')}</small></button>`}<button class="act" data-newgame style="width:100%"><b>${x('Nouvelle partie','New game')}</b></button></div></div></div>`}
+ <div class="card">${won?`<p>${x('Nouveau président, vous pouvez garder l’Assemblée actuelle ou la dissoudre pour chercher une majorité.','As the new President, you can keep the current Assembly or dissolve it to seek a majority.')}</p><p class="note">${x('Votre camp y a ','Your camp holds ')+sum((careerK().seats||SEATS24).filter((v,k)=>campOf(k)===campOf(me)))+x(' sièges sur 577.',' of 577 seats.')}</p><button class="act vbtn" data-afterpres="diss" style="width:100%;margin-bottom:8px"><b>${x('Dissoudre l’Assemblée →','Dissolve the Assembly →')}</b><small>${x('Législatives anticipées, avec l’élan de la victoire','Snap election, riding the win')}</small></button><button class="act" data-afterpres="keep" style="width:100%;margin-bottom:8px"><b>${x('Garder l’Assemblée et nommer un Premier ministre →','Keep the Assembly and appoint a Prime Minister →')}</b></button>${(()=>{const G=SIM.G,cg=lastGov(G);return cg&&cg.pm!=null?`<button class="act" data-afterpres="gov" style="width:100%;margin-bottom:8px"><b>${G.pm!=null?x('Maintenir le gouvernement en place →','Keep the current government →'):x('Reconduire le dernier gouvernement →','Reappoint the last government →')}</b><small>${x('Gouvernement '+P[cg.pm].n+(campOf(cg.pm)!==campOf(me)?' : cohabitation':''),'The '+P[cg.pm].n+' government'+(G.pm!=null?' stays':' returns')+(campOf(cg.pm)!==campOf(me)?': cohabitation':''))}</small></button>`:''})()}`:`<button class="act vbtn" data-afterpres="" style="width:100%;margin-bottom:8px"><b>${x('Continuer →','Continue →')}</b><small>${x('Le nouveau président garde ou dissout l’Assemblée','The new President keeps or dissolves the Assembly')}</small></button>`}<button class="act" data-newgame style="width:100%"><b>${x('Nouvelle partie','New game')}</b></button></div></div></div>`}
 /* ===== rallies before the campaign ===== */
 function vRallies(){const me=SIM.me,sh=natShares(true),mine=SIM.pacts.find(p=>p.head===me),others=SIM.pacts.filter(p=>p.head!==me);
  const row=k=>{const ok=PACTOK(me,k),inR=mine&&mine.m.includes(k),gone=others.find(p=>p.m.includes(k)&&p.head!==k),off=SIM.offers.find(o=>o.k===k),tried=(SIM.tried||{})[k];
@@ -2134,7 +2139,9 @@ function normV(G){const T=sum(G.v);G.v=G.v.map(v=>v/T)}
    60 % of its share at the start of the term and at least 1 %; above 35 % a party loses half of the excess each quarter (real French polls top out in the mid-30s).
    What is moved comes from, or goes to, every other party in proportion to its size. */
 const PCORE=.6,PCEIL=.35;
-function pollBounds(G){const B=G.vb||G.v;G.v=G.v.map((v,k)=>{if(k===7)return v;const c=Math.max(.01,PCORE*(B[k]||0));if(v<c)return v+(c-v)*.5;if(v>PCEIL)return v-(v-PCEIL)*.5;return v});normV(G)}
+/* niche parties have a much lower ceiling (Logan 2026-10-24: Reconquête soaked up an unpopular RN government's losses and reached 22 % and Matignon) */
+const PCEILK={6:.1};
+function pollBounds(G){const B=G.vb||G.v;G.v=G.v.map((v,k)=>{if(k===7)return v;const c=Math.max(.01,PCORE*(B[k]||0)),hi=PCEILK[k]??PCEIL;if(v<c)return v+(c-v)*.5;if(v>hi)return v-(v-hi)*.5;return v});normV(G)}
 /* ===== censure ===== */
 /* ===== censure motions: a roll-call vote that tests the coalition's cohesion =====
    Each group takes a line (censure or not); then individual MPs break ranks. In the government's camp the leak grows with low cohesion,
@@ -2224,6 +2231,14 @@ function aiResign(G){if(G.pm==null||G.pm===SIM.me||SIM.phase!=='gov')return null
  const p=(G.appr.pm<24&&age>=3?.05+.02*(24-G.appr.pm):0)+(dl>=2.5&&age>=2?.12+.1*(dl-2.5):0);if(rnd()>=Math.min(.6,p))return null;
  if(dl>=2.5)G.log.push({m:G.m,t:'🧱 '+x('Le Premier ministre constate le blocage de l’Assemblée : « Je ne peux plus gouverner. »','The Prime Minister acknowledges the Assembly is deadlocked: “I can no longer govern.”')});return govResign(G,'ai')}
 /* ===== budget ===== */
+/* time for a change (Logan 2026-10-24: REN won a third-term supermajority and then the Élysée with an economy that never faltered):
+   years the same party has held Matignon / the Élysée without a break, kept in the career record */
+function runYears(G,key,k){const K=SIM.K||(SIM.K=careerK());if(k==null)return 0;if(!K[key]||K[key].k!==k)K[key]={k,m:G.m};return Math.max(0,(G.m-K[key].m)/12)}
+const pmYears=G=>runYears(G,'pmRun',G.pm),presYears=G=>runYears(G,'presRun',G.pres);
+/* approval cost of wear in office: nothing for 3 years, then 2.5 points a year, at most 16 */
+const fatigue=y=>-Math.min(16,2.5*Math.max(0,y-3));
+/* a legislative election after more than five years of the same party at Matignon: about 3 % of its vote per year beyond five, at most a quarter */
+function tfcLeg(G){const tg=G.v.slice(),y=pmYears(G);if(y>5&&G.pm!=null&&G.pm!==7){tg[G.pm]*=Math.max(.75,Math.exp(-.03*(y-5)));const T=sum(tg);G.log.push({m:G.m,t:x('⏳ Envie de changement : '+P[G.pm].n+' est à Matignon depuis '+Math.round(y)+' ans.','⏳ Time for a change: '+P[G.pm].n+' has led the government for '+Math.round(y)+' years.')});return tg.map(v=>v/T)}return tg}
 function budgetDue(G){return autumn(G)&&G.budY!==Math.floor(G.m/12)+1}
 /* the budget forced through with 49.3: a censure motion follows */
 /* Logan 2026-10-21: a pop-up whenever the government invokes 49.3, on a bill (t=[fr,en]) or the budget (t=null) */
@@ -2248,7 +2263,7 @@ function lpRul(){const K=SIM.K;if(K&&!K.lpRul&&SIM.lpRul)K.lpRul=SIM.lpRul;retur
 function lpRoll(m,G){if(lpRul())return lpRul();const K=SIM.K;if(K&&K.presN)return null;const r={o:rnd()<.55?'jb':'lp',m};if(K)K.lpRul=r;else SIM.lpRul=r;
  const t=r.o==='jb'?x('⚖️ La cour d’appel confirme l’inéligibilité de Marine Le Pen : Jordan Bardella sera le candidat du RN en 2027.','⚖️ The appeal court upholds Marine Le Pen’s ineligibility: Jordan Bardella will be RN’s candidate in 2027.'):x('⚖️ La cour d’appel lève l’inéligibilité immédiate : Marine Le Pen pourra se présenter en 2027.','⚖️ The appeal court lifts the immediate ineligibility: Marine Le Pen can run in 2027.');
  if(G){G.log.push({m,t});const f=r.o==='lp'?.04:-.02;if(G.pmo)G.pmo[5]+=f;G.v[5]*=Math.exp(f)}else if(SIM.log)SIM.log.push(t);return r}
-function prepQuarter(){const G=SIM.G;if(G.m>=2027*12)try{lpRoll(G.m,G)}catch(e){console.error(e)}try{minSync(G)}catch(e){console.error(e)}G.mv={};G.lastCens=null;G.msg='';G.vote=null;G.prevAO={appr:G.appr.pm,cap:G.cap};
+function prepQuarter(){const G=SIM.G;/* the last government in office, so a new President can reappoint it even after it fell or resigned */if(G.pm!=null)G.pgov={pm:G.pm,gov:G.gov.slice(),sup:G.sup.slice(),nc:G.nc.slice()};if(G.m>=2027*12)try{lpRoll(G.m,G)}catch(e){console.error(e)}try{minSync(G)}catch(e){console.error(e)}G.mv={};G.lastCens=null;G.msg='';G.vote=null;G.prevAO={appr:G.appr.pm,cap:G.cap};
  /* the agenda: bills to table, the opposition's bill, and the AI government's own bills */
  if(G.pm!=null)newOffer(G);
  /* an AI government presents its budget in the autumn */
@@ -2324,7 +2339,7 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  if(G.pend.length){if(ctrl()||G.pm===me){G.appr.pm-=1.5;G.pend=[]}else{const p=G.pend[0],o=GEV[p.i].o[gevAI(G)];applyFx(G,o.fx);G.log.push({m:G.m,t:x(GEV[p.i].f,GEV[p.i].e)+' → '+x(o.f,o.e)});G.pend=[]}}
  /* economy, society and government approval */
  LEG.tick(G);try{codeTick(G)}catch(e){console.error(e)}try{scanTick(G)}catch(e){console.error(e)}try{extTick(G)}catch(e){console.error(e)}econQuarter(G);try{fiscalTick(G)}catch(e){console.error(e)}try{pjTick(G);crTick(G)}catch(e){console.error(e)}try{moTick(G)}catch(e){console.error(e)}
- const ch=cohab(G);G.appr.pres+=(ch?.8:-.6)+gauss()*1.2+(ch?0:(G.appr.pm-35)*.04);
+ const ch=cohab(G);G.appr.pres+=(ch?.8:-.6)+gauss()*1.2+(ch?0:(G.appr.pm-35)*.04)-.06*Math.max(0,presYears(G)-5);
  G.appr.pm=clamp(G.appr.pm,12,68);G.appr.pres=clamp(G.appr.pres,12,68);
  /* polls: government parties follow approval, the opposition absorbs it */
  const v0=G.v.slice();
@@ -2338,7 +2353,7 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  G.pmo=G.pmo||P.map(()=>0);G.vb=G.vb||v0.slice();
  /* a government whose approval is climbing gets momentum in the polls, one that is sliding loses it (Logan 2026-10-20: too hard to turn polls around) */
  {const h=G.ah||[],a3=h.length>=3?h[h.length-3].pm:null;if(a3!=null&&h[h.length-3].pmk===pm0){const d=G.appr.pm-a3;gp.forEach(k=>{G.pmo[k]+=.035*Math.tanh(d/8)*Math.min(1.5,(sh[k]||0)*gp.length)})}}
- G.v=G.v.map((v,k)=>{if(k===7)return v;G.pmo[k]=G.pmo[k]*.7+gauss()*.05*VOL.term*Math.sqrt(Math.max(1,smallF(v)));return Math.max(.004,v*Math.exp(G.pmo[k]+.09*Math.log(Math.max(.004,G.vb[k])/Math.max(.004,v*Math.exp(-(G.gao&&G.gao[k]||0)-(G.vro&&G.vro[k]||0)-(G.cso&&G.cso[k]||0))))))});
+ G.v=G.v.map((v,k)=>{if(k===7)return v;G.pmo[k]=G.pmo[k]*.7+gauss()*.05*VOL.term*Math.sqrt(Math.max(1,smallF(v)));return Math.max(.004,v*Math.exp(G.pmo[k]+.09*Math.log(Math.max(.004,G.vb[k])/Math.max(.004,v*Math.exp(-(G.gao&&G.gao[k]||0)-(G.vro&&G.vro[k]||0)-(G.cso&&G.cso[k]||0)-(G.ino&&G.ino[k]||0))))))});
  /* the news of the quarter: one party has a moment (or a bad patch) that moves the polls */
  if(rnd()<Math.min(.85,.5*VOL.term)){const c=[0,1,2,3,4,5,6].filter(k=>G.v[k]>.03),k=c[Math.floor(rnd()*c.length)],up=rnd()<.5&&!(k===pm0&&G.appr.pm<UNPOP),m=.08+rnd()*.14,L=up?TUPS:TDNS,t=L[Math.floor(rnd()*L.length)];
   G.v[k]*=Math.exp(up?m:-m);G.pmo[k]+=up?m*.35:-m*.35;G.log.push({m:G.m,t:(up?'📈 ':'📉 ')+P[k].n+' '+x(t[0],t[1])})}
@@ -2347,6 +2362,7 @@ function endQuarter(){const G=SIM.G,me=SIM.me;if(G.pm==null||SIM.phase!=='gov')r
  {const W=govLossW(G,gp,lostK);if(lost>0)for(const k in W)G.v[+k]+=lost*W[k]}
  /* an unpopular government rallies the opposite camp (Logan 2026-10-20: the left should surge against an unpopular right-wing government, and vice versa): a bounded level, swapped each quarter */
  {const dis=Math.tanh(Math.max(0,38-G.appr.pm)/12),W=campCauseW(G,pm0,gp);G.cso=G.cso||P.map(()=>0);G.v=G.v.map((v,k)=>{const o=gp.includes(k)?0:.2*dis*(W[k]||0)*Math.min(1,Math.sqrt(.18/Math.max(.01,v))),d=o-(G.cso[k]||0);G.cso[k]=o;return v*Math.exp(d)})}
+ try{cnPolls(G)}catch(e){console.error(e)}
  normV(G);G.v=G.v.map(v=>Math.max(.004,v));normV(G);
  /* the party leading an unpopular government never gains in the polls while it leads it (Logan 2026-10-23): any rise is cut back and goes to the opposition */
  if(G.appr.pm<UNPOP&&pm0!=null&&G.pm===pm0&&G.v[pm0]>v0[pm0]){const cap=v0[pm0],ex=G.v[pm0]-cap,op=P.map((_,k)=>k).filter(k=>k!==7&&!gp.includes(k)),T=sum(op.map(k=>G.v[k]));G.v[pm0]=cap;if(T>0)op.forEach(k=>G.v[k]+=ex*G.v[k]/T);G.pmo[pm0]=Math.min(0,G.pmo[pm0])}
@@ -2391,14 +2407,16 @@ function aiDissolve(G){const c=campOf(G.pres),pk=G.pres,left=G.presM-G.m,end=60-
 function dissolve(why){const G=SIM.G,K=careerK();G.fallsD=G.falls||0;G.log.push({m:G.m,t:x('Dissolution de l’Assemblée nationale : ','The National Assembly is dissolved: ')+why});
  K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;const keep=JSON.parse(JSON.stringify(SIM.G));
  const start=new Date(Math.floor(G.m/12),G.m%12,15).toISOString();
- newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:G.v.slice(),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
+ newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*7+G.m)%1e9+1,keep:keepLast(K),tg:tfcLeg(G),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.ctx=keep.m-keep.lastDiss>=60?'term':'snap';SIM.G=keep;SIM.G.lastDiss=keep.m;elecCarry(SIM.G);SIM.why=why;save();render()}
 function presElection(){const G=SIM.G,K=careerK();K.presAppr=G.appr.pres;K.seats=G.seats;SIM.K=K;try{lpRoll(G.m,G)}catch(e){console.error(e)}const keep=JSON.parse(JSON.stringify(G));
  /* presidential intentions: the term's polls blended with personal standing */
  /* presidential intentions start from the in-game polls as they stand (Logan 2026-10-23) */
- const tg=G.v.slice();const T=sum(tg);
+ const tg=G.v.slice();{/* a party that has held the Élysée for more than one term faces a wish for change: about 4 % of its vote per year beyond five, at most a third */const y=presYears(G);if(y>5&&G.pres!=null&&G.pres!==7){const f=Math.max(.67,Math.exp(-.04*(y-5)));tg[G.pres]*=f;G.log.push({m:G.m,t:x('⏳ Envie de changement : '+P[G.pres].n+' tient l’Élysée depuis '+Math.round(y)+' ans.','⏳ Time for a change: '+P[G.pres].n+' has held the Élysée for '+Math.round(y)+' years.')})}}try{elyRecord(G,tg)}catch(e){console.error(e)}const T=sum(tg);
  const pm=Math.max(G.m,G.presM-1),start=new Date(Math.floor(pm/12),pm%12,1).toISOString();
  newGame({party:SIM.me,theme:SIM.theme,diff:SIM.diff,mode:'pres',seed:(SIM.seed*11+G.m)%1e9+1,keep:keepLast(K),tg:tg.map(v=>v/T),start,rec:G.pm!=null?{gov:G.gov.slice(),pm:G.pm,appr:G.appr.pm,sh:govShare(G,G.gov),pres:careerK().presK,pappr:G.appr.pres,infl:G.infl,un:G.unemp,rw:(G.wg??2.2)-G.infl}:null});SIM.G=keep;save();render()}
 /* after a presidential election: the winner keeps or dissolves the Assembly */
+/* the government a new President can keep: the one in office, or the last one (G.pgov; older saves: the last PM in the approval history) */
+function lastGov(G){if(!G)return null;if(G.pm!=null&&G.gov.length)return G;if(G.pgov)return G.pgov;const h=(G.ah||[]).slice().reverse().find(a=>a.pmk!=null);return h?{pm:h.pmk,gov:[h.pmk],sup:[],nc:[]}:null}
 function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=careerK(),me=SIM.me;const d=new Date(START);d.setDate(d.getDate()+D1+(SIM.p1win!=null?0:14));const m=d.getFullYear()*12+d.getMonth()+1;
  K.presK=w;K.presM=m+59;K.presN=(K.presN||0)+1;K.presAppr=55;K.presStart=m;SIM.K=K;const G=SIM.G;if(G){G.pres=w;G.presM=K.presM;G.appr.pres=55;G.m=m;G.log.push({m,t:P[w].n+x(' entre à l’Élysée.',' enters the Élysée.')})}
  const seats=K.seats||SEATS24,camp=sum(seats.filter((v,k)=>campOf(k)===campOf(w)));
@@ -2407,6 +2425,12 @@ function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=car
   /* a newly elected President gets a honeymoon: the camp gains */
   const tg=v.map((x2,k)=>campOf(k)===campOf(w)?x2*1.18:x2);const T=sum(tg);
   newGame({party:me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*13+m)%1e9+1,keep:keepLast(K),tg:tg.map(x2=>x2/T),start:new Date(Math.floor(m/12),m%12,1).toISOString()});SIM.ctx='post';if(keep){SIM.G=keep;SIM.G.lastDiss=m;elecCarry(SIM.G)}SIM.why=x('Le nouveau président dissout l’Assemblée.','The new President dissolves the Assembly.');save();return render()}
+ /* Logan 2026-10-24: the new President can keep the incumbent government. An AI President keeps one from its own camp more often than not. */
+ const cg=lastGov(G);
+ const keepGov=cg&&cg.pm!=null&&(choice==='gov'||(choice==null&&w!==me&&campOf(cg.pm)===campOf(w)&&rnd()<.65));
+ if(keepGov){if(G.pm==null){G.pm=cg.pm;G.gov=cg.gov.slice();G.sup=cg.sup.slice();G.nc=cg.nc.slice();G.prop={}}SIM.mode='leg';setMode('leg');C.forEach(d=>{d.res=null;d.r1=null});SIM.final=seats.slice();G.govQ=G.q;
+  G.log.push({m,t:x('Le président '+P[w].n+' maintient le gouvernement de '+P[G.pm].n+'.','President '+P[w].n+' keeps the '+P[G.pm].n+' government in place.')});
+  SIM.phase='gov';st.tab='gov';st.gtab='asm';try{prepQuarter()}catch(e){console.error(e);save();render()}return}
  SIM.final=seats.slice();if(!G){SIM.G=null}startGov(!!G);if(!G){SIM.G.m=m;SIM.G.lastDiss=m-12}}
 /* projection "if the election were held today" from term polls */
 function govProjection(){const G=SIM.G;if(!G)return;const n0=SIM.nat.slice();for(let it=0;it<4;it++){const s=natShares(true);SIM.nat=SIM.nat.map((v,k)=>v+Math.log(Math.max(.002,G.v[k])/Math.max(.002,s[k])))}G.proj=projSeats();SIM.nat=n0}
@@ -2455,10 +2479,11 @@ const cneed=i=>{const G=SIM&&SIM.G;return (G&&G.code&&G.code.need&&G.code.need[i
 const bix=()=>{const G=SIM&&SIM.G;return (G&&G.bix)||1};
 const bsum=()=>BU.reduce((a,_,i)=>a+BL(i),0);
 function budIndex(G){const by=Math.floor(G.m/12)+1;if(!(G.m%12>=9)||G.bixY===by)return;G.bixY=by;
- const nb=G.cpi/CPI0,r=nb/(G.bix||1);G.bix=nb;if(Math.abs(r-1)<.0005)return;
+ /* plus about 0.9 % a year in volume: an ageing population, more pupils in higher education, new equipment (Logan 2026-10-24: spending fixed in real terms let receipts outgrow it) */
+ G.bvol=(G.bvol||1)*1.009;const nb=G.cpi/CPI0*G.bvol,r=nb/(G.bix||1);G.bix=nb;if(Math.abs(r-1)<.0005)return;
  const sc=a=>a&&a.forEach((v,i)=>{if(i!==PEN)a[i]=Math.round(v*r*10)/10});sc(G.bu);sc(G.sm);sc(G.bref);if(G.budBase)sc(G.budBase.bu);if(G.budPrev)sc(G.budPrev.bu);
  G.cost=(G.cost||0)*r;G.rev=(G.rev||0)*r;if(G.code&&G.code.need)for(const k in G.code.need)if(+k!==PEN&&k!=='chom')G.code.need[k]*=r;
- G.log.push({m:G.m,t:'💶 '+x('Budget '+by+' : les crédits sont revalorisés de l’inflation (+'+fn((r-1)*100)+' %).','Budget '+by+': spending lines are uprated for inflation (+'+fn((r-1)*100)+'%).')})}
+ G.log.push({m:G.m,t:'💶 '+x('Budget '+by+' : les crédits sont revalorisés de l’inflation et des besoins (+'+fn((r-1)*100)+' %).','Budget '+by+': spending lines are uprated for inflation and needs (+'+fn((r-1)*100)+'%).')})}
 const BMAX=i=>Math.round(BL(i)*(i===8?1.12:1.6)),BMIN=i=>i===8?Math.round(BL(i)*.9):1;
 const PEN=8; /* pensions: set in today's euros, then indexed to prices and the number of retirees */
 /* budget line → indicator, per € bn above or below the baseline */
@@ -2486,7 +2511,8 @@ function sprTick(G){if(G.spr==null){G.spr=80;G.sprA=80}const F=gfin(G),df=realDe
  else if(s0>=100&&G.spr<90)G.log.push({m:G.m,t:'📉 '+x('L’écart de taux avec l’Allemagne retombe à '+G.spr+' points de base.','The spread over German bonds eases back to '+G.spr+' basis points.')});
  if(G.spr>=130&&!dc&&typeof crOpen==='function'){L(x('L’écart de taux atteint '+G.spr+' points de base : la crise de la dette éclate.','The spread hits '+G.spr+' basis points: a debt crisis breaks out.'));try{crOpen(G,'debt',G.spr>=170?3:2)}catch(e){console.error(e)}}}
 const gdpOf=G=>(G&&G.gdp)||GDP0,popN=G=>(G&&G.pop)||POP0;
-const ngr=G=>gdpOf(G)/GDP0,ngf=G=>Math.pow(ngr(G),1.1);
+/* tax receipts follow nominal GDP one for one over time (Logan 2026-10-24: an elasticity of 1.1 compounded into ever-rising receipts and surpluses); the cycle is in txCyc */
+const ngr=G=>gdpOf(G)/GDP0,ngf=G=>ngr(G);
 /* debt interest: about €62bn at 116% of GDP; it grows with the economy and follows ECB rates with a lag */
 function debtService(G){return Math.max(0,G.debt*.535*ngr(G)*(1+(G.bc?G.bc.rAvg-2:0)*.2)*(1+Math.max(0,G.infl-2)*.05))}
 /* each tax: level above which avoidance sets in (share of its 2025 yield; France already taxes heavily), yield of the last point at the slider's top,
@@ -2574,22 +2600,26 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  const fs=(.6*(F.ministries-bsum())-.8*taxDrag(G))/gd0*100;if(G.fsR==null){G.fsR=fs;G.fsL=0;G.dp0=defP;G.dpR=defP}
  const fl0=G.fsL;G.fsL+=((fs-G.fsR)-G.fsL)*.25;G.fsR+=(fs-G.fsR)*.07;const imp=Math.max(-3,Math.min(3,4*(G.fsL-fl0)));
  const dpT=.15*Math.max(-1.5,Math.min(2,G.dp0))+.15*Math.max(-1.5,Math.min(1.5,defP-G.dpR));G.dpR+=(defP-G.dpR)*.07;
- const gr=Math.max(-4,Math.min(6,.6+(ec-50)*.05+imp+dpT+cyc-(if0-1.4)*.12-(cr0/CR0-1)*1.5-(un0-7.6)*.05+(G.arr-ARR0)*.002-Math.max(0,.5-if0)*.4));
+ /* capacity (Logan 2026-10-24: France grew 2-3 % a year for a decade with 4 % unemployment): an economy running above its potential
+    slows (-.3 × output gap) and one below it catches up; low unemployment no longer feeds growth, which made booms self-sustaining */
+ const gr=Math.max(-4,Math.min(6,.6+(ec-50)*.035+imp+dpT+cyc-(if0-1.4)*.12-(cr0/CR0-1)*1.5-.3*(G.gap||0)+(G.arr-ARR0)*.002-Math.max(0,.5-if0)*.4));
  const gN=(gr+if0)/400;G.gdp=gd0*(1+gN);G.gdpGr=(Math.pow(1+gr/400,4)-1)*100;(G.grH=G.grH||[]).push(+gr.toFixed(2));G.gap=Math.max(-6,Math.min(4,(G.gap||0)*.8+(gr-1.0)*.25));if(G.grH.length>8)G.grH.shift();if(G.bc&&G.grH.length>=2&&G.grH.slice(-2).every(v=>v<0))G.bc.st='rec';G.pop=popN(G)*(1+.0007+(ec-50)*.00003);
  G.debt=Math.max(10,(G.debt*gd0-F.bal*25)/G.gdp);
  /* jobs (Logan 2026-10-23: 'make sure unemployment is modelled accurately'): Okun's law on the output gap around a structural rate (G.nairu, ~7.4 % in 2025);
     layoffs come fast, hiring back is slow; long spells of high unemployment raise the structural rate (hysteresis), tight years slowly lower it */
  if(G.nairu==null){G.nairu=7.4;G.unA=un0;G.unLT=.26;G.wg=2.2;G.smicC=G.cpi;G.unH=[un0]}
- const unT=G.nairu-.5*G.gap-(gr-1.0)*.15-(ec-50)*.02+Math.max(0,if0-4)*.12+(cr0/CR0-1)*.8+(G.off.unemp||0)+(G.pjJobs||0)-cabInd(G,'jobs')*.03+G.tx[4]*TAXES[4][2]*ngf(G)/gd0*100*.3;G.unemp=Math.max(3,Math.min(14,un0+(unT-un0)*(unT>un0?.45:.28)));
- G.nairu=Math.max(6,Math.min(10,G.nairu+(G.unemp>G.nairu+1?.04*(G.unemp-G.nairu-1):0)-(G.unemp<G.nairu?.02:0)+(7.4-G.nairu)*.01));
+ const unT=G.nairu-.5*G.gap-(gr-1.0)*.15-(ec-50)*.008+Math.max(0,if0-4)*.12+(cr0/CR0-1)*.8+(G.off.unemp||0)+(G.pjJobs||0)-cabInd(G,'jobs')*.03+G.tx[4]*TAXES[4][2]*ngf(G)/gd0*100*.3;G.unemp=Math.max(3,Math.min(14,un0+(unT-un0)*(unT>un0?.45:.28)));
+ G.nairu=Math.max(6.5,Math.min(10,G.nairu+(G.unemp>G.nairu+1?.04*(G.unemp-G.nairu-1):0)-(G.unemp<G.nairu?.01:0)+(7.4-G.nairu)*.015));
  G.unA+=(G.unemp-G.unA)*.25;G.unLT=Math.max(.15,Math.min(.55,G.unLT+(.26+.035*(G.unA-7.4)-G.unLT)*.15));G.unH.push(+G.unemp.toFixed(2));if(G.unH.length>5)G.unH.shift();
  /* wages follow last year's prices, less so when jobs are scarce; the SMIC is raised automatically once prices are up 2 % since its last rise */
  G.wg+=((.6+.5*if0+.3*2.0-.35*(G.unemp-G.nairu)+(G.wOne||0))-G.wg)*.4;G.wOne=(G.wOne||0)*.5;
  if(G.cpi/G.smicC-1>.02){const r=(G.cpi/G.smicC-1)*100;G.smicC=G.cpi;G.wg+=.3;G.unemp=Math.min(14,G.unemp+.02);G.log.push({m:G.m,t:x('💶 Le SMIC est revalorisé automatiquement de '+fn(r)+' % : les prix ont augmenté de plus de 2 % depuis la dernière hausse.','💶 The minimum wage (SMIC) rises automatically by '+fn(r)+'%: prices are up more than 2% since its last rise.')})}
  /* Logan 2026-10-24 ("inflation stays under 1%"): price setting expects the ECB to bring inflation back to its 2 % target, so a weak patch
     no longer drifts lower for ever; cheaper ECB money lifts prices, dearer money cools them */
+ /* laws move the price LEVEL, so their inflation effect is a one-off push when they pass (or are repealed), not a permanent shift: summed for ever, they had pinned inflation near −1.5 % in long games */
+ {const oi=G.off.infl||0;if(G.offIp==null)G.offIp=oi;G.iOne=(G.iOne||0)+(oi-G.offIp)*2;G.offIp=oi}
  G.ieH=(G.ieH||[]).concat([if0]).slice(-4);const iE=.45*2.0+.55*sum(G.ieH)/G.ieH.length;
- const rd=-F.bal/gd0*100,ifT=iE-(G.bc?(G.bc.rate-2)*.12:0)+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(G.nairu-G.unemp)*.12+(G.wg-2.2)*.2+G.tx[2]*.04+G.tx[5]*.06+(G.off.infl||0)+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1.5,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
+ const rd=-F.bal/gd0*100,ifT=iE-(G.bc?(G.bc.rate-2)*.12:0)+(gr-1.0)*.3+Math.max(0,defP-1.5)*.2+Math.max(0,rd-6)*.25+(G.nairu-G.unemp)*.12+(G.wg-2.2)*.2+G.tx[2]*.04+G.tx[5]*.06+(G.iOne||0);G.iOne=(G.iOne||0)*.7;G.infl=Math.max(-1.5,Math.min(10,if0+(ifT-if0)*.3));G.cpi=G.cpi*(1+G.infl/400);
  /* deflation: households wait for lower prices and debts weigh more as incomes fall in euros (growth term above; debt/GDP rises through nominal GDP) */
  if(G.infl<0&&!G.dfl){G.dfl=1;G.log.push({m:G.m,t:x('📉 Les prix baissent ('+fn(G.infl)+' %) : les ménages repoussent leurs achats et la dette pèse plus lourd à mesure que les revenus reculent.','📉 Prices are falling ('+fn(G.infl)+'%): households put off purchases, and debt weighs more as incomes shrink.')})}else if(G.infl>.5)G.dfl=0;
  /* very low inflation: pay rises outpace prices, but tax receipts grow slowly and the ECB eases; reported once per spell */
@@ -2607,9 +2637,9 @@ function econQuarter(G){const appr0=G.appr.pm;G.prev={...G.ind};
  const I=G.ind,jd=G.sm[7]-BL(7),crA=G.crime/CR0-1;
  /* government approval, in parts: economy, public services and safety, the budget, cohesion, pledges, public mood and trends, events */
  const eco=.2*I.econ-10-.9*(G.unemp-7.6)-.8*Math.max(0,G.unemp-(G.unH[0]??G.unemp))-1.0*Math.max(0,G.infl-3)-.5*Math.max(0,.5-G.infl)+.6*Math.max(-4,Math.min(2,G.wg-G.infl-.8))+.4*(G.gdpGr-1.0)-Math.max(0,G.debt-118)*.4-Math.max(0,(G.spr||80)-100)*.04,
-  soc=.22*I.health+.15*I.hous+.1*I.edu+.08*I.clim-27.5-15*crA+1.5*Math.tanh(jd/6),coh=(G.coh-50)*.1,bud=(G.bmood=budMood(G,G.sm,G.tx,F).tot),pl=plRecord(G),md=moodTick(G),cr=crPress(G),lw=codeMood(G);
- G.abd={eco,soc,bud,coh,pl,md,cr,lw,ev:G.ev};
- const tgt=36.5+eco+soc+coh+pl+md+cr+lw+G.ev+bud;
+  soc=.22*I.health+.15*I.hous+.1*I.edu+.08*I.clim-27.5-15*crA+1.5*Math.tanh(jd/6),coh=(G.coh-50)*.1,bud=(G.bmood=budMood(G,G.sm,G.tx,F).tot),pl=plRecord(G),md=moodTick(G),cr=crPress(G),lw=codeMood(G),fat=fatigue(pmYears(G));
+ G.abd={eco,soc,bud,coh,pl,md,cr,lw,fat,ev:G.ev};
+ const tgt=36.5+eco+soc+coh+pl+md+cr+lw+fat+G.ev+bud;
  G.appr.pm=appr0+((tgt>52?52+(tgt-52)*.6:tgt)-appr0)*.35+(rnd()-.5)*2;G.ev*=.6;
  /* the public gets used to the budget: what counts as a cut fades over about two years */
  G.bref=G.bref.map((v,i)=>v+(G.sm[i]-v)*.2);G.exR=(G.exR??bxMood(G,G))+(bxMood(G,G)-(G.exR??bxMood(G,G)))*.2;G.tref=G.tref.map((v,i)=>v+(G.tx[i]-v)*.2);
@@ -3210,9 +3240,9 @@ const LEG={
  gen(G,party,o={}){
   const heat=G.heat||{},stress=lcl((G.debt-110)/15,0,1),doms=LCORE,mine=party===SIM.me;
   const dw=k=>{let w=1+Math.max(0,50-G.ind[k])/8+(heat[k]||0)*1.2;if(mine&&LTH[k]!=null&&myProm(G).some(p=>p.t===LTH[k]&&p.s!=='kept'))w+=1.2;
-   w*=Math.pow(.65,(G.laws||[]).filter(l=>l.act&&l.dom===k&&G.q-l.q<=2).length);return w};
+   w*=Math.pow(.65,(G.laws||[]).filter(l=>l.act&&l.dom===k&&G.q-l.q<=2).length);return w*cnW(G,DCAT[k])};
   /* besides the six core files, each party also legislates on the issues it owns: immigration for the RN, Europe for the centre, the cost of living for LFI (Logan 2026-10-23) */
-  const XD=['liv','immig','eur','tax','def','lab','soc','energy'],xw=d=>party>=0&&party!==7&&OWN[party]?Math.max(0,OWN[party][DCAT[d]]-.05)*2.4:0;
+  const XD=['liv','immig','eur','tax','def','lab','soc','energy'],xw=d=>party>=0&&party!==7&&OWN[party]?Math.max(0,OWN[party][DCAT[d]]-.05)*2.4*cnW(G,DCAT[d]):0;
   const dom=o.dom||lPick(doms.concat(XD),k=>XD.includes(k)?xw(k):dw(k)),gap=50-(G.ind[dom]??50)+(heat[dom]||0)*3;
   const aw=a=>{if(pNo(party,dom,a))return 0;const A=LARC[a],ef=A.i*((LDOM[dom].flip&&LDOM[dom].flip[a])?-1:1);let w=.6+Math.max(0,ldot(A.ax,LPAR[party]))*1.4;
    if(gap>12&&ef>0)w+=1.5;if(gap<-8&&ef<0)w+=.8;if(stress>.5&&A.c<0)w+=1.2*stress;if(stress>.5&&A.c>0)w*=1-.4*stress;if(o.relief&&ef<0)w=0;
@@ -3260,7 +3290,7 @@ const LEG={
  /* one bill a given party would sponsor (AI government, opposition proposals, deal concessions) */
  aiPick(G,party){G.laws=G.laws||[];G.heat=G.heat||{};
   if(party===G.pm&&rnd()<.55){const el=(G.prom||[]).filter(p=>!p.s&&p.dl!=null&&G.gov.includes(p.k)).map(p=>p.i).filter(i=>!G.passed.includes(i)&&!(G.done||[]).includes(i)&&!(G.offer||[]).includes(i)&&G.q-((G.lastBillQ||{})[i]??-99)>=2);if(el.length)return pick(el)}
-  if(rnd()<.35){const el=aiPlat(party).filter(i=>mFits(party,i)&&!G.passed.includes(i)&&!(G.done||[]).includes(i)&&G.q-((G.lastBillQ||{})[i]??-99)>=2);if(el.length)return pick(el)}
+  if(rnd()<.35){const el=aiPlat(party).filter(i=>mFits(party,i)&&!G.passed.includes(i)&&!(G.done||[]).includes(i)&&G.q-((G.lastBillQ||{})[i]??-99)>=2);if(el.length)return lPick(el,i=>cnW(G,MEAS[i][0]))}
   {const g=codeGrief(G,party);if(rnd()<Math.min(.16,.04+g*.01)){const b=codeGen(G,party);if(b&&b.st[party]>0)return pushBill(b)}}
   for(let t=0;t<8;t++){const b=LEG.gen(G,party);if(b.st[party]>0&&bFits(party,b))return pushBill(b)}return null},
  cost(G,b){return Math.ceil(b.k*(1+.5*Math.max(0,(G.tabled||0)-1)))},
@@ -3438,7 +3468,7 @@ function billRow(G,bi,o){const b=B(bi);if(!b)return'';const net=lr1((+b.c||0)-(+
  const crs=(G.cr||[]).filter(q=>crDef(q.id)).map(q=>{const nm=safeText(crNm(q));if(b.cr===q.id)return `<span class="cr">🚨 ${nm}</span>`;if(!crRel(q.id,b))return'';const sc=crScore(q.id,b);return sc>=.5?`<span class="cr" title="${x('Aide face à la crise','Helps with the crisis')}">🚨 ${nm}</span>`:sc<=-.5?`<span class="bad" title="${x('Nuit à la crise','Works against the crisis')}">⚠ ${nm}</span>`:''}).join('');
  const tg={crisis:['URGENCE','URGENT','u'],repeal:['ABROGATION','REPEAL','r'],renew:['PROROGATION','RENEWAL','n']}[b.tag];
  const {ok,bad}=promSplit(G,b);
- const tags=(tg?`<span class="${tg[2]}">${x(tg[0],tg[1])}</span>`:'')+crs+ok.map(q=>`<span class="ok" title="${x('Tient une promesse','Keeps a pledge')}">✦ ${safeText(promLabel(q))}</span>`).join('')+bad.map(q=>`<span class="bad" title="${x('Contredit une promesse','Breaks a pledge')}">⚠ ${safeText(promLabel(q))}</span>`).join('')+(o.tag||'');
+ const tags=(tg?`<span class="${tg[2]}">${x(tg[0],tg[1])}</span>`:'')+crs+ok.map(q=>`<span class="ok" title="${x('Tient une promesse','Keeps a pledge')}">✦ ${safeText(promLabel(q))}</span>`).join('')+bad.map(q=>`<span class="bad" title="${x('Contredit une promesse','Breaks a pledge')}">⚠ ${safeText(promLabel(q))}</span>`).join('')+elyTag(G,bi,b)+(o.tag||'');
  const ks=P.map((_,k)=>k).filter(k=>G.seats[k]>0&&b.st),sv=k=>b.st[k]||0,nm=a=>a.map(k=>`<span style="color:${pt(k)}">${P[k].n}</span>`).join(' ');
  const fo=ks.filter(k=>sv(k)>0),ag=ks.filter(k=>sv(k)<0),ab=ks.filter(k=>!sv(k));
  const who=o.sp!=null?o.sp:b.by;
@@ -3523,7 +3553,7 @@ function voteHTML(G){const v=G.vote;if(!v)return'';if(v.kind==='cens')return cen
  const me=SIM.me,b=v.kind==='bill'?B(v.bi):null,stance=!dn&&!run&&v.step===0&&(v.kind==='bill'||v.kind==='budget'),dlS=v.kind==='budget'&&(dealOf(G,me)||{}).t==='s';
  return `<div class="card votecard" id="votebox"><h3>${x('Vote à l’Assemblée','Assembly vote')} · ${safeText(v.title)}</h3>${b?billFold(G,v.bi,{sp:v.sponsor,priv:v.priv}):''}
   ${hemicycle(G.seats,{vc})}${voteTicker(v,cast,0)}${br(x('Pour','For'),f,VG)}${br(x('Contre','Against'),a,VR)}${br(x('Abstentions','Abstentions'),ab,VA)}
- ${stance?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Position de votre groupe','Your group’s stance')}</b><p class="note">${x('Choisissez la consigne de vote de vos députés avant d’appeler le vote. Vous pouvez en changer jusqu’au début du scrutin.','Choose how your MPs vote before calling the vote. You can change it until the roll call starts.')}${dlS?' '+x('Ne pas voter pour rompt votre accord de soutien sans participation.','Not voting for it breaks your confidence-and-supply deal.'):''}${v.sponsor===me?' '+x('C’est votre texte : voter contre le fera sans doute tomber.','This is your own text: voting against it will probably sink it.'):''}${G.gov.includes(me)&&!v.priv?' '+x('Voter contre un texte du gouvernement que vous soutenez fâche le Premier ministre.','Voting against a bill of the government you sit in angers the Prime Minister.'):''}</p><div style="display:flex;gap:8px;flex-wrap:wrap">${[[1,'Pour','For'],[-1,'Contre','Against'],[0,'Abstention','Abstain']].map(o=>`<button class="chip ${v.pos[me]===o[0]?'on':''}" data-gvstance="${o[0]}">${x(o[1],o[2])}</button>`).join('')}</div></div>`:''}
+ ${stance?`<div class="card" style="margin:12px 0;padding:12px"><b>${x('Position de votre groupe','Your group’s stance')}</b>${dlS?`<p class="note">${x('Ne pas voter pour rompt votre accord de soutien sans participation.','Not voting for it breaks your confidence-and-supply deal.')}</p>`:''}<div style="display:flex;gap:8px;flex-wrap:wrap">${[[1,'Pour','For'],[-1,'Contre','Against'],[0,'Abstention','Abstain']].map(o=>`<button class="chip ${v.pos[me]===o[0]?'on':''}" data-gvstance="${o[0]}">${x(o[1],o[2])}</button>`).join('')}</div></div>`:''}
  <p style="font:800 20px 'Bricolage Grotesque',sans-serif;margin:8px 0">${dn?(v.pass?'✓ '+x('ADOPTÉ','PASSED'):'✗ '+x('REJETÉ','DEFEATED'))+' ('+v.f+'–'+v.a+')':run?x('Vote en cours…','Voting…'):x('Prêt à voter','Ready to vote')}</p>${dn?`<button class="act" data-gvclose><b>${x('Fermer','Close')}</b></button>`:`<button class="act vbtn" data-gvgo style="display:inline-block"><b>${v.step?x('Continuer','Continue'):x('Appeler le vote','Call the vote')}</b></button> <button class="chip" data-gvskip>${x('Passer','Skip')}</button>`}</div>`}
 function drawVote(){const el=$('#votebox');if(el&&SIM.G)el.outerHTML=voteHTML(SIM.G)}
 function vtick(){const G=SIM.G,v=G&&G.vote;if(!v||v.done){clearInterval(st.vt);return}v.step=Math.min(v.tot,v.step+24);if(v.step>=v.tot){clearInterval(st.vt);finishVote();save();render()}else drawVote()}
@@ -3587,7 +3617,7 @@ function oppBills(G){const pool=P.map((_,k)=>k).filter(k=>k!==7&&k!==SIM.me&&!G.
    and prefers bills that pass, are popular, keep a pledge before its deadline, honour the coalition contract or answer a crisis */
 function aiGovPick(G,taken){const pm=G.pm,L=[];for(let t=0;t<7;t++){const bi=LEG.aiPick(G,pm);if(bi!=null&&!taken.includes(bi)&&!L.includes(bi)&&!G.done.includes(bi))L.push(bi)}if(!L.length)return null;
  const sc=bi=>{const b=B(bi);if(!b)return -9;const v=gvote(G,b.st,bi,false,false,pm),m=(v.f-v.a)/SEATS,pl=(G.prom||[]).find(p=>p.i===bi&&!p.s&&p.dl!=null&&G.gov.includes(p.k)),dm=(G.dem||[]).some(d=>d.m===bi);
-  return (v.pass?2:-2.5)+clamp(m*5,-1,1)+lcl(+(b.ap||0),-3,3)*.3+(pl?1.2+Math.max(0,4-(pl.dl-G.q))*.3:0)+(dm?1:0)+(b.tag==='crisis'?.8:0)-G.gov.filter(k=>k!==pm&&b.st[k]<0).length*.6+rnd()*.3};
+  return (v.pass?2:-2.5)+clamp(m*5,-1,1)+lcl(+(b.ap||0),-3,3)*.3+(pl?1.2+Math.max(0,4-(pl.dl-G.q))*.3:0)+(dm?1:0)+(b.tag==='crisis'?.8:0)-G.gov.filter(k=>k!==pm&&b.st[k]<0).length*.6+elyBias(G,bi)+rnd()*.3};
  const R=L.map(bi=>[sc(bi),bi]).sort((a,b)=>b[0]-a[0]);return R[0][0]>-1?R[0][1]:null}
 /* 49.3 on a defeated government bill: routine when the censure that follows would fail; when it would pass, only as a way out of deadlock for a bill that matters (a pledge, the coalition contract, a crisis) (Logan 2026-10-23) */
 function ai493(G,bi){const b=B(bi);if(!b)return false;if(threat(G,.08)<MAJ)return rnd()<.6;const dl=deadlock(G),key=(G.prom||[]).some(p=>p.i===bi&&!p.s&&G.gov.includes(p.k))||(G.dem||[]).some(d=>d.m===bi)||b.tag==='crisis';return dl>=2&&key&&rnd()<.25+.1*(dl-2)}
@@ -4181,9 +4211,10 @@ function crMoRoll(G,c){const o=crMoOdds(G,c);if(!o)return 0;const r=rnd(),v=r<o[
 const crFunded=(G,C)=>C.bl!=null&&G.bu&&G.bu[C.bl]>=BL(C.bl)*1.03;
 /* the AI government's response (player not in charge): minister, ministry budget and a response bill that comes to a real vote next quarter */
 /* an AI government now acts on most crises, as a player would (Logan 2026-10-23); opposition pressure still makes it likelier */
-function crAIOdds(G,c){return Math.min(.95,.62+.07*c.sev+.15*(c.prs||0)+(G.appr.pm<35?.05:0))}
+/* Logan 2026-10-24 ('never a real crisis'): AI governments act less often and fumble more, so crises can drag on, worsen and fail */
+function crAIOdds(G,c){return Math.min(.85,.45+.06*c.sev+.15*(c.prs||0)+(G.appr.pm<35?.05:0))}
 function crAI(G,c){const C=crDef(c.id),a=crAIOdds(G,c),M=crMf(c),gr=c.gr=c.gr||[],add=(t,v)=>{gr.unshift({q:G.q,t,v});if(gr.length>6)gr.pop();crLog(G,'🏛️ '+crNm(c)+x(' : ',': ')+x(t[0],t[1]))};let g=0,did=0;
- if(rnd()<a){did=1;const r=rnd(),v=r<.6?25:r<.85?12:-8;g+=v;if(v>0)crFx(G,{imb:c.id==='heat'?-.012*v:0,cush:c.id==='slow'?.006*v:0,v:c.id==='rec'?.02*v:0});
+ if(rnd()<a){did=1;const r=rnd(),v=r<.5?22:r<.8?10:-10;g+=v;if(v>0)crFx(G,{imb:c.id==='heat'?-.012*v:0,cush:c.id==='slow'?.006*v:0,v:c.id==='rec'?.02*v:0});
   add([M[0]+' ('+MIN[c.sl][3]+')'+(v>12?' : réussi.':v>0?' : résultats mitigés.':' : bourde.'),M[1]+' ('+MIN[c.sl][4]+')'+(v>12?': it works.':v>0?': mixed results.':': a fumble.')],v)}
  if(C.bl!=null&&rnd()<a*.6){did=1;g+=8;add(['Rallonge budgétaire : '+BU[C.bl][0]+'.','Extra funding: '+BU[C.bl][1]+'.'],8)}
  if(c.aib!=null&&(!B(c.aib)||G.q-(c.aibq??G.q)>=2||(c.pass||[]).includes(c.aib)))c.aib=null;
@@ -4231,7 +4262,7 @@ function crTick(G){if(!G||G.pm==null)return;G.cr=G.cr||[];G.crDone=G.crDone||[];
    if(c.ctl>=100)end='win';else if(c.crit>=2)end='fail';else if(G.q-c.q0>=(c.lim||8))end=c.ctl>=60?'part':'fail'}
   if(!end){crHit(G,C,c.sev*(c.hm||1)*.5);crPol(G,c);crMap(G,c,-.004*c.sev);if(c.sp)G.ind[c.sp]=cl(G.ind[c.sp]-.4*c.sev);if(G.q-c.q0>=1&&rnd()<.33)crTwist(G,c);if(c.sev>sv0)crPopAdd(G,c,'up')}else crEnd(G,c,end)}
  crSpawn(G);if(G.bc)G.bc.nb=0;
- for(const k in CN0){const t=CN0[k]+G.cr.reduce((a,c)=>a+(crDef(c.id).dom===k?.5*c.sev:0)+(c.sp===k?.25*c.sev:0),0)+Math.max(0,45-(G.ind[k]??50))*.03+(k==='econ'?Math.max(0,G.infl-2.5)*.35+Math.max(0,-((G.wg??2.2)-G.infl))*.2+Math.max(0,G.unemp-8)*.12:0)+(k==='tax'?Math.max(0,((G.debt||110)-110)/25):k==='pen'&&G.strike?.5*(G.strike.sev||1):0)+codeCn(G,k);G.cn[k]=G.cn[k]??CN0[k];G.cn[k]=G.cn[k]+(t-G.cn[k])*.5}}
+ cnNews(G);for(const k in CN0){const t=cnTarget(G,k);G.cn[k]=G.cn[k]??CN0[k];G.cn[k]=G.cn[k]+(t-G.cn[k])*.5}}
 const CRPOL={aust:{0:1,1:.8,2:.5},reform:{0:1,5:.7,1:.4},strike:{0:1,5:.6,1:.2},farm:{5:1,4:.6,6:.3},migr:{5:1,6:.7,4:.35},riot:{5:1,6:.5,4:.3},terr:{5:.8,4:.5,6:.4},dom:{0:.6,5:.4},hous:{0:.6,1:.4},urg:{1:.5,0:.5},nrj:{5:.6,0:.4},debt:{4:.5,5:.5}};
 /* political fallout: serious crises feed the parties that own the grievance, strain the majority and cost the Élysée */
 function crPol(G,c){const W=CRPOL[c.id];if(!W||c.sev<2)return;const s=c.sev-1,ctlF=1-Math.min(100,c.ctl||0)/140;if(ctlF<=.3)return;const f=s*ctlF;
@@ -4271,7 +4302,7 @@ function crCard(G,c){const C=crDef(c.id),gov=ctrl(),sv=c.sev,age=G.q-c.q0,col=['
  return `<div class="card cr-card" style="border-left-color:${col}"><div class="cr-h"><span class="cr-em">${C.em}</span><div style="flex:1"><b>${crNm(c)}</b><div class="note">${x(CNL[C.dom][0],CNL[C.dom][1])} · ${age?age+x(' trimestre'+(age>1?'s':''),' quarter'+(age>1?'s':'')):x('nouvelle','new')}${pace}</div></div><span class="cr-stage" style="color:${col}"><span class="cr-dots">${dots}</span>${x(CRST[sv-1][0],CRST[sv-1][1])}</span></div><p class="note" style="margin:6px 0">${crTxt(c)}</p>${tw}${econ}${met}${ctl}${risk}${opp}${C.econ?`<div class="note" style="margin-top:6px">💡 ${crHelp(c)}</div>`:''}<div class="cr-opts">${bills}${mo}</div></div>`}
 /* what voters care about: shown in the Vote intention card (Logan 2026-10-21) */
 function careHTML(G){const c0=(G&&G.cn)||CN0,cn={},camp=!(G&&typeof G==='object')&&SIM.sal;for(const k in CN0){const t=CCAT[k];cn[t]=(cn[t]||0)+(c0[k]??CN0[k])}if(camp)for(const t in cn)cn[t]*=SIM.sal[t]||1;const tot=Object.values(cn).reduce((a,b)=>a+b,0),top=Object.entries(cn).sort((a,b)=>b[1]-a[1]),PC=['#2f6fd0','#d05a2f','#2fa36b','#8a4fd0','#c9a227','#4fb3c9','#d0457a','#7a8a99','#5b4fd0','#3f8f5a','#b07a2f'];
- return `<div class="gp-care"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${pie(top.map(([k,v],i)=>[v,PC[i%11],x(TH[k][0],TH[k][1])]),104,.5)}<div class="pie-legend" style="grid-template-columns:1fr;margin:0;font-size:13px">${top.map(([k,v],i)=>`<span><i style="background:${PC[i%10]}"></i>${x(TH[k][0],TH[k][1])} ${Math.round(v/tot*100)} %</span>`).join('')}</div></div></div>`}
+ return `<div class="gp-care"><div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">${pie(top.map(([k,v],i)=>[v,PC[i%11],x(TH[k][0],TH[k][1])]),104,.5)}<div class="pie-legend" style="grid-template-columns:1fr;margin:0;font-size:13px">${top.map(([k,v],i)=>`<span><i style="background:${PC[i%10]}"></i>${x(TH[k][0],TH[k][1])} ${Math.round(v/tot*100)} %</span>`).join('')}</div></div>${camp?'':cnWhyHTML(G)}</div>`}
 function gCris(G){G.cr=G.cr||[];G.crDone=G.crDone||[];
  const cards=G.cr.length?G.cr.slice().sort((a,b)=>b.sev-a.sev).map(c=>crCard(G,c)).join(''):`<div class="card"><p class="note" style="margin:0">${x('Aucune crise pour l’instant. Elles peuvent éclater à tout moment, et le cycle économique peut en déclencher.','No crisis right now. One can break out at any time, and the business cycle can set one off.')}${G.bc?' '+x('Risque de récession ce trimestre : ','Recession risk this quarter: ')+Math.round(bcRisk(G)*100)+' %.':''}</p></div>`;
  return `<h3 class="nv-h">🚨 ${G.cr.length?x('Crises à traiter','Crises needing a response'):x('Crises','Crises')}</h3><div class="nvcr">${cards}</div>`}
@@ -4423,7 +4454,7 @@ function xOpp(G,r){const p=G.xp0;if(!p||p.oppR!=null)return;p.oppR=r;const o=xDe
  G.log.push({m:G.m,t:x('Votre groupe : ','Your group: ')+x(GEVOPP[r][0],GEVOPP[r][1]).toLowerCase()})}
 /* each quarter: active shocks weigh on growth, jobs and prices, less if the response worked */
 function extTick(G){if(G.xp){const D=xDef(G.xp.id);xDecide(G,D.o.length-1)}
- (G.ext||[]).forEach(e=>{const D=xDef(e.id);if(!D||e.left<=0)return;const k=e.sev*(1-e.mit);if(D.q.gr&&G.bc)G.bc.v+=D.q.gr*k;if(D.q.un)G.unemp=Math.min(14,G.unemp+D.q.un*k);/* ×3: price shocks pass through to the shelf within a few quarters (Logan 2026-10-24: inflation barely moved) */if(D.q.infl)G.iOne=(G.iOne||0)+D.q.infl*k*3;
+ (G.ext||[]).forEach(e=>{const D=xDef(e.id);if(!D||e.left<=0)return;const k=e.sev*(1-e.mit);if(D.q.gr&&G.bc)G.bc.v+=D.q.gr*k;if(D.q.un)G.unemp=Math.min(14,G.unemp+D.q.un*k);/* ×2: price shocks pass through to the shelf within a few quarters (Logan 2026-10-24: inflation barely moved) */if(D.q.infl)G.iOne=(G.iOne||0)+D.q.infl*k*2;
   if(--e.left<=0){if(e.cost)G.cost=Math.max(0,(G.cost||0)-e.cost);G.log.push({m:G.m,t:(D.em||'')+' '+x(D.f,D.e)+x(' : la pression retombe.',': the pressure eases.')})}});
  G.ext=(G.ext||[]).filter(e=>e.left>0)}
 /* the decision card (Assembly tab) */
@@ -5075,7 +5106,7 @@ function gBud(G){const c=ctrl(),due=budgetDue(G),busy=G.vote&&!G.vote.done,bv=G.
 /* Map pane */
 /* Government approval: the chart, who carries it (cabinet share) and what drives it */
 function gApprCard(G,A,xa,noWho){const sh=G.pm!=null?govShare(G):{},gk=Object.keys(sh).map(Number),d=G.abd||{},sg=v=>(v>=0?'+':'−')+fn(Math.abs(v),1),
-  rows=[[x('Économie (croissance, emploi, prix, dette)','Economy (growth, jobs, prices, debt)'),d.eco],[x('Services publics et sécurité','Public services and safety'),d.soc],[x('Budget','Budget'),d.bud],[x('Cohésion de la majorité','Cohesion of the majority'),d.coh],[x('Bilan des engagements','Pledge record'),d.pl],[x('Humeur du pays et tendance des sondages','National mood and poll trend'),d.md],[x('Crises (en cours et passées)','Crises (current and past)'),d.cr],[x('Lois en vigueur (retraites, travail, santé)','Laws in force (pensions, labour, health)'),d.lw],[x('Événements récents','Recent events'),d.ev]].filter(r=>r[1]!=null);
+  rows=[[x('Économie (croissance, emploi, prix, dette)','Economy (growth, jobs, prices, debt)'),d.eco],[x('Services publics et sécurité','Public services and safety'),d.soc],[x('Budget','Budget'),d.bud],[x('Cohésion de la majorité','Cohesion of the majority'),d.coh],[x('Bilan des engagements','Pledge record'),d.pl],[x('Humeur du pays et tendance des sondages','National mood and poll trend'),d.md],[x('Crises (en cours et passées)','Crises (current and past)'),d.cr],[x('Lois en vigueur (retraites, travail, santé)','Laws in force (pensions, labour, health)'),d.lw],[x('Usure du pouvoir','Time in office'),d.fat||null],[x('Événements récents','Recent events'),d.ev]].filter(r=>r[1]!=null);
  return `<div class="card"><h3>${x('Popularité du gouvernement','Government approval')} · ${Math.round(G.appr.pm)} %</h3>${lineChart([{c:pc(G.pm??-1),v:A.map(a=>a.pm/100)},{c:'var(--mute)',v:A.map(a=>a.pres/100)}],xa,{lo:.1,hi:.7,ticks:[.2,.4,.6],title:x('Popularité','Approval'),mark:.5})}<div class="pie-legend"><span><i style="background:${pc(G.pm??-1)}"></i>${x('Gouvernement','Government')} ${Math.round(G.appr.pm)} %</span><span><i style="background:var(--mute)"></i>${x('Président','President')} ${Math.round(G.appr.pres)} %</span></div>
  ${noWho?'':gWho(G)}
  ${rows.length?`<h4 style="margin:10px 0 4px">${x('Ce qui la fait bouger','What moves it')}</h4>${rows.map(r=>`<div class="grow" style="display:flex;justify-content:space-between"><span>${r[0]}</span><b style="color:${r[1]>.3?'var(--ok)':r[1]<-.3?'var(--bad)':'inherit'}">${sg(r[1])}</b></div>`).join('')}<p class="note">${x('Écart par rapport à un niveau neutre de 36 %. La popularité rejoint progressivement sa cible.','Difference from a neutral 36%. Approval moves gradually towards its target.')}</p>`:''}</div>`}
@@ -5089,8 +5120,9 @@ function elyPanel(img,lab,k,sub,extra,ap){return `<div class="ely-p"><div class=
 function gEly(G){const me=SIM.me,pmK=G.pm,part=(G.gov||[]).filter(k=>k!==pmK),tile=k=>`<span class="ely-t" style="--pc:${pc(k)}">${plogo(k,22)||''}<b>${P[k].n}</b><i>${G.seats[k]||0}</i></span>`;
  const govX=pmK==null?'':`<div class="ely-row">${part.length?`<span class="ely-g"><span class="ely-l">${x('Gouvernement','Government')}</span>${part.map(tile).join('')}</span>`:''}${G.sup.length?`<span class="ely-g"><span class="ely-l">${x('Soutien','Support')}</span>${G.sup.map(tile).join('')}</span>`:''}${G.nc.length?`<span class="ely-g"><span class="ely-l">${x('Non-censure','No-censure')}</span>${G.nc.map(tile).join('')}</span>`:''}</div>`;
  const presSub=x('Président de la République · présidentielle en ','President of the Republic · next election ')+MONTHS(G.presM),pmSub=pmK==null?x('Gouvernement démissionnaire','Caretaker government'):x('Premier ministre · ','Prime Minister · ')+(G.gov.length>1?x('coalition de ','coalition of ')+G.gov.length+x(' partis',' parties'):x('gouvernement monocolore','single-party government'))+' · '+sum([...G.gov,...G.sup].map(k=>G.seats[k]||0))+x(' députés',' MPs');
- const acts=gSnap(G)+gResign(G);
+ const acts=elyActs(G)+gSnap(G)+gResign(G);
  return `<div class="ely-top">${elyPanel(GIMG.ely,x('Palais de l’Élysée','The Élysée Palace'),G.pres,presSub,cohab(G)?`<div class="ely-row"><span class="ely-l">${x('Cohabitation','Cohabitation')}</span></div>`:'',G.appr.pres)}${elyPanel(GIMG.cab,x('Conseil des ministres','The Council of Ministers'),pmK,pmSub,govX,pmK==null?null:G.appr.pm)}</div>
+ ${elyAgendaCard(G)}${partiesCard(G)}
  <div class="ely-acts">${acts||`<div class="card"><p class="note">${x('Seul le président peut dissoudre l’Assemblée ou nommer un nouveau gouvernement, et seul le Premier ministre peut démissionner. Vous n’occupez aucune de ces fonctions.','Only the President can dissolve the Assembly or appoint a new government, and only the Prime Minister can resign. You hold neither office.')}</p></div>`}</div>
  ${gDash(G)}`}
 /* Dashboard */
@@ -5179,6 +5211,7 @@ function govClick(t,D){const G=SIM.G;
  if(D.leave){const v=D.leave;if(v==='ask'){st.leaveAsk=1;return R()}st.leaveAsk=0;if(v!=='no')govLeave(G,SIM.me,v);return R()}
  if(D.resign){const v=D.resign;if(v==='ask'){st.resAsk=1;return R()}if(v==='no'){st.resAsk=0;return R()}st.resAsk=0;govResign(SIM.G,v==='go'?null:v);return true}
  if(t.hasAttribute('data-pdismiss')){presDismiss(SIM.G,false);return true}
+ if(D.ely){elyDo(G,D.ely,D.ei);return R()}
  if(t.hasAttribute('data-diss')){dissolve(x('le président dissout l’Assemblée','the President dissolves the Assembly'));return true}
  if(t.hasAttribute('data-pdue')){presElection();return true}
  return false}
@@ -5539,11 +5572,17 @@ function platCard(){const me=SIM.me,c=platCost(me)+(SIM.costAdj||0),cr=credOf(me
  ${SIM.plat.length?SIM.plat.map(m=>`<div class="note">• ${mName(m)} <span style="opacity:.8">(${MEAS[m][4]>0?'+':''}${MEAS[m][4]} ${x('Md€','bn€')})</span></div>`).join(''):`<p class="note">${x('Aucune mesure : utilisez « Annonce de programme ».','No measures yet: use “Policy announcement”.')}</p>`}
  <details style="margin-top:8px"><summary><b>${x('Les programmes rivaux','Rival platforms')}</b></summary>${ORD.filter(k=>k!==7&&k!==me&&!(PRES()&&!natShares(true)[k])).map(k=>`<div style="margin:6px 0">${chipP(k)} <span class="note">${platCost(k)} ${x('Md€','bn€')}</span><div class="note">${SIM.ai[k].plat.map(mName).join(' · ')||'—'}</div></div>`).join('')}</details>
  <details open style="margin-top:6px"><summary><b>${x('Ce qui préoccupe les Français','What voters care about')}</b></summary>${careHTML(120)}</details></div>`}
+/* today's gain from your own actions, and last night's split (Logan 2026-10-24) */
+function dayLedger(L){const f=v=>`<b style="color:${Math.abs(v)<.0005?'var(--mute)':v>0?'var(--ok)':'var(--bad)'}">${v>=0?'+':'−'}${Math.abs(v*100).toFixed(1)}</b>`,today=shareNow()-dayStart();
+ const t=`<span>${x('Aujourd’hui, vos actions : ','Today, your actions: ')}${f(today)}</span>`;
+ const y=L&&L.own!=null?`<span>${x('Hier : vos actions ','Yesterday: your actions ')}${f(L.own)} · ${x('rivaux ','rivals ')}${f(L.riv)} · ${x('actualité et usure ','news and fading ')}${f(L.nw)}</span>`:'';
+ return `<div class="note hq-led" style="margin:0 16px 8px;display:flex;flex-direction:column;gap:2px" title="${x('Vos gains restent acquis : ils s’usent d’environ 3 % par jour, mais les rivaux font campagne eux aussi chaque nuit.','Your gains stay: they fade about 3% a day, but the rivals campaign every night too.')}">${t}${y}</div>`}
 function turnCard(){const ph=SIM.phase,me=SIM.me,L=SIM.last,r1=ph==='r1',D=r1?D1:D2,dn=r1?SIM.day:SIM.r2day,K=campK();
  let h=`<div class="card hq" id="turn" style="--pk:${pc(me)}"><div class="hq-top">${plogo(me,40)||`<span class="plogo-x">${P[me].n}</span>`}<div><b>${pfull(me)}</b><small>${x('Votre campagne','Your campaign')}</small></div></div>
  ${presOut()?`<p class="note" style="margin:10px 16px 0">${K!=null?x('Éliminé au 1er tour : vous faites campagne pour ','Out after the first round: you are campaigning for ')+`<b style="color:${pt(K)}">${P[K].n}</b>.`:x('Éliminé au 1er tour et sans consigne : vous suivez la campagne sans y prendre part.','Out after the first round with no endorsement: you follow the campaign without taking part.')}</p>`:''}
  <div class="hq-day"><div class="l"><span><b>${r1?x('Jour ','Day '):x('Entre-deux-tours, jour ','Run-off week, day ')}${dn}</b> / ${D}</span><span>${dn>=D?(r1?x('Dernier jour avant le 1er tour','Last day before the first round'):x('Dernier jour avant le second tour','Last day before the run-off')):`${r1?x('1er tour dans','First round in'):x('Second tour dans','Run-off in')} <b>${D-dn+1}</b> ${x('jours','days')}`}</span></div><div class="hq-seg" style="--n:${D}">${Array.from({length:D},(_,i)=>`<i class="${i+1<dn?'d':i+1===dn?'t':''}"></i>`).join('')}</div></div>
- <div class="hq-st"><div><small>${x('Actions','Actions')}</small><div class="pips">${Array.from({length:Math.max(3,SIM.ap)},(_,i)=>`<i class="${i<SIM.ap?'':'o'}"></i>`).join('')}</div></div><div><small>${x('Fonds','Funds')}</small><b>${SIM.funds} k€</b></div><div><small>${x('Score','Share')}</small><b>${pct(PRES()&&ph==='r2c'&&SIM.fin&&SIM.fin.includes(me)?presR2Nat()[me]:natShares(true)[me])}</b>${L?dTick(L.d):''}</div></div>
+ <div class="hq-st"><div><small>${x('Actions','Actions')}</small><div class="pips">${Array.from({length:Math.max(3,SIM.ap)},(_,i)=>`<i class="${i<SIM.ap?'':'o'}"></i>`).join('')}</div></div><div><small>${x('Fonds','Funds')}</small><b>${SIM.funds} k€</b></div><div><small>${x('Score','Share')}</small><b>${pct(shareNow())}</b>${dTick(shareNow()-dayStart())}</div></div>
+ ${dayLedger(L)}
  ${SIM.msg?`<p role="alert" style="color:var(--bad);font-size:13px;margin:0 16px 8px">${SIM.msg}</p>`:''}
  <button class="hq-go" data-next><b>${x('Terminer la journée','End the day')} →</b><small>${r1?(SIM.day===D1?x('Ensuite, le 1er tour','The first round is next'):x('Sondages mis à jour · +'+(PRES()?PC.day:40)+' k€','Polls update · +'+(PRES()?PC.day:40)+' k€')):(SIM.r2day===D2?x('Ensuite, le second tour','The run-off is next'):x('Projections mises à jour','Projections update'))}</small></button>
  <div class="hq-iss">🎯<div><small>${x('Votre thème central','Your central issue')}</small><b>${x(TH[SIM.theme][0],TH[SIM.theme][1])}</b></div></div>
@@ -5818,7 +5857,7 @@ const _doAct=doAct;doAct=function(i,c){if(!PRES())return _doAct(i,c);c=c||{};con
  return _doAct(i,c)};
 /* ===== AI candidates campaign the presidential way ===== */
 function pcAiDay(){SIM.rv=[];if(pcBlackout())return;const sh=natShares(true),r2=r2mode(),S=PCi();
- for(const k of pcCands()){if(k===SIM.me||k===7)continue;const o=SIM.ai[k];o.ap=sh[k]<.05?2:3;o.funds=Math.min(o.funds,pcCap()-S.spent[k]);let guard=0;
+ for(const k of pcCands()){if(k===SIM.me||k===7)continue;const o=SIM.ai[k];o.ap=3;o.funds=Math.min(o.funds,pcCap()-S.spent[k]);let guard=0;
   while(o.ap>0&&guard++<6){const opts=[],cons=(i,s,c)=>{const a=ACT[i];if(a.ap<=o.ap&&actCost(i)<=o.funds&&s>0)opts.push({i,sc:s+rnd()*.35,c})};
    const d=presAITarget(k,null,r2),dp=d&&d.dp,ar=ARENA.map((a,j)=>[depSeats(a[2]).reduce((s,dd)=>s+latent(dd)[k],0)/(1+pcN(k,'gm'+j)),j]).sort((p,q)=>q[0]-p[0])[0][1];
    cons(PA.gm,(r2?1.6:1.4)/(1+pcN(k,'gm')*.5),{ar});
@@ -5844,7 +5883,7 @@ function pcTick(){const S=PCi(),ks=pcCands(),sh=natShares(true);if(!ks.length)re
   for(const key in S.n[k])S.n[k][key]*=key.startsWith('gm')||key==='tv'||key==='vu'||key==='gotv'?.85:key==='fr'?0:.97;
   if(SIM.phase==='r1'&&SIM.day<PC.dl&&k!==SIM.me)S.sp[k]+=Math.round(40+(sh[k]||0)*900+rnd()*40)});
  if(SIM.phase==='r1'&&SIM.day<PC.dl)S.sp[SIM.me]+=Math.round(25+(sh[SIM.me]||0)*700);
- SIM.funds+=PC.day-40;SIM.ai.forEach(o=>{o.funds+=Math.round((PC.day-30)*.8)})}
+ SIM.funds+=PC.day-40;SIM.ai.forEach(o=>{o.funds+=PC.day-40})}
 const _tick=tick;tick=function(){_tick();if(PRES()&&SIM.pc)pcTick()};
 /* the 500 sponsorships deadline: small candidates who fall short are out, and their voters go to the closest candidate still running */
 function pcDeadline(){const S=PCi();S.dl=1;const run=pcCands();
@@ -5856,7 +5895,7 @@ function pcDeadline(){const S=PCi();S.dl=1;const run=pcCands();
  SIM.log.push('📜 '+x('Le Conseil constitutionnel publie la liste officielle : ','The Constitutional Council publishes the official list: ')+pcCands().length+x(' candidats.',' candidates.'))}
 const _nextDay=nextDay;nextDay=function(){_nextDay();if(PRES()&&SIM.phase==='r1'&&SIM.pc){let ch=0;if(SIM.day>=PC.dl&&!SIM.pc.dl){pcDeadline();ch=1}if(SIM.day===PC.off&&!SIM.pc.offN){SIM.pc.offN=1;SIM.log.push('📺 '+x('Campagne officielle : temps de parole égal pour tous les candidats à la radio et à la télévision.','The official campaign opens: every candidate now gets equal speaking time on radio and TV.'));ch=1}if(ch){save();render()}}};
 /* presidential money and state at the start of each round */
-const _beginCampaign=beginCampaign;beginCampaign=function(){if(!PRES()){pcLegDebt();return _beginCampaign()}pcInit();SIM.funds=PC.fund0;SIM.ai.forEach((o,k)=>{o.funds=Math.round(PC.fund0*clamp((SIM.t0||TGP)[k]/.2,.35,1))});return _beginCampaign()};
+const _beginCampaign=beginCampaign;beginCampaign=function(){if(!PRES()){pcLegDebt();return _beginCampaign()}pcInit();SIM.funds=Math.round(PC.fund0*clamp((SIM.t0||TGP)[SIM.me]/.2,.35,1));SIM.ai.forEach((o,k)=>{o.funds=Math.round(PC.fund0*clamp((SIM.t0||TGP)[k]/.2,.35,1))});return _beginCampaign()};
 const _startPresR2=startPresR2;startPresR2=function(){PCi();SIM.funds+=1300;(SIM.fin||[]).forEach(k=>{if(k!==SIM.me)SIM.ai[k].funds+=1500});return _startPresR2()};
 /* a candidate under 5 % gets only a small refund (4.75 % of the cap instead of 47.5 % of spending): the party starts the next legislative campaign in debt */
 function pcRefund(k){const S=SIM.pc;if(!S)return null;const sp=S.spent[k]||0,sh=(SIM.r1nat||[])[k]||0,ref=sh>=.05?Math.min(sp,PC.cap1*.475):Math.min(sp,PC.cap1*.0475);return {sp,sh,ref,gap:Math.max(0,sp-ref)}}
@@ -6070,6 +6109,301 @@ document.addEventListener('focusin',e=>{const el=e.target.closest&&e.target.clos
 document.addEventListener('focusout',e=>{if(MHA&&e.target===MHA)mhHide()});
 document.addEventListener('scroll',()=>{if(MHA)mhHide()},true);
 {const _r=render;render=function(){const r=_r.apply(this,arguments);if(MHA&&!MHA.isConnected)mhHide();return r}}
+
+/* ===== The AI governs by the player's rules (Logan 2026-10-24: "fix the gaps so the AI plays by your rules everywhere") =====
+   An AI government now has political capital on the same scale as the player's (G.acap): it regenerates from the Prime Minister's seats,
+   tabling a bill costs the same as for the player (more for each bill beyond the second), an overloaded agenda costs cohesion,
+   a pledge kept refunds a point, and a reshuffle costs one. When the player has no part in Questions to the Government,
+   the main opposition group and the AI government have their own session. */
+const aiGovNow=G=>G&&G.pm!=null&&G.pm!==SIM.me&&!ctrl()&&SIM.phase==='gov';
+function aiCapRegen(G){const rg=Math.min(6,Math.round(1+(G.seats[G.pm]||0)/54+.75));G.acap=Math.min(6,Math.max(G.acap??rg,rg))}
+const aiBillCost=(G,b,n)=>Math.ceil(b.k*(1+.5*Math.max(0,n-1)));
+{const _n=newOffer;newOffer=function(G){const crq=(G.crq||[]).slice();const r=_n.apply(this,arguments);try{aiCapBills(G,crq)}catch(e){console.error(e)}return r}}
+function aiCapBills(G,crq){if(!aiGovNow(G))return;aiCapRegen(G);const L=[];let n=0;
+ const take=bi=>{const b=B(bi);if(!b||L.includes(bi)||(G.done||[]).includes(bi))return false;const c=aiBillCost(G,b,n);if(G.acap<c)return false;G.acap-=c;n++;if(b.by==null)b.by=G.pm;L.push(bi);return true};
+ /* bills it has promised (a crisis response, a priority the President pressed for) come first; what it can't afford waits */
+ const wait=crq.filter(bi=>!take(bi));
+ for(let t=0;t<3;t++){const bi=aiGovPick(G,L);if(bi==null||!take(bi))break}
+ if(n>=3){const pen=1.5*(n-2);G.coh=cl((G.coh??60)-pen)}
+ G.aib=L;G.crq=wait.filter(bi=>B(bi)&&!(G.done||[]).includes(bi))}
+{const _k=promKept;promKept=function(G,p,part){const r=_k.apply(this,arguments);if(!part&&aiGovNow(G)&&(p.k??SIM.me)===G.pm&&G.acap!=null)G.acap=Math.min(6,G.acap+1);return r}}
+/* once a quarter: Questions to the Government between AI groups, and a reshuffle when the government is in trouble */
+{const _e=endQuarter;endQuarter=function(){const G=SIM.G;if(G&&SIM.phase==='gov'&&G.pm!=null&&G.faiQ!==G.q){G.faiQ=G.q;try{aiQag(G);aiReshuffle(G)}catch(e){console.error(e)}}return _e.apply(this,arguments)}}
+function aiQag(G){if(qagRole(G)||G.pm===SIM.me)return;const o=offOpp(G);if(o==null||o===SIM.me||o===7)return;
+ const p=clamp(.4+(40-G.appr.pm)/100+(50-G.coh)/200,.2,.7);
+ if(rnd()<p){G.vrec=G.vrec||P.map(()=>0);G.vrec[o]+=.3;G.appr.pm-=1;G.log.push({m:G.m,t:x('Questions au gouvernement : '+P[o].n+' met le gouvernement en difficulté.','Questions to the Government: '+P[o].n+' puts the government on the spot.')})}
+ else{G.coh=cl((G.coh??60)+2);G.appr.pm+=.5;if(aiGovNow(G))G.acap=Math.min(6,(G.acap??0)+1)}}
+const mpE=(mi,s)=>mi==null||!MP[mi]?0:mpEff(mi,s);
+function aiReshuffle(G){if(!aiGovNow(G)||!G.min||(G.acap??0)<1||G.appr.pm>=36||G.q-(G.ashQ??-9)<4||G.q-(G.govQ??-9)<2||rnd()>.5)return;
+ const old={...G.min},base={};for(const s in old){const mi=old[s];if(MP[mi]&&MP[mi][1]!==G.pm)base[s]=mi}
+ const nm=autoCab(G,G.gov,G.pm,base),ch=MIN.filter((_,s)=>nm[s]!==old[s]).length,d=sum(MIN.map((_,s)=>mpE(nm[s],s)-mpE(old[s],s)));
+ /* the same reception rule as a player's reshuffle: better ministers help, too many changes at once hurt */
+ const a=clamp(d*.4-Math.max(0,ch-3)*.5,-3,3);if(!ch||a<=0||MIN.some((_,s)=>nm[s]==null))return;
+ G.acap--;G.ashQ=G.q;G.min=nm;G.appr.pm+=a;G.log.push({m:G.m,t:x('Remaniement du gouvernement '+P[G.pm].n+' : ','The '+P[G.pm].n+' government reshuffles: ')+ch+x(' changement(s), bien accueilli (+',' change(s), well received (+')+(Math.round(a*10)/10)+')'})}
+/* AI opposition groups pay for their member's bills too (Logan 2026-10-24: "why don't AI opposition bills cost capital?"):
+   each group has its own capital (G.ocap), refilled from its seats like the player's, and a bill it can't afford isn't tabled */
+{const _o=oppBills;oppBills=function(G){const L=_o.apply(this,arguments);G.ocap=G.ocap||{};
+ P.forEach((_,k)=>{if(k===7||k===SIM.me)return;const rg=Math.min(6,Math.round(1+(G.seats[k]||0)/54+.75));G.ocap[k]=Math.min(6,Math.max(G.ocap[k]??rg,rg))});
+ return L.filter(o=>{const b=B(o.bi),c=b?aiBillCost(G,b,0):9;if((G.ocap[o.sp]??0)<c)return false;G.ocap[o.sp]-=c;return true})}}
+
+/* ===== Presidential depth (Logan 2026-10-24: "Start the presidential depth") =====
+   Every President gets three priorities for the term, drawn from their party's programme (a player President: their own pledges).
+   A friendly government is pressed to deliver them; under cohabitation the President guards the reserved domains (Europe, defence),
+   blocks bills there, and the Élysée and Matignon clash in public. A player President has actions of their own on the Élysée tab.
+   The record of the term counts at the next presidential election. */
+const ELYDOM=[7,9];
+function paOf(G){if(!G||G.pres==null||G.pres===7)return null;const K=careerK(),id=G.pres+':'+(K.presStart??0);
+ if(!K.pa||K.pa.id!==id){const done=new Set(G.passed||[]),me=SIM.me;
+  let L=G.pres===me?(G.prom||[]).filter(p=>(p.k??me)===me&&p.i!=null&&p.i<BL0&&!p.s).map(p=>p.i):[];
+  L=L.concat(sigOf(G.pres)).filter((i,j,a)=>a.indexOf(i)===j&&BLS[i]&&!done.has(i));
+  K.pa={id,k:G.pres,m:L.slice(0,3),ok:[],nq:0,cq:0};SIM.K=K}
+ return K.pa}
+const paPend=(G,pa)=>pa?pa.m.filter(i=>!pa.ok.includes(i)&&!(G.passed||[]).includes(i)):[];
+/* the President opposes a bill in the reserved domains while in cohabitation */
+function elyVeto(G,b){return !!(G&&b&&b.th&&cohab(G)&&G.pres!=null&&G.pm!=null&&ELYDOM.includes(b.th[0])&&b.st&&b.st[G.pres]<0)}
+/* how an AI Prime Minister weighs a bill against the Élysée (used by aiGovPick) */
+function elyBias(G,bi){const b=B(bi);if(!b)return 0;if(elyVeto(G,b))return -.6;const pa=paOf(G);return pa&&!cohab(G)&&paPend(G,pa).includes(bi)?.8:0}
+function elyTag(G,bi,b){let t='';const pa=paOf(G);if(pa&&paPend(G,pa).includes(bi))t+=`<span class="ok" title="${x('Une des trois priorités du président','One of the President’s three priorities')}">⚜️ ${x('Priorité de l’Élysée','Élysée priority')}</span>`;
+ if(elyVeto(G,b))t+=`<span class="bad" title="${x('Domaine réservé : le président s’y oppose et refuse de l’inscrire au Conseil des ministres. Passer outre coûte 1 capital et déclenche un bras de fer.','Reserved domain: the President opposes it and won’t put it before the Council of Ministers. Overriding costs 1 capital and starts a showdown.')}">⚜️ ${x('Veto de l’Élysée','Élysée veto')}</span>`;return t}
+/* ----- Élysée vs Matignon showdowns ----- */
+const CLASH=[['Qui représente la France au Conseil européen ? Le président et le Premier ministre se disputent le siège.','Who speaks for France at the European Council? The President and the Prime Minister both want the seat.'],
+ ['Le président refuse de signer les ordonnances du gouvernement.','The President refuses to sign the government’s ordinances.'],
+ ['Bras de fer sur les nominations : l’Élysée bloque les candidats de Matignon.','A fight over appointments: the Élysée blocks Matignon’s nominees.'],
+ ['Le budget des armées oppose le chef des armées au gouvernement.','The defence budget pits the head of the armed forces against the government.'],
+ ['Interview du 14 juillet : le président étrille la politique du gouvernement.','Bastille Day interview: the President tears into the government’s policy.'],
+ ['Un Conseil des ministres glacial fuite dans la presse.','A frosty Council of Ministers leaks to the press.']];
+/* a public contest: the more popular side tends to win; the winner gains a little, the loser loses more */
+function elyContest(G,why,big){const a=G.appr.pres+gauss()*7,b=G.appr.pm+gauss()*7,pw=a>=b,s=big?1.4:1;
+ if(pw){G.appr.pres+=.8*s;G.appr.pm-=1.2*s}else{G.appr.pm+=.8*s;G.appr.pres-=1.2*s}
+ G.coh=cl((G.coh??60)-2);G.ang[G.pm]=(G.ang[G.pm]||0)+(pw?.04:0);
+ G.log.push({m:G.m,t:'⚔️ '+x(why[0],why[1])+' '+x(pw?'L’Élysée l’emporte dans l’opinion.':'Matignon l’emporte dans l’opinion.',pw?'The Élysée wins the argument with the public.':'Matignon wins the argument with the public.')});
+ if(K0())K0().cl=(K0().cl||0)+1;return pw}
+const K0=()=>SIM.K&&SIM.K.pa;
+const meSide=G=>G.pres===SIM.me?'pres':G.pm===SIM.me?'pm':null;
+function elyClashRoll(G){if(!cohab(G)||G.pm==null||G.pres==null||G.pres===7||SIM.phase!=='gov'||G.clash)return;
+ const d=1-(AFF[G.pres][G.pm]+AFF[G.pm][G.pres])/2;if(rnd()>=.1+.2*d)return;const t=(rnd()*CLASH.length)|0;
+ if(meSide(G))G.clash={t,q:G.q};else{/* an AI side that trails badly in the polls backs down, as a player could (Logan 2026-10-24) */const dp=G.appr.pres-G.appr.pm,T=CLASH[t];
+  if(Math.abs(dp)>6){const pw=dp>0;if(pw){G.appr.pm-=.6;G.appr.pres+=.4}else{G.appr.pres-=.6;G.appr.pm+=.4}G.log.push({m:G.m,t:'🕊️ '+x(T[0],T[1])+' '+x(pw?'Matignon choisit l’apaisement.':'L’Élysée choisit l’apaisement.',pw?'Matignon chooses to calm things down.':'The Élysée chooses to calm things down.')})}
+  else elyContest(G,T)}}
+function elyClashAnswer(G,hit){const c=G.clash;if(!c)return;G.clash=null;const T=CLASH[c.t],side=meSide(G);
+ if(hit){const pw=elyContest(G,T,false);if(side&&((side==='pres')!==pw))G.log.push({m:G.m,t:x('Votre riposte se retourne contre vous.','Your counter-attack backfires.')})}
+ else{if(side==='pres'){G.appr.pres-=.6;G.appr.pm+=.4}else{G.appr.pm-=.6;G.appr.pres+=.4}G.log.push({m:G.m,t:'🕊️ '+x(T[0],T[1])+' '+x('Vous choisissez l’apaisement.','You choose to calm things down.')})}}
+/* ----- start of each quarter: the agenda reaches a friendly government; in cohabitation the President stalls bills in the reserved domains ----- */
+{const _n=newOffer;newOffer=function(G){const r=_n.apply(this,arguments);try{elyOffer(G)}catch(e){console.error(e)}return r}}
+function elyOffer(G){if(SIM.phase!=='gov'||G.pm==null)return;const pa=paOf(G),me=SIM.me;
+ if(pa&&ctrl()&&!cohab(G)){const bi=paPend(G,pa).find(i=>B(i)&&!G.offer.includes(i)&&!(G.done||[]).includes(i)&&!promBreaks(G,B(i)));if(bi!=null)G.offer.push(bi)}
+ G.veto=[];if(cohab(G)&&!ctrl()){(G.aib||[]).slice().forEach(bi=>{const b=B(bi);if(!elyVeto(G,b))return;
+  /* the AI Prime Minister pays the same price as a player to override: one capital, or the bill is shelved */
+  const key=(G.prom||[]).some(p=>p.i===bi&&!p.s&&G.gov.includes(p.k))||b.tag==='crisis',go=(G.acap??0)>=1&&(key||rnd()<.6);
+  if(!go){G.aib=G.aib.filter(z=>z!==bi);if(G.pres===me){G.log.push({m:G.m,t:'⚜️ '+x(`Face à votre opposition, le gouvernement renonce à « ${b.f} ».`,`Faced with your opposition, the government shelves “${b.e}”.`)});return}}
+  else G.acap--;
+  if(G.pres===me)G.veto.push(bi);
+  else if(!go){elyContest(G,[`Le président refuse d’inscrire « ${b.f} » au Conseil des ministres.`,`The President refuses to put “${b.e}” before the Council of Ministers.`])}
+  else elyContest(G,[`Le gouvernement passe outre l’Élysée sur « ${b.f} ».`,`The government overrides the Élysée on “${b.e}”.`])})}
+ if(G.elyOQ!==G.q){G.elyOQ=G.q;elyClashRoll(G)}}
+/* overriding the President's veto costs a capital point and a showdown */
+{const _c=LEG.cost;LEG.cost=function(G,b){return _c.apply(this,arguments)+(elyVeto(G,b)?1:0)}}
+{const _t=tableOffer;tableOffer=function(oi,how){const G=SIM.G,bi=G.offer[oi],b=B(bi),v=elyVeto(G,b),c0=G.cap;const r=_t.apply(this,arguments);
+ if(v&&G.cap<c0)elyContest(G,[`Le Premier ministre passe outre le veto de l’Élysée sur « ${b.f} ».`,`The Prime Minister overrides the Élysée’s veto on “${b.e}”.`],true);return r}}
+/* ----- delivering a priority ----- */
+{const _p=passBill;passBill=function(G,bi){const r=_p.apply(this,arguments);try{const b=B(bi),pa=paOf(G);if(b&&pa&&b.meas!=null&&pa.m.includes(b.meas)&&!pa.ok.includes(b.meas)){pa.ok.push(b.meas);const ch=cohab(G);
+  G.appr.pres+=ch?.5:1.5;if(!ch&&G.pm!==G.pres)G.appr.pm+=.5;G.elyP=Math.max(0,(G.elyP||0)-30);
+  G.log.push({m:G.m,t:'⚜️ '+x('Priorité de l’Élysée tenue : ','Élysée priority delivered: ')+x(b.f,b.e)+` (${pa.ok.length}/${pa.m.length})`})}}catch(e){console.error(e)}return r}}
+/* ----- end of each quarter ----- */
+{const _e=endQuarter;endQuarter=function(){const G=SIM.G;if(G&&SIM.phase==='gov'&&G.pm!=null&&G.elyQ!==G.q){G.elyQ=G.q;try{elyTick(G)}catch(e){console.error(e)}}return _e.apply(this,arguments)}}
+function elyTick(G){const me=SIM.me;if(G.clash)elyClashAnswer(G,false);G.veto=[];try{elyAI(G)}catch(e){console.error(e)}const pa=paOf(G);if(!pa)return;
+ pa.nq++;if(cohab(G))pa.cq++;const pend=paPend(G,pa),left=(G.presM-G.m)/3;
+ /* late in the term, unfinished priorities weigh on the President (not in cohabitation: the government is not theirs) */
+ if(!cohab(G)&&pend.length&&left<=6)G.appr.pres-=.25*pend.length;
+ /* a player Prime Minister of the President's camp is pressed to deliver */
+ if(G.pm===me&&G.pres!==me&&!cohab(G)&&pend.length){const tb=(G.bills||[]).some(r=>r.q===G.q&&pend.includes(r.bi)),p0=G.elyP||0;
+  G.elyP=clamp(p0+(tb?-10:6+(left<=8?4:0)),0,100);
+  if(p0<50&&G.elyP>=50)G.log.push({m:G.m,t:'⚜️ '+x('L’Élysée s’impatiente : le président attend ses priorités.','The Élysée grows impatient: the President is waiting for their priorities.')});
+  if(p0<75&&G.elyP>=75)G.log.push({m:G.m,t:'⚜️ '+x('Rumeurs de remaniement : le président envisage de changer de Premier ministre.','Reshuffle rumours: the President is thinking about a new Prime Minister.')})}
+ else G.elyP=Math.max(0,(G.elyP||0)-10)}
+/* an impatient President may replace a Prime Minister of their own camp who ignores them */
+{const _d=aiPresDismiss;aiPresDismiss=function(G){if(_d.apply(this,arguments))return true;
+ if(G.pres==null||G.pres===SIM.me||G.pm!==SIM.me||cohab(G)||SIM.phase!=='gov'||(G.elyP||0)<75||!presCanDismiss(G).ok)return false;
+ if(rnd()>=.2+(G.elyP-75)/100)return false;G.log.push({m:G.m,t:'⚜️ '+x('Le président perd patience avec son Premier ministre.','The President loses patience with their Prime Minister.')});G.elyP=30;presDismiss(G,true);return true}}
+/* the record counts at the presidential election: kept priorities help the President's party, unfinished ones hurt (less so after cohabitation) */
+function elyRecord(G,tg){const pa=paOf(G);if(!pa||!pa.m.length||G.pres==null||G.pres===7)return;const k=pa.ok.length,n=pa.m.length-k,cs=pa.nq?pa.cq/pa.nq:0;
+ tg[G.pres]*=Math.max(.85,1+.03*k-.035*n*(cs>.5?.4:1));
+ G.log.push({m:G.m,t:'⚜️ '+x('Bilan de l’Élysée : ','The Élysée’s record: ')+k+'/'+pa.m.length+x(' priorités tenues',' priorities delivered')+(cs>.5?x(' (cohabitation)',' (cohabitation)'):'')})}
+/* ----- a player President's own actions ----- */
+function elyDo(G,a,i,ai){const me=ai?G.pres:SIM.me;if(!ai&&(a==='cl1'||a==='cl0'))return elyClashAnswer(G,a==='cl1');if(G.pres!==me)return;
+ if(a==='adr'&&!(G.adrQ!=null&&G.q-G.adrQ<4)){G.adrQ=G.q;const cr=(G.cr||[]).length?1:0;G.appr.pres+=1.5+cr;if(!cohab(G)&&G.pm!=null)G.appr.pm+=.8;
+  G.log.push({m:G.m,t:'📺 '+x('Allocution du président de la République','The President addresses the nation')+(cr?x(' face à la crise',' on the crisis'):'')})}
+ if(a==='sum'&&!(G.sumQ!=null&&G.q-G.sumQ<2)){G.sumQ=G.q;G.appr.pres+=cohab(G)?.8:.5;G.log.push({m:G.m,t:'🌍 '+x('Le président représente la France au sommet international.','The President represents France at an international summit.')})}
+ if(a==='push'&&G.pushQ!==G.q&&!cohab(G)&&G.pm!=null&&G.pm!==me){const bi=+i,b=B(bi);if(!b||(G.done||[]).includes(bi))return;G.pushQ=G.q;b.by=G.pm;(G.crq=G.crq||[]).push(bi);G.appr.pres-=.3;if(b.st[G.pm]<0)G.ang[G.pm]=(G.ang[G.pm]||0)+.1;
+  G.log.push({m:G.m,t:'⚜️ '+x('Le président demande au gouvernement d’inscrire « '+b.f+' » au prochain trimestre.','The President asks the government to table “'+b.e+'” next quarter.')})}
+ if(a==='blk'){const bi=+i,b=B(bi);if(!(G.veto||[]).includes(bi))return;G.veto=G.veto.filter(z=>z!==bi);G.aib=(G.aib||[]).filter(z=>z!==bi);G.ang[G.pm]=(G.ang[G.pm]||0)+.1;
+  elyContest(G,[`Le président refuse d’inscrire « ${b.f} » au Conseil des ministres.`,`The President refuses to put “${b.e}” before the Council of Ministers.`])}
+ G.appr.pres=clamp(G.appr.pres,12,68);G.appr.pm=clamp(G.appr.pm,12,68)}
+/* ----- Élysée tab ----- */
+function elyAgendaCard(G){const pa=paOf(G);if(!pa)return'';const pend=paPend(G,pa),ch=cohab(G),me=SIM.me,left=Math.max(0,Math.round((G.presM-G.m)/3));
+ const row=i=>{const ok=!pend.includes(i),b=B(i);const s=ok?'✅ '+x('tenue','delivered'):ch?'🧊 '+x('gelée par la cohabitation','frozen by cohabitation'):(G.aib||[]).includes(i)||(G.crq||[]).includes(i)?'🏛️ '+x('déposée','tabled'):(G.offer||[]).includes(i)&&ctrl()?'📋 '+x('à votre ordre du jour','on your agenda'):'⏳ '+x('en attente','waiting');
+  return `<div class="grow" style="display:flex;justify-content:space-between;gap:8px"><span>${x(b.f,b.e)}</span><b style="white-space:nowrap;color:${ok?'var(--ok)':'var(--mute)'}">${s}</b></div>`};
+ const push=G.pres===me&&!ch&&G.pm!=null&&G.pm!==me&&G.pushQ!==G.q?pend.filter(i=>B(i)&&!(G.aib||[]).includes(i)&&!(G.crq||[]).includes(i)).map(i=>`<button class="chip" data-ely="push" data-ei="${i}">${x('Presser le gouvernement : ','Press the government: ')}${x(B(i).f,B(i).e)}</button>`).join(' '):'';
+ const pr=G.pm===me&&G.pres!==me&&!ch&&pend.length?`<div class="bar" style="margin-top:8px"><span class="n" style="width:150px">${x('Pression de l’Élysée','Élysée pressure')}</span><span class="t"><i style="width:${G.elyP||0}%;background:${(G.elyP||0)>=75?'var(--bad)':(G.elyP||0)>=50?'var(--warn)':'var(--fleur)'}"></i></span><span class="v" style="width:70px">${Math.round(G.elyP||0)} / 100</span></div><p class="note">${x('Chaque trimestre sans texte prioritaire déposé, la pression monte. Au-delà de 75, le président peut changer de Premier ministre.','Each quarter without a priority bill tabled, the pressure rises. Above 75 the President may replace you.')}</p>`:'';
+ return `<div class="card"><h3>⚜️ ${x('Les priorités du président','The President’s priorities')} · ${P[pa.k].n} <span class="note">· ${pa.ok.length}/${pa.m.length} ${x('tenues','delivered')} · ${left} ${x('trimestres restants','quarters left')}</span></h3>${pa.m.map(row).join('')}
+  <p class="note">${ch?x('En cohabitation, le gouvernement ne porte pas le programme du président ; l’Élysée garde la main sur l’Europe et la défense.','In cohabitation the government does not carry the President’s programme; the Élysée keeps its hold on Europe and defence.'):x('Chaque priorité tenue renforce le président ; celles qui restent en suspens pèseront à la présidentielle.','Each priority delivered strengthens the President; unfinished ones will count against them at the presidential election.')}</p>${pr}${push?`<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${push}</div>`:''}</div>`}
+function elyActs(G){const me=SIM.me,side=meSide(G);let h='';
+ if(G.clash&&side){const T=CLASH[G.clash.t];h+=`<div class="card"><h3>⚔️ ${x('Bras de fer Élysée–Matignon','Élysée–Matignon showdown')}</h3><p class="note">${x(T[0],T[1])} ${x('Popularité : président ','Approval: President ')}${Math.round(G.appr.pres)} % · ${x('gouvernement ','government ')}${Math.round(G.appr.pm)} %.</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="act" data-ely="cl1" style="max-width:260px"><b>${x('Riposter publiquement','Hit back in public')}</b><small>${x('Le plus populaire l’emporte, en général','The more popular side usually wins')}</small></button><button class="act" data-ely="cl0" style="max-width:260px"><b>${x('Apaiser','Calm things down')}</b><small>${x('Petit recul, pas de risque','A small loss, no risk')}</small></button></div></div>`}
+ if(G.pres===me){const adr=G.adrQ!=null&&G.q-G.adrQ<4,sum=G.sumQ!=null&&G.q-G.sumQ<2,cr=(G.cr||[]).length;
+  h+=`<div class="card"><h3>⚜️ ${x('L’action du président','The President’s actions')}</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="act" data-ely="adr" ${adr?'disabled':''} style="max-width:260px"><b>📺 ${x('Allocution télévisée','Address the nation')}</b><small>${adr?x('Une fois par an','Once a year'):x('Popularité +1,5','Approval +1.5')+(cr?x(', plus face à une crise',', more during a crisis'):'')}</small></button><button class="act" data-ely="sum" ${sum?'disabled':''} style="max-width:260px"><b>🌍 ${x('Sommet international','International summit')}</b><small>${sum?x('Tous les deux trimestres','Every other quarter'):x('Popularité +0,5','Approval +0.5')+(cohab(G)?x(', +0,8 en cohabitation',', +0.8 in cohabitation'):'')}</small></button></div>
+  ${(G.veto||[]).filter(bi=>(G.aib||[]).includes(bi)).map(bi=>`<p class="note" style="margin-top:8px">${x('Domaine réservé : le gouvernement veut déposer « '+B(bi).f+' », contraire à votre ligne.','Reserved domain: the government wants to table “'+B(bi).e+'”, against your line.')}</p><button class="act" data-ely="blk" data-ei="${bi}" style="max-width:320px"><b>${x('Bloquer au Conseil des ministres','Block it at the Council of Ministers')}</b><small>${x('Le texte est retiré ; bras de fer public','The bill is withdrawn; a public showdown')}</small></button>`).join('')}</div>`}
+ return h}
+{const _b=gBadge;gBadge=function(t,G){if(t==='ely'){const n=(G.clash&&meSide(G)?1:0)+(G.pres===SIM.me?(G.veto||[]).filter(bi=>(G.aib||[]).includes(bi)).length:0);if(n)return [n,'']}return _b.apply(this,arguments)}}
+/* an AI President uses the same tools (Logan 2026-10-24: "Make sure the AI uses these options too"):
+   an address when unpopular or in a crisis, summits now and then (more in cohabitation, the President's own turf),
+   and pressing a friendly AI government on a priority it has left aside. Blocking in the reserved domains happens in elyOffer. */
+function elyAI(G){if(G.pres==null||G.pres===7||G.pres===SIM.me||SIM.phase!=='gov')return;const ap=G.appr.pres,cr=(G.cr||[]).length,ch=cohab(G);
+ if(!(G.adrQ!=null&&G.q-G.adrQ<4)&&(cr||ap<38)&&rnd()<.6)elyDo(G,'adr',null,1);
+ if(!(G.sumQ!=null&&G.q-G.sumQ<2)&&rnd()<(ch?.6:.35))elyDo(G,'sum',null,1);
+ const pa=paOf(G);if(pa&&!ch&&G.pm!=null&&G.pm!==SIM.me&&G.pushQ!==G.q){const bi=paPend(G,pa).find(i=>B(i)&&!(G.aib||[]).includes(i)&&!(G.crq||[]).includes(i)&&!(G.done||[]).includes(i));
+  if(bi!=null&&rnd()<.4)elyDo(G,'push',bi,1)}}
+
+/* ===== Party life and mid-term elections (Logan 2026-10-24) =====
+   Every group in the Assembly has a caucus cohesion (G.pcoh, 0–100): "caucus cohesion is meant to represent tension within parties".
+   It falls with poor polls, anger and a stronger rival in the same camp, and rises back slowly. Low cohesion brings the same events
+   to every party, the player's included: deputies switching group, a congress, a split. A new movement can rise inside DIV.
+   Mid-term elections (departmental and regional, European, Senate) are results only: no campaign. They move polls, cohesion and approval. */
+const PCOH0=62;
+const MOVN=[['Le Sursaut','The Upsurge'],['Alternative citoyenne','Citizens’ Alternative'],['Voix des territoires','Voice of the Regions'],['Élan populaire','Popular Drive'],['Mouvement du renouveau','Renewal Movement'],['Les Indignés de France','France’s Outraged']];
+function pcohOf(G){if(!G.pcoh)G.pcoh=P.map((_,k)=>k===7?null:Math.round(PCOH0+gauss()*6));return G.pcoh}
+const nearOf=(G,k,ex)=>P.map((_,j)=>j).filter(j=>j!==k&&j!==7&&!(ex||[]).includes(j)).sort((a,b)=>AFF[k][b]*(1+3*(G.v[b]-(G.vb||G.v)[b]))-AFF[k][a]*(1+3*(G.v[a]-(G.vb||G.v)[a])))[0];
+/* deputies leave group k for group j; they will stand as incumbents under their new label (K.inc) */
+function pMove(G,k,j,n){n=Math.min(n,G.seats[k]||0);if(n<=0)return 0;G.seats[k]-=n;G.seats[j]=(G.seats[j]||0)+n;const K=careerK();
+ if(Array.isArray(K.inc)){let c=0;C.forEach(d=>{if(c<n&&K.inc[d.i]===k&&rnd()<.5){K.inc[d.i]=j;c++}});C.forEach(d=>{if(c<n&&K.inc[d.i]===k){K.inc[d.i]=j;c++}})}
+ if(G.pm===k&&!G.seats[k])G.seats[k]=0;return n}
+const pcName=k=>P[k].n;
+function pcohTick(G){const pc0=pcohOf(G),vb=G.vb||G.v,me=SIM.me;
+ P.forEach((_,k)=>{if(k===7)return;if(!(G.seats[k]>0)&&G.v[k]<.02){pc0[k]=PCOH0;return}
+  let c=pc0[k];c+=(PCOH0-c)*.1+120*(G.v[k]-vb[k])-10*(G.ang[k]||0)+gauss()*3.5;
+  /* a much stronger party in the same camp pulls at the group, more so in opposition */
+  const cmp=P.map((_,j)=>j).filter(j=>j!==k&&j!==7&&campOf(j)===campOf(k)&&G.v[j]>G.v[k]*1.5).length;if(cmp&&!G.gov.includes(k))c-=1.5;
+  if(k===G.pm)c=(c+(G.coh??c))/2;pc0[k]=clamp(c,5,95)});
+ if(G.pm!=null)G.coh=cl((G.coh??60)+(pc0[G.pm]-(G.coh??60))*.3)}
+/* the AI uses the same tools as the player: rally the group (1 capital) and congresses */
+function pcCapOf(G,k){return k===G.pm&&!ctrl()?G.acap??0:(G.ocap||{})[k]??0}
+function pcSpend(G,k){if(k===G.pm&&!ctrl())G.acap=(G.acap??0)-1;else{G.ocap=G.ocap||{};G.ocap[k]=(G.ocap[k]??0)-1}}
+function pcRally(G,k){const pc0=pcohOf(G);pc0[k]=Math.min(95,pc0[k]+8);if(k===G.pm)G.coh=cl((G.coh??60)+5);G.log.push({m:G.m,t:'🤝 '+x(pcName(k)+' resserre les rangs de son groupe.',pcName(k)+' closes ranks in its group.')})}
+function pcCongress(G,k){const pc0=pcohOf(G);G.cong=G.cong||{};G.cong[k]=G.q;pc0[k]=Math.min(95,pc0[k]+14);G.vrec=G.vrec||P.map(()=>0);G.vrec[k]+=.3;
+ G.log.push({m:G.m,t:'🏛️ '+x('Congrès de '+pcName(k)+' : le parti se rassemble autour d’une ligne renouvelée.',pcName(k)+' holds a congress and rallies around a renewed line.')})}
+const congOK=(G,k)=>G.q-((G.cong||{})[k]??-9)>=8;
+function pcEvents(G){const pc0=pcohOf(G),me=SIM.me;G.low=G.low||{};let split=false;
+ P.forEach((_,k)=>{if(k===7||!(G.seats[k]>0))return;const c=pc0[k],S=G.seats[k];
+  if(k!==me&&c<45&&pcCapOf(G,k)>=1){if(c<40&&congOK(G,k)&&rnd()<.5){pcSpend(G,k);pcCongress(G,k);return}if(rnd()<.6){pcSpend(G,k);pcRally(G,k);return}}
+  /* a split: two quarters in a row under 25 */
+  if(c<25&&G.low[k]&&S>=10&&rnd()<.5){const f=.1+.2*rnd(),n=Math.max(2,Math.round(S*f)),j=rnd()<.5?7:nearOf(G,k);pMove(G,k,j,n);const s=G.v[k]*f*.5;G.v[k]-=s;G.v[j]+=s;pc0[k]=55;split=true;
+   G.log.push({m:G.m,t:'💥 '+x('Scission chez '+pcName(k)+' : '+n+' députés quittent le groupe pour '+(j===7?'siéger comme non-inscrits':'rejoindre '+pcName(j))+'.','Split in '+pcName(k)+': '+n+' deputies leave the group '+(j===7?'to sit as independents':'for '+pcName(j))+'.')})}
+  else if(c<48&&rnd()<(48-c)/45){const n=clamp(Math.round(S*.03*(1+rnd())),1,8),j=nearOf(G,k);if(j!=null&&pMove(G,k,j,n)){pc0[k]=Math.min(95,pc0[k]+4);
+   G.log.push({m:G.m,t:'🔀 '+x(n+(n>1?' députés quittent ':' député quitte ')+pcName(k)+' pour '+pcName(j)+'.',n+(n>1?' deputies leave ':' deputy leaves ')+pcName(k)+' for '+pcName(j)+'.')})}}
+  G.low[k]=c<25});
+ /* a new movement inside DIV: unhappy voters and a party in turmoil */
+ const worst=P.map((_,k)=>k).filter(k=>k!==7&&G.seats[k]>0).sort((a,b)=>pc0[a]-pc0[b])[0];
+ if(!G.mov&&worst!=null&&(G.appr.pm<32||pc0[worst]<30)&&rnd()<.06+(split?.12:0)){const nm=MOVN[(rnd()*MOVN.length)|0],amt=.015+.02*rnd(),gv=G.gov.length?G.gov:[G.pm];
+  const fr=[worst,...gv.filter(j=>j!==worst)];fr.forEach((j,i)=>{const a=amt*(i?.5/(fr.length-1):(fr.length>1?.5:1)),t=Math.min(a,G.v[j]*.2);G.v[j]-=t;G.v[7]+=t});
+  G.mov={n:nm,k:worst,a:amt,m:G.m};G.log.push({m:G.m,t:'✨ '+x('Un nouveau mouvement, « '+nm[0]+' », perce dans les sondages, porté par des déçus de '+pcName(worst)+'.','A new movement, “'+nm[1]+'”, breaks through in the polls, drawing on disappointed '+pcName(worst)+' voters.')})}
+ else if(G.mov){const b=G.mov.a*.15;G.mov.a-=b;const t=Math.min(b,Math.max(0,G.v[7]-.01));G.v[7]-=t;G.v[G.mov.k]+=t;
+  if(G.mov.a<.004){G.log.push({m:G.m,t:'🍂 '+x('« '+G.mov.n[0]+' » s’essouffle.','“'+G.mov.n[1]+'” runs out of steam.')});G.mov=null}}
+ normV(G)}
+/* a broken pledge divides the group that made it */
+{const _b=promBroken;promBroken=function(G,p){const r=_b.apply(this,arguments);try{const k=p.k??SIM.me,pc0=pcohOf(G);if(pc0[k]!=null)pc0[k]=Math.max(5,pc0[k]-4)}catch(e){}return r}}
+{const _e=endQuarter;endQuarter=function(){const G=SIM.G;if(G&&SIM.phase==='gov'&&G.pm!=null&&G.plQ!==G.q){G.plQ=G.q;try{pcohTick(G);pcEvents(G)}catch(e){console.error(e)}}return _e.apply(this,arguments)}}
+/* the player's own caucus */
+function pcDo(G,a){const me=SIM.me;if(!pcohOf(G)[me]&&pcohOf(G)[me]!==0)return;if(G.cap<1)return;
+ if(a==='rally'&&G.pcrQ!==G.q){G.pcrQ=G.q;G.cap--;pcRally(G,me)}
+ if(a==='cong'&&congOK(G,me)){G.cap--;pcCongress(G,me)}}
+function partiesCard(G){const pc0=pcohOf(G),me=SIM.me,ks=ORD.filter(k=>k!==7&&(G.seats[k]>0||G.v[k]>.02));
+ const row=k=>{const c=Math.round(pc0[k]??PCOH0),col=c<25?'var(--bad)':c<45?'var(--warn)':'var(--ok)';
+  return `<div class="bar"><span class="n" style="width:150px">${plogo(k,16)||''} ${P[k].n} <span class="note">${G.seats[k]||0}</span></span><span class="t"><i style="width:${c}%;background:${col}"></i></span><span class="v" style="width:70px">${c}</span></div>`};
+ const mine=pc0[me]!=null&&G.seats[me]>0?pc0[me]:null,rq=G.pcrQ===G.q,cg=congOK(G,me);
+ const acts=mine!=null&&mine<60?`<p class="note" style="margin-top:8px">${x('Votre groupe se divise. Sous 48, des députés peuvent partir ; sous 25 deux trimestres de suite, le groupe peut éclater.','Your group is restless. Below 48 deputies may leave; below 25 two quarters running, the group can split.')}</p><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="act" data-pcl="rally" ${G.cap<1||rq?'disabled':''} style="max-width:260px"><b>🤝 ${x('Resserrer les rangs','Rally the group')}</b><small>${x('1 capital · cohésion +8','1 capital · cohesion +8')}</small></button><button class="act" data-pcl="cong" ${G.cap<1||!cg?'disabled':''} style="max-width:260px"><b>🏛️ ${x('Convoquer un congrès','Call a congress')}</b><small>${cg?x('1 capital · cohésion +14, petit élan','1 capital · cohesion +14, small poll lift'):x('Un congrès tous les deux ans','One congress every two years')}</small></button></div>`:'';
+ const mv=G.mov?`<p class="note" style="margin-top:8px">✨ ${x('Nouveau mouvement parmi les divers : « '+G.mov.n[0]+' », ','New movement among the independents: “'+G.mov.n[1]+'”, ')}${pct(G.mov.a)} ${x('dans les sondages','in the polls')}.</p>`:'';
+ return `<div class="card"><h3>🧩 ${x('Cohésion des groupes','Caucus cohesion')}</h3>${ks.map(row).join('')}${mv}${acts}</div>`}
+{const _b=gBadge;gBadge=function(t,G){const r=_b.apply(this,arguments);if(t==='ely'&&!r){const c=pcohOf(G)[SIM.me];if(c!=null&&c<40&&G.seats[SIM.me]>0&&G.cap>=1)return ['!','']}return r}}
+
+/* ===== Mid-term elections: results only (Logan 2026-10-24: no playable mid-term campaigns for now) ===== */
+const MIDE=[{t:'loc',m0:2028*12+2,every:72,f:'Élections départementales et régionales',e:'Departmental and regional elections',em:'🗳️',
+  mul:{0:.7,1:1.3,2:1,3:.7,4:1.4,5:.7,6:.5,7:1.6,8:1.1,9:1}},
+ {t:'eu',m0:2029*12+5,every:60,f:'Élections européennes',e:'European elections',em:'🇪🇺',mul:{0:1,1:1,2:1.3,3:1,4:.9,5:1.15,6:1.2,7:.6,8:1,9:1},gov:.82},
+ {t:'sen',m0:2029*12+8,every:36,f:'Élections sénatoriales',e:'Senate elections',em:'🏛️'}];
+const SEN0=[18,64,16,22,133,4,0,18,56,17];
+function midDates(E,a,b){const L=[];for(let m=E.m0;m<=b;m+=E.every)if(m>a)L.push(m);return L}
+function midShares(G,E){const v=G.v.map((s,k)=>Math.max(0,s*(E.mul[k]??1)*(E.gov&&G.gov.includes(k)?E.gov:1)*Math.exp(gauss()*.06)));const T=sum(v);return v.map(s=>s/T)}
+/* who wins each region or département: the leading camp, held by its biggest party; 2024 local strength scaled by the national swing */
+function midUnits(res,key){const nb=Array(NP).fill(0),U={};C.forEach(d=>{const u=d[key];U[u]=U[u]||Array(NP).fill(0);d.b.forEach((v,k)=>{U[u][k]+=v*d.wt;nb[k]+=v*d.wt})});
+ const NT=sum(nb),win=Array(NP).fill(0);Object.values(U).forEach(a=>{const T=sum(a)||1,s=a.map((v,k)=>v/T*(res[k]/Math.max(.002,nb[k]/NT)));const cs=[0,0,0,0];s.forEach((v,k)=>cs[campOf(k)]+=v);
+  const cm=cs.indexOf(Math.max(...cs.slice(0,3))),k=s.map((v,k)=>[campOf(k)===cm?v:-1,k]).sort((a,b)=>b[0]-a[0])[0][1];win[k]++});return win}
+function dhondt(v,n,th){const ok=v.map(s=>s>=th?s:0),w=Array(NP).fill(0);for(let i=0;i<n;i++){let b=0,bv=-1;ok.forEach((s,k)=>{const q=s/(w[k]+1);if(q>bv){bv=q;b=k}});w[b]++}return w}
+function midHold(G,E,m){const vb=G.vb||G.v,me=SIM.me,R={t:E.t,m,q:G.q};G.vrec=G.vrec||P.map(()=>0);const pc0=pcohOf(G);
+ if(E.t==='sen'){const S=G.sen||SEN0.slice(),loc=(G.mids||[]).filter(r=>r.t==='loc').slice(-1)[0],base=loc?loc.res:G.v;
+  const tgt=base.map((v,k)=>v*348),half=dhondt(S.map((s,k)=>.6*tgt[k]/348+.4*s/348),174,0),keep=S.map(s=>Math.round(s/2));let ns=keep.map((s,k)=>s+half[k]);const d=348-sum(ns);ns[ns.indexOf(Math.max(...ns))]+=d;
+  R.sen=ns;R.prev=S;G.sen=ns;const rt=sum(ns.filter((s,k)=>campOf(k)===1));G.log.push({m:G.m,t:'🏛️ '+x('Sénatoriales : la droite et le centre '+(rt>=175?'gardent':'perdent')+' la majorité au Sénat ('+rt+' sièges sur 348).','Senate elections: the right and centre '+(rt>=175?'keep':'lose')+' their Senate majority ('+rt+' of 348 seats).')});
+  P.forEach((_,k)=>{const d2=(ns[k]-S[k])/348;G.vrec[k]+=clamp(d2*4,-.15,.15)})}
+ else{const res=midShares(G,E);R.res=res;R.vb=vb.slice();
+  if(E.t==='eu')R.seats=dhondt(res.map((s,k)=>k===7?0:s),81,.05);else{R.reg=midUnits(res,'g');R.dep=midUnits(res,'dp')}
+  /* what a result does: momentum, the group's cohesion, and a verdict on the government */
+  P.forEach((_,k)=>{if(k===7)return;const d=res[k]-vb[k];G.vrec[k]+=clamp(d*6,-.5,.5);if(pc0[k]!=null)pc0[k]=clamp(pc0[k]+clamp(d*150,-12,8),5,95)});
+  const gd=sum(G.gov.map(k=>res[k]-vb[k]));if(G.pm!=null){G.appr.pm=clamp(G.appr.pm+clamp(gd*40,-4,2),12,68);if(campOf(G.pres)===campOf(G.pm))G.appr.pres=clamp(G.appr.pres+clamp(gd*20,-3,1),12,68)}R.gd=gd;
+  if(G.mov&&res[7]>G.v[7]*1.2){G.mov.a*=1.4;R.mov=G.mov.n}
+  const top=res.map((v,k)=>[v,k]).filter(a=>a[1]!==7).sort((a,b)=>b[0]-a[0]);
+  G.log.push({m:G.m,t:E.em+' '+x(E.f,E.e)+' : '+top.slice(0,3).map(([v,k])=>P[k].n+' '+pct(v)).join(' · ')+(gd<-.02?x(' — revers pour la majorité.',' — a setback for the government.'):gd>.02?x(' — succès pour la majorité.',' — a success for the government.'):'')})}
+ (G.mids=G.mids||[]).push(R);G.midPop=R;normV(G)}
+{const _p=prepQuarter;prepQuarter=function(){const G=SIM.G;if(G&&G.m!=null){const K=careerK(),a=K.midM??G.m;if(G.m>a||K.midM==null){K.midM=G.m;SIM.K=K}try{MIDE.forEach(E=>midDates(E,a,G.m).forEach(m=>midHold(G,E,m)))}catch(e){console.error(e)}}return _p.apply(this,arguments)}}
+function midSync(){let el=document.getElementById('midpop');const G=SIM.G,R=G&&SIM.phase==='gov'&&!SIM.spec&&st.tab!=='night'&&!document.getElementById('startscreen')&&G.midPop&&G.midPop.q===G.q?G.midPop:null;
+ if(!R){if(el)el.remove();return}const E=MIDE.find(e=>e.t===R.t);
+ if(!el){el=document.createElement('div');el.id='midpop';el.className='backdrop';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');document.body.appendChild(el)}
+ const ks=ORD.filter(k=>R.sen?R.sen[k]:R.res[k]>.004),list=(v,lab)=>ks.filter(k=>v[k]).map(k=>`<div class="grow" style="display:flex;justify-content:space-between;gap:8px"><span>${plogo(k,16)||''} ${P[k].n}</span><b>${lab(k)}</b></div>`).join('');
+ let body;if(R.sen)body=`<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">${pie(ks.map(k=>[R.sen[k],pc(k)]),150,.55,'Sénat')}<div style="flex:1;min-width:200px">${list(R.sen,k=>R.sen[k]+(R.sen[k]!==R.prev[k]?` <span class="note">(${R.sen[k]>R.prev[k]?'+':''}${R.sen[k]-R.prev[k]})</span>`:''))}</div></div>`;
+ else{const ch=k=>{const d=(R.res[k]-R.vb[k])*100;return Math.abs(d)<.5?'':` <span class="note" style="color:${d>0?'var(--ok)':'var(--bad)'}">${d>0?'+':'−'}${Math.abs(d).toFixed(1)}</span>`};
+  body=`<div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">${pie(ks.map(k=>[R.res[k],pc(k)]),150,.55,x(E.f,E.e))}<div style="flex:1;min-width:220px">${list(R.res,k=>pct(R.res[k])+ch(k)+(R.seats?` · ${R.seats[k]} ${x('sièges','seats')}`:R.reg&&R.reg[k]?` · ${R.reg[k]} ${x('régions','regions')}`:''))}</div></div>
+  <p class="note" style="margin:8px 0 0">${x('Écart avec les législatives entre parenthèses.','Change on the last legislative election shown in colour.')} ${R.dep?x('Départements remportés : ','Départements won: ')+ks.filter(k=>R.dep[k]).sort((a,b)=>R.dep[b]-R.dep[a]).map(k=>P[k].n+' '+R.dep[k]).join(' · ')+'.':''} ${R.mov?x('Le mouvement « '+R.mov[0]+' » perce.','The “'+R.mov[1]+'” movement breaks through.'):''}</p>
+  <p style="margin:8px 0 0"><b>${R.gd<-.02?x('Un revers pour la majorité : la popularité du gouvernement recule.','A setback for the government: its approval falls.'):R.gd>.02?x('Un succès pour la majorité.','A success for the government.'):x('Pas de verdict net sur le gouvernement.','No clear verdict on the government.')}</b></p>`}
+ el.innerHTML=`<section class="modal" style="width:min(620px,100%)"><div class="mh"><h2>${E.em} ${x(E.f,E.e)} · ${MONTHS(R.m)}</h2></div><div class="mb">${body}<div style="display:flex;justify-content:flex-end;margin-top:10px"><button class="act vbtn" data-midx><b>${x('Fermer','Close')}</b></button></div></div></section>`}
+{const _r=render;render=function(){const r=_r.apply(this,arguments);try{midSync()}catch(e){console.error(e)}return r}}
+document.addEventListener('click',e=>{const t=e.target.closest&&e.target.closest('[data-midx],[data-pcl]');if(!t||!SIM.G)return;if(t.hasAttribute('data-midx'))SIM.G.midPop=null;else pcDo(SIM.G,t.dataset.pcl);save();render()});
+
+/* ===== What voters worry about, and why (Logan 2026-10-24: "Voters concerns should be linked to metrics, randomness via public mood/media,
+   and other sensical things. and thus, voters concerns should affect polling too") =====
+   Each concern's level is its usual weight plus named drivers: the concrete metric behind it (assaults, residence permits, rents, A&E waits…),
+   prices and jobs, active crises and outside shocks, public mood, and the news cycle (G.cnm, with occasional media waves).
+   The concerns then move the polls through issue ownership: when an issue rises, the parties voters trust on it gain, the same rule for everyone. */
+const CNX={ukr:{def:.6,econ:.2},def:{def:.5,eur:.2},oil:{econ:.4},food:{econ:.4},tariff:{econ:.3,eur:.2},glob:{econ:.3},eurx:{eur:.4,econ:.2},edp:{eur:.3,tax:.3},merc:{eur:.3},mig:{immig:.6},cyber:{def:.3,safe:.2},defl:{econ:.3},glut:{econ:.2}};
+const cnL=(a,fr,en)=>[a,fr,en];
+function cnDrv(G,k){const D=[],add=(a,fr,en)=>{if(Math.abs(a)>=.02)D.push(cnL(a,fr,en))},pc=v=>(v>0?'+':'−')+Math.abs(Math.round(v*100))+' %';
+ (G.cr||[]).forEach(c=>{const C=crDef(c.id);if(!C)return;const a=(C.dom===k?.5*c.sev:0)+(c.sp===k?.25*c.sev:0);if(a){const n=String(crNm(c)).replace(/<[^>]*>/g,'');add(a,'Crise : '+n,'Crisis: '+n)}});
+ (G.ext||[]).forEach(e=>{const W=CNX[e.id],D0=xDef(e.id);if(W&&W[k]&&e.left>0&&D0)add(W[k]*(e.sev||1)*(1-(e.mit||0)*.5),D0.em+' '+D0.f,D0.em+' '+D0.e)});
+ const m=MET.find(z=>z.k===k);
+ if(m){const i=G.ind[k]??50,lv=clamp((50-i)*.035,-.25,1),tr=Math.max(0,((G.prev&&G.prev[k])??i)-i)*.1,s=metSummary(G,k);if(lv+tr)add(lv+tr,s,s)}
+ else if(G.ind&&G.ind[k]!=null&&G.ind[k]<45)add((45-G.ind[k])*.03,'Le service se dégrade','The service is getting worse');
+ if(k==='econ'){add(Math.max(0,G.infl-2.5)*.35,'Inflation '+fn(G.infl)+' %','Inflation '+fn(G.infl)+' %');add(Math.max(0,-((G.wg??2.2)-G.infl))*.2,'Salaires réels en baisse','Real wages falling');add(Math.max(0,G.unemp-8)*.12,'Chômage '+fn(G.unemp)+' %','Unemployment '+fn(G.unemp)+' %');add(Math.max(0,-(G.gdpGr??1))*.3,'Croissance '+fn(G.gdpGr)+' %','Growth '+fn(G.gdpGr)+' %');add(Math.max(0,-(G.mood||0))*.04,'Humeur du pays morose','A gloomy national mood')}
+ if(k==='safe'&&G.crime)add(clamp((G.crime/CR0-1)*3,-.3,.8),'Violences '+Math.round(G.crime)+' / 100 000 ('+pc(G.crime/CR0-1)+' sur 2024)','Assaults '+Math.round(G.crime)+' per 100k ('+pc(G.crime/CR0-1)+' on 2024)');
+ if(k==='immig'&&G.arr)add(clamp((G.arr/ARR0-1)*2.5,-.3,.8),'Premiers titres de séjour '+Math.round(G.arr)+' k ('+pc(G.arr/ARR0-1)+' sur 2024)','First residence permits '+Math.round(G.arr)+'k ('+pc(G.arr/ARR0-1)+' on 2024)');
+ if(k==='tax'){add(Math.max(0,((G.debt||110)-110)/25),'Dette '+fn(G.debt)+' % du PIB','Debt '+fn(G.debt)+' % of GDP');add(Math.max(0,(G.spr??80)-120)/150,'Écart OAT-Bund '+Math.round(G.spr)+' pb','Spread vs Germany '+Math.round(G.spr)+' bp')}
+ if(k==='pen'&&G.strike)add(.5*(G.strike.sev||1),'Grève contre la réforme','Strikes over the reform');
+ {const c=codeCn(G,k);add(c,'Le droit en vigueur déplaît','Voters dislike the law as it stands')}
+ {const n=(G.cnm&&G.cnm[k])||0;add(n,n>0?'📰 À la une des médias':'📰 Sorti de l’actualité',n>0?'📰 Leading the news':'📰 Out of the news')}
+ return D}
+/* the news cycle: every concern drifts with coverage; now and then the media seize on one (a viral story, a report, a heatwave) */
+const CNW={safe:['Un fait divers tourne en boucle sur les chaînes d’info.','A crime story loops on the news channels.'],immig:['Un naufrage et un camp évacué relancent le débat migratoire.','A shipwreck and a cleared camp reopen the migration debate.'],health:['Les urgences fermées la nuit font la une.','A&E wards closing at night make the headlines.'],hous:['Un rapport sur le mal-logement fait réagir.','A report on bad housing strikes a chord.'],clim:['Une canicule record frappe le pays.','A record heatwave hits the country.'],edu:['Des classes sans professeur à la rentrée.','Classes start the year with no teacher.'],econ:['Le prix du caddie fait la une.','The cost of the weekly shop leads the news.'],pen:['Les petites retraites au cœur d’un documentaire.','A documentary on meagre pensions goes viral.'],tax:['La Cour des comptes alerte sur la dette.','The Court of Audit warns about the debt.'],def:['Une incursion de drones inquiète.','A drone incursion causes alarm.'],eur:['Bruxelles et Paris s’opposent publiquement.','Brussels and Paris clash in public.']};
+function cnNews(G){G.cnm=G.cnm||{};for(const k in CN0)G.cnm[k]=((G.cnm[k]||0)*.6+gauss()*.08);
+ if(rnd()<.15){const ks=Object.keys(CNW),k=ks[Math.floor(rnd()*ks.length)],a=.5+rnd()*.4;G.cnm[k]+=a;G.log.push({m:G.m,t:'📰 '+x(CNW[k][0],CNW[k][1])+' '+x(TH[CCAT[k]][0],TH[CCAT[k]][1])+x(' : préoccupation en hausse.',': concern rises.')})}
+ for(const k in CN0)G.cnm[k]=clamp(G.cnm[k],-.4,1.2)}
+function cnTarget(G,k){const D=cnDrv(G,k);G.cnw=G.cnw||{};G.cnw[k]=D.filter(d=>d[0]>.1).sort((a,b)=>b[0]-a[0]).slice(0,2);return Math.max(CN0[k]*.4,CN0[k]+D.reduce((a,d)=>a+d[0],0))}
+/* polls: issues voters care about more than usual lift the parties that own them (a bounded level, swapped each quarter like the other term offsets) */
+function cnPolls(G){if(!G.cn)return;G.ino=G.ino||P.map(()=>0);const mo=TH.map((_,t)=>sum(OWN.slice(0,7).map(o=>o[t]))/7),dv={};
+ for(const k in CN0)dv[CCAT[k]]=(dv[CCAT[k]]||0)+(G.cn[k]-CN0[k]);
+ G.v=G.v.map((v,k)=>{if(k===7||!OWN[k])return v;let e=0;for(const t in dv)e+=dv[t]*(OWN[k][t]-mo[t]);const o=.08*Math.tanh(e/1),d=o-(G.ino[k]||0);G.ino[k]=o;return v*Math.exp(d)})}
+/* how much more (or less) than usual voters care about a category: steers what bills every party drafts (same rule for the player's suggestions) */
+function cnCat(G){const c={},c0={};for(const k in CN0){const t=CCAT[k];c[t]=(c[t]||0)+((G&&G.cn&&G.cn[k])??CN0[k]);c0[t]=(c0[t]||0)+CN0[k]}return [c,c0]}
+const cnW=(G,t)=>{if(!G||!G.cn||t==null)return 1;const [c,c0]=cnCat(G);return c0[t]?clamp(Math.pow(c[t]/c0[t],1.2),.5,3):1};
+/* the concerns at the end of a term set what the next campaign is first about (called from newGame before the AI platforms are drawn) */
+function cnSeedSal(o,G0){const G=o&&o.keep&&G0&&G0.cn?G0:null;if(!G||!SIM.sal)return;const [c,c0]=cnCat(G);SIM.sal=SIM.sal.map((v,t)=>c0[t]?clamp(v*Math.pow(c[t]/c0[t],.7),.5,1.6):v)}
+/* why each top concern stands where it does, under the pie */
+function cnWhyHTML(G){if(!G||!G.cnw||!G.cn)return '';const L=Object.keys(CN0).filter(k=>(G.cnw[k]||[]).length).sort((a,b)=>(G.cn[b]-CN0[b])-(G.cn[a]-CN0[a])).slice(0,3);if(!L.length)return '';
+ return `<div class="note" style="margin-top:6px">${L.map(k=>`<div><b>${x(TH[CCAT[k]][0],TH[CCAT[k]][1])}</b> ${G.cn[k]>CN0[k]+.05?'▲':''} · ${G.cnw[k].map(d=>x(d[1],d[2])).join(' · ')}</div>`).join('')}</div>`}
 
 /* ===== Spectator mode (Logan 2026-10-23: "Can you add a spectate mode") =====
    The AI plays every party. The game runs with SIM.me = 7 (DIV), which every AI loop, debate, poll list and coalition already leaves out,
