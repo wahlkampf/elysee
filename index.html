@@ -1846,6 +1846,8 @@ function finishWithdrawals(){const me=SIM.me;let kept=0,gave=0;
  let tri=0;C.forEach(d=>{if(d.res2run&&d.res2run.length>2)tri++});SIM.barrage=2.6*(1-Math.min(.35,tri/600));
  /* the closer the RN looks to a majority, the harder the rest of the country closes ranks (Logan 2026-10-22) */
  let rnL=0;C.forEach(d=>{if(d.r1&&(d.r1.cl.o[0][1]===5||d.r1.cl.o[0][1]===6))rnL++});SIM.barrage*=1+.6*clamp((rnL-200)/200,0,1);
+ /* a front needs a threat (Logan 2026-10-24: a President's camp swept 399 seats and left RN 4): when the RN leads few seats after the first round, as in 2022, voters of the other camps are far less willing to block it */
+ SIM.barrage*=clamp(.5+.5*rnL/220,.5,1);
  SIM.cons[me]=SIM.cons[me]||'none';SIM.phase='r2c';SIM.r2day=1;SIM.ap=3;SIM.funds+=150;SIM.ai.forEach(o=>{o.funds+=150});st.tab='map';st.layer='proj';st.sel=null;r2Projection();save();render()}
 function countRuns(){const c={duel:0,tri:0,quad:0,el:0};C.forEach(d=>{if(!d.r1)return;if(d.r1.cl.el>=0)c.el++;else{const n=(d.res2run||d.r1.cl.q).length;n===2?c.duel++:n===3?c.tri++:c.quad++}});return c}
 /* ===== run-off week ===== */
@@ -2423,7 +2425,8 @@ function afterPres(choice){const s=SIM.r2nat,[a,b]=SIM.fin,w=s[a]>s[b]?a:b,K=car
  const diss=choice==='diss'||(choice==null&&w!==me&&camp<MAJ&&rnd()<.75);
  if(diss){const v=G?G.v:TG0.slice();const keep=G?JSON.parse(JSON.stringify(G)):null;
   /* a newly elected President gets a honeymoon: the camp gains */
-  const tg=v.map((x2,k)=>campOf(k)===campOf(w)?x2*1.18:x2);const T=sum(tg);
+  /* sized by the run-off margin (2017's landslide win gave a wave, 2022's narrower one barely any); allies get half (Logan 2026-10-24) */
+  const mg=s[a]+s[b]>0?Math.abs(s[a]-s[b])/(s[a]+s[b]):.1,hb=clamp((mg-.08)*.5,0,.12),tg=v.map((x2,k)=>k===w?x2*(1+hb):campOf(k)===campOf(w)?x2*(1+hb/2):x2);const T=sum(tg);
   newGame({party:me,theme:SIM.theme,diff:SIM.diff,mode:'leg',seed:(SIM.seed*13+m)%1e9+1,keep:keepLast(K),tg:tg.map(x2=>x2/T),start:new Date(Math.floor(m/12),m%12,1).toISOString()});SIM.ctx='post';if(keep){SIM.G=keep;SIM.G.lastDiss=m;elecCarry(SIM.G)}SIM.why=x('Le nouveau président dissout l’Assemblée.','The new President dissolves the Assembly.');save();return render()}
  /* Logan 2026-10-24: the new President can keep the incumbent government. An AI President keeps one from its own camp more often than not. */
  const cg=lastGov(G);
